@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rates | Kaastro Pay</title>
+<title>Today's Rates | Kaastro Pay</title>
 <meta name="theme-color" content="#10b981">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
@@ -14,222 +14,130 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
 <script src="../js/boot.js" data-root="../"></script>
 </head>
-<body data-portal="user" data-page="rates" data-title="Rates" data-sub="Live buy and sell prices">
+<body data-portal="user" data-page="rates" data-title="Today’s Rates" data-sub="What we pay and what we charge">
 
 <main class="main-content">
   <div class="row g-3">
-
     <div class="col-lg-7">
+      <!-- The headline pair -->
       <div class="card p-3 p-md-4">
-        <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-          <div class="d-flex align-items-center gap-2">
-            <div class="asset-icon lg" id="heroIcon"></div>
-            <div>
-              <div class="d-flex align-items-center gap-2">
-                <h2 class="card-title mb-0" id="heroSym"></h2>
-                <span class="pill pill-neutral" id="heroName"></span>
-              </div>
-              <div class="small text-muted">1 <span id="heroSym2"></span> in <span class="ccy"></span></div>
-            </div>
-          </div>
-          <div class="text-end">
-            <div style="font-size:1.6rem;font-weight:800;letter-spacing:-.03em" id="heroPrice">—</div>
-            <div class="small fw-bold" id="heroChange">—</div>
-          </div>
+        <div class="section-head">
+          <h2>USDT to <span class="ccy"></span></h2>
+          <span class="small text-muted" id="tick"></span>
         </div>
-
-        <div class="chart-holder mt-3">
-          <canvas id="chart" height="150"></canvas>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
-          <div class="seg" id="rangeSeg">
-            <button data-r="1D">1D</button>
-            <button class="active" data-r="1W">1W</button>
-            <button data-r="1M">1M</button>
-            <button data-r="1Y">1Y</button>
-          </div>
-          <span class="small text-muted" id="tickIn"></span>
-        </div>
-
-        <hr class="my-3">
-
-        <div class="row g-2">
-          <div class="col-6">
-            <div class="stat-tile">
-              <div class="st-label">You buy at</div>
-              <div class="st-value" style="font-size:1.05rem" id="buyPx">—</div>
-              <div class="st-note">includes our spread</div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="stat-tile">
-              <div class="st-label">You sell at</div>
-              <div class="st-value" style="font-size:1.05rem" id="sellPx">—</div>
-              <div class="st-note">net of our spread</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="d-flex gap-2 mt-3">
-          <a href="buy.html" class="btn btn-primary flex-grow-1">Buy <span class="hs"></span></a>
-          <a href="sell.html" class="btn btn-soft flex-grow-1">Sell <span class="hs"></span></a>
+        <div class="rate-pair" id="pair"></div>
+        <div class="k-alert k-ok mt-3">
+          <i class="fas fa-shield-halved"></i>
+          <div>Crypto you deposit is converted to <span class="ccy"></span> automatically.
+            Kaastro Pay does not store cryptocurrency.</div>
         </div>
       </div>
 
-      <div class="card p-3 mt-3">
-        <h2 class="card-title mb-2">Quick converter</h2>
-        <div class="row g-2 align-items-end">
-          <div class="col-5">
-            <label class="form-label">You send</label>
-            <input class="form-control" id="convFrom" value="100" inputmode="decimal">
-          </div>
-          <div class="col-2 text-center pb-2"><i class="fas fa-arrow-right text-muted"></i></div>
-          <div class="col-5">
-            <label class="form-label">You get (est.)</label>
-            <input class="form-control" id="convTo" readonly>
-          </div>
+      <!-- Every asset, both directions -->
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>All assets</h2>
+          <span class="small text-muted">deposit / withdrawal</span></div>
+        <div class="table-wrap">
+          <table class="k-table" style="min-width:0">
+            <thead><tr><th>Asset</th><th class="text-end">You get</th><th class="text-end">You pay</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
         </div>
-        <div class="small text-muted mt-2" id="convNote"></div>
       </div>
     </div>
 
     <div class="col-lg-5">
-      <div class="card p-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h2 class="card-title">All assets</h2>
-          <span class="small text-muted">tap to chart</span>
+      <!-- Converter -->
+      <div class="card p-3 p-md-4">
+        <div class="section-head"><h2>Estimate a deposit</h2></div>
+        <label class="form-label">If you send</label>
+        <div class="amount-box mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <input type="text" inputmode="decimal" id="cvAmt" value="100">
+            <span class="ab-side" style="cursor:default" id="cvAsset">USDT</span>
+          </div>
         </div>
-        <div id="allList"></div>
+        <select class="form-select mb-3" id="cvPick"></select>
+        <label class="form-label">You receive</label>
+        <div class="amount-box mb-3">
+          <div class="d-flex align-items-center gap-2">
+            <input type="text" id="cvOut" readonly>
+            <span class="ab-side" style="cursor:default"><span class="ccy"></span></span>
+          </div>
+        </div>
+        <div class="summary-rows" id="cvSum"></div>
+        <a href="deposit.html" class="btn btn-primary w-100 mt-3">Deposit now</a>
       </div>
-      <div class="card p-3 mt-3">
-        <div class="d-flex align-items-start gap-2">
-          <i class="fas fa-circle-info mt-1 text-muted"></i>
-          <p class="small text-muted mb-0">
-            The chart shows the mid-market price. Your buy and sell prices sit either
-            side of it — that gap is our spread, and it is the same for everyone in
-            <span class="cname"></span>.</p>
-        </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>How the rate is set</h2></div>
+        <p class="text-muted mb-2" style="font-size:.83rem">
+          We take the mid-market price from three independent feeds and apply one
+          published spread. The deposit rate sits just under mid; the withdrawal
+          rate just above it. That gap is how we make money, and it is the same
+          for everyone in <span class="cname"></span>.
+        </p>
+        <p class="text-muted mb-0" style="font-size:.83rem">
+          Rates refresh every 30 seconds. The rate on your receipt is the one
+          that was applied, not a later reconstruction.
+        </p>
       </div>
     </div>
-
   </div>
 </main>
 
 <script>
 KP.ready(function () {
   var C = KP.currentCountry(), F = KP.fmt;
-  var current = 'BTC', range = '1W';
-  var RANGES = { '1D': 86400000, '1W': 604800000, '1M': 2592000000, '1Y': 31536000000 };
-
   $('.ccy').text(C.currency);
   $('.cname').text(C.name);
 
-  var cv = document.getElementById('chart');
-  var ctx = cv.getContext('2d');
+  $('#cvPick').html(KP.ASSET_LIST.map(function (a) {
+    return '<option value="' + a.symbol + '">' + a.symbol + ' · ' + a.name + '</option>';
+  }).join(''));
 
-  function drawChart() {
-    var pts = KP.rates.history(current, C.currency, 80, RANGES[range]);
-    var dpr = window.devicePixelRatio || 1;
-    var w = cv.clientWidth, h = 150;
-    cv.width = w * dpr; cv.height = h * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
+  function paint() {
+    var dep = KP.rates.depositRate('USDT', C.currency);
+    var wdr = KP.rates.withdrawalRate('USDT', C.currency);
 
-    var vals = pts.map(function (p) { return p.v; });
-    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
-    var pad = (max - min) * 0.15 || max * 0.02;
-    min -= pad; max += pad;
-    var up = vals[vals.length - 1] >= vals[0];
-    var line = up ? '#10b981' : '#ef4444';
+    $('#pair').html(
+      '<div class="rate-box"><span class="rb-ico qa-icon qa-green"><i class="fas fa-arrow-down"></i></span>'
+      + '<span class="rb-label">USDT Deposit</span><b>' + F.fiat(dep, C.currency) + '</b>'
+      + '<div class="ar-sub mt-1">What we credit per USDT</div></div>'
+      + '<div class="rate-box"><span class="rb-ico qa-icon qa-amber"><i class="fas fa-arrow-up"></i></span>'
+      + '<span class="rb-label">USDT Withdrawal</span><b>' + F.fiat(wdr, C.currency) + '</b>'
+      + '<div class="ar-sub mt-1">What you pay per USDT</div></div>');
 
-    function x(i) { return (i / (pts.length - 1)) * w; }
-    function y(v) { return h - ((v - min) / (max - min)) * h; }
+    $('#rows').html(KP.ASSET_LIST.map(function (a) {
+      return '<tr><td><div class="d-flex align-items-center gap-2">'
+        + '<span class="asset-icon sm" style="background:' + a.color + '">' + a.symbol.slice(0, 3) + '</span>'
+        + '<div style="line-height:1.25"><div class="t-strong">' + a.symbol + '</div>'
+        + '<div class="t-mono">' + a.name + '</div></div></div></td>'
+        + '<td class="text-end t-strong text-up">' + F.fiat(KP.rates.depositRate(a.symbol, C.currency), C.currency) + '</td>'
+        + '<td class="text-end t-strong">' + F.fiat(KP.rates.withdrawalRate(a.symbol, C.currency), C.currency) + '</td></tr>';
+    }).join(''));
 
-    // faint grid
-    var grid = getComputedStyle(document.body).getPropertyValue('--border-color').trim();
-    ctx.strokeStyle = grid; ctx.lineWidth = 1;
-    for (var g = 1; g < 4; g++) {
-      ctx.beginPath(); ctx.moveTo(0, (h / 4) * g); ctx.lineTo(w, (h / 4) * g); ctx.stroke();
-    }
-
-    // area fill
-    var grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, up ? 'rgba(16,185,129,.28)' : 'rgba(239,68,68,.28)');
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.beginPath();
-    ctx.moveTo(0, h);
-    pts.forEach(function (p, i) { ctx.lineTo(x(i), y(p.v)); });
-    ctx.lineTo(w, h); ctx.closePath();
-    ctx.fillStyle = grad; ctx.fill();
-
-    // line
-    ctx.beginPath();
-    pts.forEach(function (p, i) { i ? ctx.lineTo(x(i), y(p.v)) : ctx.moveTo(x(i), y(p.v)); });
-    ctx.strokeStyle = line; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-    ctx.stroke();
-
-    // emphasised endpoint
-    var lx = x(pts.length - 1), ly = y(vals[vals.length - 1]);
-    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2);
-    ctx.fillStyle = line; ctx.fill();
-    ctx.beginPath(); ctx.arc(lx, ly, 8, 0, Math.PI * 2);
-    ctx.fillStyle = up ? 'rgba(16,185,129,.2)' : 'rgba(239,68,68,.2)'; ctx.fill();
-  }
-
-  function paintHero() {
-    var a = KP.ASSETS[current];
-    var ch = KP.rates.change24h(current);
-    $('#heroIcon').text(current.slice(0, 4)).css('background', a.color);
-    $('#heroSym, #heroSym2').text(current);
-    $('.hs').text(current);
-    $('#heroName').text(a.name);
-    $('#heroPrice').text(F.fiat(KP.rates.midFiat(current, C.currency), C.currency));
-    $('#heroChange')
-      .text((ch >= 0 ? '▲ +' : '▼ ') + ch.toFixed(2) + '% · 24h')
-      .attr('class', 'small fw-bold ' + (ch >= 0 ? 'text-up' : 'text-down'));
-    $('#buyPx').text(F.fiat(KP.rates.buyRate(current, C.currency), C.currency));
-    $('#sellPx').text(F.fiat(KP.rates.sellRate(current, C.currency), C.currency));
     convert();
   }
 
-  function paintList() {
-    $('#allList').html(KP.ASSET_LIST.map(function (a) {
-      var ch = KP.rates.change24h(a.symbol);
-      return '<div class="asset-row cursor-pointer pick-asset' + (a.symbol === current ? ' opacity-100' : '') + '" data-sym="' + a.symbol + '">'
-        + '<div class="asset-icon sm" style="background:' + a.color + '">' + a.symbol.slice(0, 3) + '</div>'
-        + '<div><div class="ar-name" style="font-size:.84rem">' + a.symbol + '</div>'
-        + '<div class="ar-sub">' + a.name + '</div></div>'
-        + '<div class="ar-right"><div class="ar-amt">' + F.fiat(KP.rates.midFiat(a.symbol, C.currency), C.currency) + '</div>'
-        + '<div class="ar-sub ' + (ch >= 0 ? 'text-up' : 'text-down') + '">' + (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%</div>'
-        + '</div></div>';
-    }).join(''));
-  }
-
   function convert() {
-    var v = parseFloat($('#convFrom').val().replace(/,/g, '')) || 0;
-    var out = v * KP.rates.sellRate(current, C.currency);
-    $('#convTo').val(F.fiat(out, C.currency, { noSymbol: true }));
-    $('#convNote').text(v + ' ' + current + ' at the sell rate of '
-      + F.fiat(KP.rates.sellRate(current, C.currency), C.currency) + ' per ' + current + '.');
+    var sym = $('#cvPick').val() || 'USDT';
+    var v = parseFloat(($('#cvAmt').val() || '').replace(/,/g, '')) || 0;
+    var rate = KP.rates.depositRate(sym, C.currency);
+    $('#cvAsset').text(sym);
+    $('#cvOut').val(F.fiat(v * rate, C.currency, { noSymbol: true }));
+    $('#cvSum').html(
+      '<div class="sr"><span>Deposit rate</span><span>' + F.fiat(rate, C.currency) + ' / ' + sym + '</span></div>'
+      + '<div class="sr"><span>Deposit fee</span><span class="text-up">None</span></div>'
+      + '<div class="sr total"><span>Credited</span><span>' + F.fiat(v * rate, C.currency) + '</span></div>');
   }
 
-  $(document).on('click', '.pick-asset', function () {
-    current = $(this).data('sym');
-    paintList(); paintHero(); drawChart();
-  });
-  $('#rangeSeg button').on('click', function () {
-    $('#rangeSeg button').removeClass('active');
-    $(this).addClass('active');
-    range = $(this).data('r');
-    drawChart();
-  });
-  $('#convFrom').on('input', convert);
-  $(window).on('resize', drawChart);
+  $('#cvAmt').on('input', convert);
+  $('#cvPick').on('change', convert);
 
-  paintList(); paintHero(); drawChart();
-  KP.rates.onTick(function () { paintList(); paintHero(); drawChart(); });
-  setInterval(function () { $('#tickIn').text('updates in ' + KP.rates.secondsToTick() + 's'); }, 1000);
+  paint();
+  KP.rates.onTick(paint);
+  setInterval(function () { $('#tick').text('updates in ' + KP.rates.secondsToTick() + 's'); }, 1000);
 });
 </script>
 </body>

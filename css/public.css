@@ -195,7 +195,7 @@
 }
 .step-card .sc-n {
     width: 30px; height: 30px; border-radius: 10px;
-    background: var(--primary-color); color: #fff;
+    background: var(--lemon); color: var(--lemon-ink);
     display: grid; place-items: center; font-weight: 800; font-size: 0.85rem;
     margin-bottom: 0.75rem;
 }
@@ -397,10 +397,8 @@
 /* Sharper hero type and a crisper primary button */
 .hero h1 { text-shadow: 0 1px 0 rgba(255,255,255,.4); }
 [data-bs-theme="dark"] .hero h1 { text-shadow: none; }
-.hero .btn-primary {
-    box-shadow: 0 10px 22px -10px rgba(16, 185, 129, .75);
-}
-.hero .btn-primary:hover { box-shadow: 0 12px 26px -10px rgba(16, 185, 129, .9); }
+.hero .btn-primary { box-shadow: 0 10px 24px -10px rgba(178, 251, 12, .9); }
+.hero .btn-primary:hover { box-shadow: 0 14px 30px -10px rgba(178, 251, 12, 1); }
 
 .trust-bar { box-shadow: var(--shadow-md); }
 
@@ -423,7 +421,7 @@
     width: 7px; height: 7px; border-radius: 99px; background: var(--border-color);
     transition: var(--transition); cursor: pointer;
 }
-.quote-dots span.on { width: 20px; background: var(--primary-color); }
+.quote-dots span.on { width: 20px; background: var(--lemon); }
 
 /* Public pages use the real logo too */
 .pub-nav .brand-img { height: 40px; }
@@ -536,7 +534,7 @@
 .faces img:first-child { margin-left: 0; }
 .faces .more {
     width: 38px; height: 38px; border-radius: 50%; margin-left: -11px;
-    background: var(--primary-color); color: #fff;
+    background: var(--lemon); color: var(--lemon-ink);
     display: grid; place-items: center;
     font-size: 0.66rem; font-weight: 800;
     border: 2px solid var(--bg-body);
@@ -690,11 +688,7 @@
     flex: none;
 }
 
-.btn-install {
-    background: var(--primary-color); border-color: var(--primary-color); color: #04140e;
-    font-weight: 800;
-}
-.btn-install:hover, .btn-install:focus { background: #34d399; border-color: #34d399; color: #04140e; }
+/* .btn-install lives in kaastro.css with the other lemon actions. */
 .btn-ghost {
     background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .22);
     color: var(--hero-text); font-weight: 700;

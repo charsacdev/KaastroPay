@@ -49,8 +49,8 @@
             + 'or a costlier payout rail should not be forced onto one global number. Leave a row '
             + 'on <b>Default</b> and it follows the global spread.</p>'
             + '<div class="table-wrap"><table class="k-table" style="min-width:820px">'
-            + '<thead><tr><th>Market</th><th>Reference rate</th><th>Buy spread</th>'
-            + '<th>Sell spread</th><th>Swap spread</th><th class="text-end">Effective on USDT</th>'
+            + '<thead><tr><th>Market</th><th>Reference rate</th><th>Deposit spread</th>'
+            + '<th>Withdrawal spread</th><th>Remittance</th><th class="text-end">USDT in / out</th>'
             + '<th class="text-end">Source</th></tr></thead>'
             + '<tbody id="mktRows"></tbody></table></div>'
             + saveBar('mktBar', 'Apply market rates')
@@ -63,15 +63,15 @@
             + '<div class="section-head"><h2>Global default spread</h2></div>'
             + '<p class="text-muted" style="font-size:.82rem">'
             + 'Applies to any market without its own override. Basis points: 100 bps = 1%.</p>'
-            + '<label class="form-label mt-2">Buy margin</label>'
+            + '<label class="form-label mt-2">Deposit margin</label>'
             + '<div class="input-group mb-1"><input type="number" class="form-control" id="mBuy" step="5">'
             + '<span class="input-group-text">bps</span></div>'
             + '<div class="form-text mb-3" id="mBuyPct"></div>'
-            + '<label class="form-label">Sell margin</label>'
+            + '<label class="form-label">Withdrawal margin</label>'
             + '<div class="input-group mb-1"><input type="number" class="form-control" id="mSell" step="5">'
             + '<span class="input-group-text">bps</span></div>'
             + '<div class="form-text mb-3" id="mSellPct"></div>'
-            + '<label class="form-label">Swap margin</label>'
+            + '<label class="form-label">Remittance margin</label>'
             + '<div class="input-group mb-1"><input type="number" class="form-control" id="mSwap" step="5">'
             + '<span class="input-group-text">bps</span></div>'
             + '<div class="form-text mb-3" id="mSwapPct"></div>'
@@ -96,7 +96,7 @@
             + '<span class="small text-muted" id="tickIn"></span></div></div>'
             + '<div class="table-wrap"><table class="k-table"><thead><tr>'
             + '<th>Asset</th><th class="text-end">Mid (USD)</th><th class="text-end">Mid</th>'
-            + '<th class="text-end">Users buy at</th><th class="text-end">Users sell at</th>'
+            + '<th class="text-end">Deposit rate</th><th class="text-end">Withdrawal rate</th>'
             + '<th class="text-end">Spread</th><th class="text-end">24h</th></tr></thead>'
             + '<tbody id="rateRows"></tbody></table></div></div></div>'
 
@@ -111,7 +111,7 @@
             var m = KP.rates.effective(c.currency);
             return draft[c.currency] || {
                 fx: KP.rates.fxRate(c.currency),
-                buy: m.buy, sell: m.sell, swap: m.swap,
+                deposit: m.deposit, withdrawal: m.withdrawal, remittance: m.remittance,
                 overridden: m.overridden || KP.rates.isFxOverridden(c.currency)
             };
         }
@@ -120,8 +120,8 @@
             $('#mktRows').html(KP.COUNTRY_LIST.map(function (c) {
                 var v = current(c);
                 var eff = KP.rates.midUsd('USDT') * v.fx;
-                var buy = eff * (1 + v.buy / 10000);
-                var sell = eff * (1 - v.sell / 10000);
+                var dep = eff * (1 - v.deposit / 10000);
+                var wdr = eff * (1 + v.withdrawal / 10000);
                 var over = !!draft[c.currency] || KP.rates.effective(c.currency).overridden
                     || KP.rates.isFxOverridden(c.currency);
                 return '<tr data-ccy="' + c.currency + '">'
@@ -134,16 +134,16 @@
                     + '<input class="form-control mk-fx" type="number" step="0.01" value="' + v.fx + '"></div>'
                     + '<div class="t-mono mt-1">per USD</div></td>'
                     + '<td><div class="input-group input-group-sm" style="width:112px">'
-                    + '<input class="form-control mk-buy" type="number" step="5" value="' + v.buy + '">'
+                    + '<input class="form-control mk-dep" type="number" step="5" value="' + v.deposit + '">'
                     + '<span class="input-group-text">bps</span></div></td>'
                     + '<td><div class="input-group input-group-sm" style="width:112px">'
-                    + '<input class="form-control mk-sell" type="number" step="5" value="' + v.sell + '">'
+                    + '<input class="form-control mk-wdr" type="number" step="5" value="' + v.withdrawal + '">'
                     + '<span class="input-group-text">bps</span></div></td>'
                     + '<td><div class="input-group input-group-sm" style="width:112px">'
-                    + '<input class="form-control mk-swap" type="number" step="5" value="' + v.swap + '">'
+                    + '<input class="form-control mk-rem" type="number" step="5" value="' + v.remittance + '">'
                     + '<span class="input-group-text">bps</span></div></td>'
-                    + '<td class="text-end"><div class="t-strong text-up">' + F.fiat(buy, c.currency) + '</div>'
-                    + '<div class="t-mono text-down">' + F.fiat(sell, c.currency) + '</div></td>'
+                    + '<td class="text-end"><div class="t-strong text-up">' + F.fiat(dep, c.currency) + '</div>'
+                    + '<div class="t-mono">' + F.fiat(wdr, c.currency) + '</div></td>'
                     + '<td class="text-end">'
                     + (over ? '<span class="pill pill-manual">Override</span>'
                             : '<span class="pill pill-neutral">Default</span>')
@@ -154,13 +154,13 @@
         paintMarkets();
 
         var $bar = $('#mktBar');
-        $('#mktRows').on('input', '.mk-fx, .mk-buy, .mk-sell, .mk-swap', function () {
+        $('#mktRows').on('input', '.mk-fx, .mk-dep, .mk-wdr, .mk-rem', function () {
             var $tr = $(this).closest('tr');
             draft[$tr.data('ccy')] = {
                 fx: parseFloat($tr.find('.mk-fx').val()) || 0,
-                buy: parseInt($tr.find('.mk-buy').val(), 10) || 0,
-                sell: parseInt($tr.find('.mk-sell').val(), 10) || 0,
-                swap: parseInt($tr.find('.mk-swap').val(), 10) || 0
+                deposit: parseInt($tr.find('.mk-dep').val(), 10) || 0,
+                withdrawal: parseInt($tr.find('.mk-wdr').val(), 10) || 0,
+                remittance: parseInt($tr.find('.mk-rem').val(), 10) || 0
             };
             markDirty($bar, Object.keys(draft).length);
         });
@@ -178,7 +178,9 @@
         $bar.on('click', '.sb-save', function () {
             Object.keys(draft).forEach(function (c) {
                 var d = draft[c];
-                KP.rates.setCountryMargins(c, { buy: d.buy, sell: d.sell, swap: d.swap });
+                KP.rates.setCountryMargins(c, {
+                    deposit: d.deposit, withdrawal: d.withdrawal, remittance: d.remittance
+                });
                 KP.rates.setFxRate(c, d.fx);
             });
             var n = Object.keys(draft).length;
@@ -196,18 +198,20 @@
 
         function loadGlobal() {
             var m = KP.rates.margins();
-            $('#mBuy').val(m.buy); $('#mSell').val(m.sell); $('#mSwap').val(m.swap);
+            $('#mBuy').val(m.deposit); $('#mSell').val(m.withdrawal); $('#mSwap').val(m.remittance);
             paintPct();
         }
         function paintPct() {
-            $('#mBuyPct').text('Users buy ' + ($('#mBuy').val() / 100).toFixed(2) + '% above mid.');
-            $('#mSellPct').text('Users sell ' + ($('#mSell').val() / 100).toFixed(2) + '% below mid.');
-            $('#mSwapPct').text('Swaps cost ' + ($('#mSwap').val() / 100).toFixed(2) + '%.');
+            $('#mBuyPct').text('Deposits credit ' + ($('#mBuy').val() / 100).toFixed(2) + '% under mid.');
+            $('#mSellPct').text('Withdrawals charge ' + ($('#mSell').val() / 100).toFixed(2) + '% over mid.');
+            $('#mSwapPct').text('Cross-border payouts cost ' + ($('#mSwap').val() / 100).toFixed(2) + '%.');
         }
         $('#mBuy,#mSell,#mSwap').on('input', paintPct);
         $('#saveGlobal').on('click', function () {
             KP.rates.saveMargins({
-                buy: +$('#mBuy').val() || 0, sell: +$('#mSell').val() || 0, swap: +$('#mSwap').val() || 0
+                deposit: +$('#mBuy').val() || 0,
+                withdrawal: +$('#mSell').val() || 0,
+                remittance: +$('#mSwap').val() || 0
             });
             KP.rails.toast('Global spread saved. Markets without an override follow it now.');
             paintMarkets(); paintRates();
@@ -225,8 +229,8 @@
         function paintRates() {
             $('#rateRows').html(KP.ASSET_LIST.map(function (a) {
                 var mid = KP.rates.midFiat(a.symbol, ccy);
-                var b = KP.rates.buyRate(a.symbol, ccy);
-                var s = KP.rates.sellRate(a.symbol, ccy);
+                var b = KP.rates.depositRate(a.symbol, ccy);
+                var s = KP.rates.withdrawalRate(a.symbol, ccy);
                 var ch = KP.rates.change24h(a.symbol);
                 return '<tr>'
                     + '<td><div class="d-flex align-items-center gap-2">'
@@ -236,8 +240,8 @@
                     + '<td class="text-end t-mono">' + F.usd(KP.rates.midUsd(a.symbol)) + '</td>'
                     + '<td class="text-end t-strong">' + F.fiat(mid, ccy) + '</td>'
                     + '<td class="text-end t-strong text-up">' + F.fiat(b, ccy) + '</td>'
-                    + '<td class="text-end t-strong text-down">' + F.fiat(s, ccy) + '</td>'
-                    + '<td class="text-end t-mono">' + ((b - s) / mid * 100).toFixed(2) + '%</td>'
+                    + '<td class="text-end t-strong">' + F.fiat(s, ccy) + '</td>'
+                    + '<td class="text-end t-mono">' + ((s - b) / mid * 100).toFixed(2) + '%</td>'
                     + '<td class="text-end t-strong ' + (ch >= 0 ? 'text-up' : 'text-down') + '">'
                     + (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%</td></tr>';
             }).join(''));

@@ -43,6 +43,8 @@
     js(root + 'js/review.js');
     js(root + 'js/shell.js');
     js(root + 'js/pwa.js');
+    js(root + 'js/flows.js');
+    js(root + 'js/flows2.js');
 
     window.KP = window.KP || {};
     window.KP.ready = function (fn) {

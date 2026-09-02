@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard | Kaastro Pay</title>
+<title>Home | Kaastro Pay</title>
 <meta name="theme-color" content="#10b981">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
@@ -14,86 +14,83 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
 <script src="../js/boot.js" data-root="../"></script>
 </head>
-<body data-portal="user" data-page="home" data-title="Dashboard" data-sub="">
+<body data-portal="user" data-page="home" data-title="Home" data-sub="">
 
 <main class="main-content">
-  <div id="kycBanner"></div>
+  <p class="greet" id="greet"></p>
+  <div id="tierBanner"></div>
 
   <div class="row g-3">
-
-    <!-- Balance + actions, laid out as in the app mockup -->
     <div class="col-lg-5">
+      <!-- Balance -->
       <div class="balance-card">
         <div class="d-flex justify-content-between align-items-start gap-2">
-          <div class="bc-label">Total Balance <i class="fas fa-eye cursor-pointer" id="eyeBtn"></i></div>
-          <span class="bc-chip" id="fiatCcy">NGN</span>
+          <div class="bc-label">Available Balance <i class="fas fa-eye cursor-pointer" id="eyeBtn"></i></div>
+          <span class="bc-chip" id="ccyChip">NGN</span>
         </div>
-        <div class="bc-amount" id="fiatBal">—</div>
-        <div class="bc-sub-label">Available Balance</div>
-        <div class="bc-sub-value" id="availBal">—</div>
-        <hr style="border-color:rgba(255,255,255,.1);margin:.85rem 0 .6rem">
-        <div class="d-flex justify-content-between align-items-center gap-2">
+        <div class="bc-amount" id="balAmt">—</div>
+        <div class="d-flex justify-content-between align-items-center gap-2 mt-2">
           <span class="bc-sub-label" style="margin:0" id="vaLine">—</span>
-          <a href="deposit-fiat.html" class="bc-link">Fund <i class="fas fa-arrow-right"></i></a>
+          <button class="bc-link kp-copy" id="vaCopy" style="background:none;border:none">
+            <i class="fas fa-copy"></i></button>
         </div>
       </div>
 
+      <!-- Four actions -->
       <div class="action-row mt-3">
-        <a href="deposit-crypto.html" class="action-tile">
-          <span class="qa-icon qa-green"><i class="fas fa-arrow-down"></i></span><span>Deposit</span></a>
-        <a href="buy.html" class="action-tile">
-          <span class="qa-icon qa-blue"><i class="fas fa-right-left"></i></span><span>Trade</span></a>
-        <a href="withdraw-fiat.html" class="action-tile">
-          <span class="qa-icon qa-amber"><i class="fas fa-arrow-up"></i></span><span>Withdraw</span></a>
-        <a href="wallets.html" class="action-tile">
-          <span class="qa-icon qa-slate"><i class="fas fa-ellipsis"></i></span><span>More</span></a>
+        <a href="deposit.html" class="action-tile">
+          <span class="qa-icon qa-green"><i class="fas fa-arrow-down"></i></span>
+          <span>Deposit</span><small>Naira or crypto</small></a>
+        <a href="withdraw.html" class="action-tile">
+          <span class="qa-icon qa-amber"><i class="fas fa-arrow-up"></i></span>
+          <span>Withdraw</span><small>Bank or crypto</small></a>
+        <a href="transfer.html" class="action-tile">
+          <span class="qa-icon qa-blue"><i class="fas fa-paper-plane"></i></span>
+          <span>Transfer</span><small>Kaastro users</small></a>
+        <a href="request.html" class="action-tile">
+          <span class="qa-icon qa-purple"><i class="fas fa-hand-holding-dollar"></i></span>
+          <span>Request</span><small>Get paid</small></a>
       </div>
     </div>
 
-    <!-- Portfolio -->
     <div class="col-lg-7">
-      <div class="portfolio-card h-100 d-flex flex-column">
-        <div class="d-flex justify-content-between align-items-start gap-2">
-          <div class="min-w-0">
-            <div class="st-label" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:700">
-              Crypto portfolio</div>
-            <div class="pc-amount mt-1" id="cryptoVal">—</div>
-            <div class="small text-muted" id="cryptoUsd">—</div>
-          </div>
-          <a href="wallets.html" class="btn btn-soft btn-sm flex-shrink-0">
-            <span class="d-none d-sm-inline">All wallets </span><i class="fas fa-arrow-right"></i></a>
+      <!-- Promo slider -->
+      <div id="promoSlider" class="carousel slide promo-slider" data-bs-ride="carousel" data-bs-interval="5000">
+        <div class="carousel-inner" id="promoInner"></div>
+        <div class="carousel-indicators" id="promoDots"></div>
+      </div>
+
+      <!-- Today's rates, front and centre -->
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head">
+          <h2>Today’s Rates</h2>
+          <span class="small text-muted"><i class="fas fa-circle text-up" style="font-size:.4rem"></i>
+            <span id="rateTick">Updated just now</span></span>
         </div>
-        <hr class="my-3">
-        <div id="topAssets" class="flex-grow-1"></div>
+        <div class="rate-pair" id="ratePair"></div>
+        <a href="rates.html" class="btn btn-soft btn-sm w-100 mt-3">See all rates</a>
       </div>
     </div>
   </div>
 
-  <!-- Quick services, 4 × 2 as in the mockup -->
+  <!-- Quick services -->
   <div class="card p-3 mt-3">
     <div class="section-head">
       <h2>Quick Services</h2>
-      <a href="wallets.html" class="text-primary-k">See all</a>
+      <a href="bills.html" class="text-primary-k">See all</a>
     </div>
     <div class="service-grid" id="services"></div>
   </div>
 
+  <!-- Recent transactions -->
   <div class="card p-3 mt-3">
     <div class="section-head">
-      <h2>Pay a bill</h2>
-      <a href="bills.html" class="text-primary-k">See all</a>
+      <h2>Recent Transactions</h2>
+      <a href="insights.html" class="text-primary-k">See all</a>
     </div>
-    <div class="row g-2">
-      <div class="col-4"><a href="bills.html?s=airtime" class="biller-tile">
-        <span class="qa-icon qa-green"><i class="fas fa-mobile-screen"></i></span><span>Airtime</span></a></div>
-      <div class="col-4"><a href="bills.html?s=data" class="biller-tile">
-        <span class="qa-icon qa-blue"><i class="fas fa-wifi"></i></span><span>Data</span></a></div>
-      <div class="col-4"><a href="bills.html?s=electricity" class="biller-tile">
-        <span class="qa-icon qa-amber"><i class="fas fa-bolt"></i></span><span>Electricity</span></a></div>
-    </div>
+    <div id="recentTx"></div>
   </div>
 
-  <!-- Only shown while the app is not installed on this device. -->
   <div class="install-cta mt-3" data-install-hide-when-installed hidden id="installRow">
     <img src="../images/icon-maskable-192.png" width="44" height="44" alt="">
     <div class="flex-grow-1 min-w-0">
@@ -103,102 +100,104 @@
     <button class="btn btn-install btn-sm flex-shrink-0" data-install>
       <i class="fas fa-download me-1"></i>Install</button>
   </div>
-
-  <div class="row g-3 mt-0">
-    <div class="col-lg-7">
-      <div class="card p-3 h-100">
-        <div class="section-head">
-          <h2>Recent Transactions</h2>
-          <a href="transactions.html" class="text-primary-k">See all</a>
-        </div>
-        <div id="recentTx"></div>
-      </div>
-    </div>
-    <div class="col-lg-5">
-      <div class="card p-3 h-100">
-        <div class="section-head">
-          <h2>Market</h2>
-          <span class="small text-muted" id="tickIn"></span>
-        </div>
-        <div id="marketList"></div>
-        <a href="rates.html" class="btn btn-soft btn-sm w-100 mt-2">Full rates</a>
-      </div>
-    </div>
-  </div>
 </main>
 
 <script>
 KP.ready(function () {
   var me = KP.data.ME, C = KP.currentCountry(), F = KP.fmt;
 
-  // The demo user's cash sits in NGN. Other country views show it converted so
-  // the navbar switcher demonstrates a real Ghana or Kenya session.
-  function myFiat() {
-    if (C.currency === 'NGN') return me.fiatBalance;
-    return (me.fiatBalance / KP.USD_RATE.NGN) * KP.USD_RATE[C.currency];
+  var h = new Date().getHours();
+  $('#greet').text((h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening')
+    + ', ' + me.firstName);
+
+  function myBal() {
+    return C.currency === 'NGN' ? me.fiatBalance
+      : (me.fiatBalance / KP.USD_RATE.NGN) * KP.USD_RATE[C.currency];
   }
 
   var hidden = false;
   function paintBalance() {
-    var v = myFiat();
-    $('#fiatBal').text(hidden ? '••••••' : F.fiat(v, C.currency));
-    $('#availBal').text(hidden ? '••••••' : F.fiat(v, C.currency));
-    $('#fiatCcy').text(C.currency);
+    $('#balAmt').text(hidden ? '••••••' : F.fiat(myBal(), C.currency));
+    $('#ccyChip').text(C.currency);
   }
   $('#eyeBtn').on('click', function () {
     hidden = !hidden;
     $(this).attr('class', 'fas ' + (hidden ? 'fa-eye-slash' : 'fa-eye') + ' cursor-pointer');
-    paintBalance(); paintPortfolio();
+    paintBalance();
   });
+  paintBalance();
 
-  $('#vaLine').text(C.fundingRail === 'virtual_account'
-    ? me.virtualAccount.bank + ' · ' + me.virtualAccount.number
-    : C.fundingLabel + ' · ' + C.banks[0]);
+  // The virtual account is the thing people copy most, so it sits on the card.
+  if (C.fundingRail === 'virtual_account') {
+    $('#vaLine').html('<i class="fas fa-building-columns me-1"></i>Providus Bank &nbsp;•&nbsp; '
+      + me.virtualAccount.number);
+    $('#vaCopy').attr('data-copy', me.virtualAccount.number);
+  } else {
+    $('#vaLine').html('<i class="fas fa-mobile-screen me-1"></i>' + C.fundingLabel + ' · ' + C.banks[0]);
+    $('#vaCopy').hide();
+  }
 
   if (me.tier < 3) {
-    $('#kycBanner').html('<div class="sys-banner sys-kyc">'
-      + '<i class="fas fa-user-shield fs-5"></i>'
-      + '<div class="flex-grow-1" style="min-width:180px"><b>You are on Tier ' + me.tier + '.</b> '
-      + '<span class="small">Daily limit ' + F.usd(KP.TIERS[me.tier].dailyUsd) + '. Verify further to raise it.</span></div>'
-      + '<a href="kyc.html" class="btn btn-primary btn-sm">Upgrade</a></div>');
+    $('#tierBanner').html('<div class="tier-banner">'
+      + '<span class="qa-icon qa-green sm"><i class="fas fa-shield-halved"></i></span>'
+      + '<span class="flex-grow-1 min-w-0"><b>Tier ' + me.tier + ' account</b>'
+      + '<span>Upgrade to increase your transaction limit</span></span>'
+      + '<a href="verification.html" class="btn btn-primary btn-sm flex-shrink-0">Upgrade</a></div>');
   }
 
-  function paintPortfolio() {
-    var usdTotal = KP.data.MY_WALLETS.reduce(function (s, w) {
-      return s + w.amount * KP.rates.midUsd(w.asset);
-    }, 0);
-    $('#cryptoVal').text(hidden ? '••••••' : F.fiat(usdTotal * KP.USD_RATE[C.currency], C.currency));
-    $('#cryptoUsd').text('≈ ' + F.usd(usdTotal) + ' across '
-      + KP.data.MY_WALLETS.filter(function (w) { return w.amount > 0; }).length + ' assets');
+  /* ---------------- promo slider ---------------- */
+  var PROMOS = [
+    ['Convert crypto to Naira instantly', 'Fast, secure and automatic — no wallet to manage.',
+     'Deposit Now', 'deposit.html', 'fa-arrows-rotate'],
+    ['Send money across Africa', 'Ghana, Kenya, Tanzania, Rwanda and South Africa in minutes.',
+     'Send Abroad', 'send-abroad.html', 'fa-earth-africa'],
+    ['Pay bills from your balance', 'Airtime, data, electricity and betting in one tap.',
+     'Pay a Bill', 'bills.html', 'fa-bolt']
+  ];
+  $('#promoInner').html(PROMOS.map(function (p, i) {
+    return '<div class="carousel-item' + (i === 0 ? ' active' : '') + '">'
+      + '<div class="promo-card"><div class="min-w-0">'
+      + '<b>' + p[0] + '</b><span>' + p[1] + '</span>'
+      + '<a href="' + p[3] + '" class="btn btn-light btn-sm mt-3">' + p[2] + '</a></div>'
+      + '<i class="fas ' + p[4] + ' promo-art"></i></div></div>';
+  }).join(''));
+  $('#promoDots').html(PROMOS.map(function (_, i) {
+    return '<button type="button" data-bs-target="#promoSlider" data-bs-slide-to="' + i + '"'
+      + (i === 0 ? ' class="active"' : '') + ' aria-label="Slide ' + (i + 1) + '"></button>';
+  }).join(''));
 
-    var held = KP.data.MY_WALLETS.filter(function (w) { return w.amount > 0; })
-      .sort(function (a, b) { return b.amount * KP.rates.midUsd(b.asset) - a.amount * KP.rates.midUsd(a.asset); })
-      .slice(0, 3);
-
-    $('#topAssets').html(held.map(function (w) {
-      var a = KP.ASSETS[w.asset];
-      var val = w.amount * KP.rates.midUsd(w.asset);
-      var ch = KP.rates.change24h(w.asset);
-      return '<div class="asset-row">'
-        + '<div class="asset-icon" style="background:' + a.color + '">' + a.symbol.slice(0, 4) + '</div>'
-        + '<div class="min-w-0"><div class="ar-name">' + a.name + '</div>'
-        + '<div class="ar-sub">' + F.crypto(w.amount, w.asset) + '</div></div>'
-        + '<div class="ar-right"><div class="ar-amt">' + F.fiat(val * KP.USD_RATE[C.currency], C.currency) + '</div>'
-        + '<div class="ar-sub ' + (ch >= 0 ? 'text-up' : 'text-down') + '">'
-        + (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%</div></div></div>';
-    }).join(''));
+  /* ---------------- today's rates ---------------- */
+  function paintRates() {
+    var dep = KP.rates.depositRate('USDT', C.currency);
+    var wdr = KP.rates.withdrawalRate('USDT', C.currency);
+    $('#ratePair').html(
+      '<div class="rate-box"><span class="rb-ico qa-icon qa-green"><i class="fas fa-arrow-down"></i></span>'
+      + '<span class="rb-label">USDT Deposit</span>'
+      + '<b>' + F.fiat(dep, C.currency) + '</b></div>'
+      + '<div class="rate-box"><span class="rb-ico qa-icon qa-amber"><i class="fas fa-arrow-up"></i></span>'
+      + '<span class="rb-label">USDT Withdrawal</span>'
+      + '<b>' + F.fiat(wdr, C.currency) + '</b></div>');
   }
+  paintRates();
+  KP.rates.onTick(function () {
+    paintRates();
+    $('#rateTick').text('Updated just now');
+  });
+  setInterval(function () {
+    var s = KP.rates.TICK_MS / 1000 - KP.rates.secondsToTick();
+    $('#rateTick').text(s < 5 ? 'Updated just now' : 'Updated ' + Math.round(s) + 's ago');
+  }, 1000);
 
-  // Eight tiles, 4 × 2 — matching the mockup's service grid.
+  /* ---------------- quick services ---------------- */
   $('#services').html([
-    ['deposit-crypto.html', 'fa-bitcoin-sign', 'qa-green', 'Deposit Crypto', ''],
-    ['deposit-fiat.html', 'fa-building-columns', 'qa-blue', 'Deposit Cash', ''],
-    ['buy.html', 'fa-cart-shopping', 'qa-green', 'Buy', ''],
-    ['sell.html', 'fa-hand-holding-dollar', 'qa-amber', 'Sell', ''],
-    ['swap.html', 'fa-right-left', 'qa-purple', 'Swap', 'New'],
-    ['withdraw-crypto.html', 'fa-paper-plane', 'qa-red', 'Send Crypto', ''],
-    ['withdraw-fiat.html', 'fa-money-bill-transfer', 'qa-blue', 'Withdraw', ''],
-    ['bills.html', 'fa-bolt', 'qa-amber', 'Pay Bills', 'New']
+    ['bills.html?s=airtime', 'fa-mobile-screen', 'qa-green', 'Airtime', ''],
+    ['bills.html?s=data', 'fa-wifi', 'qa-blue', 'Data', ''],
+    ['bills.html?s=electricity', 'fa-bolt', 'qa-amber', 'Electricity', ''],
+    ['bills.html?s=betting', 'fa-futbol', 'qa-purple', 'Betting', ''],
+    ['send-abroad.html', 'fa-earth-africa', 'qa-green', 'Send Abroad', 'New'],
+    ['scan.html', 'fa-qrcode', 'qa-blue', 'Scan & Pay', ''],
+    ['rates.html', 'fa-chart-line', 'qa-slate', 'Rates', ''],
+    ['bills.html', 'fa-ellipsis', 'qa-slate', 'More', '']
   ].map(function (s) {
     return '<a href="' + s[0] + '" class="service-tile">'
       + '<span class="qa-icon ' + s[2] + '"><i class="fas ' + s[1] + '"></i>'
@@ -206,11 +205,14 @@ KP.ready(function () {
       + '<span>' + s[3] + '</span></a>';
   }).join(''));
 
-  $('#recentTx').html(KP.data.myTransactions().slice(0, 6).map(function (t) {
-    var cls = t.type === 'swap' ? 'tx-swap' : (t.dir === 'in' ? 'tx-in' : 'tx-out');
-    var ic = t.type === 'swap' ? 'fa-right-left' : (t.dir === 'in' ? 'fa-arrow-down' : 'fa-arrow-up');
-    var amt = (t.dir === 'in' ? '+' : '−') + (t.fiat != null ? F.fiat(t.fiat, 'NGN') : F.crypto(t.amount, t.asset));
-    var pill = t.status === 'successful' ? 'pill-success' : t.status === 'failed' ? 'pill-failed' : 'pill-processing';
+  /* ---------------- recent transactions ---------------- */
+  $('#recentTx').html(KP.data.myTransactions().slice(0, 5).map(function (t) {
+    var cls = t.dir === 'in' ? 'tx-in' : 'tx-out';
+    var ic = t.type === 'bill' ? 'fa-bolt' : t.dir === 'in' ? 'fa-arrow-down' : 'fa-arrow-up';
+    var amt = (t.dir === 'in' ? '+' : '−')
+      + (t.fiat != null ? F.fiat(t.fiat, 'NGN') : F.crypto(t.amount, t.asset));
+    var pill = t.status === 'successful' ? 'pill-success'
+      : t.status === 'failed' ? 'pill-failed' : 'pill-processing';
     return '<div class="tx-row">'
       + '<div class="tx-icon ' + cls + '"><i class="fas ' + ic + '"></i></div>'
       + '<div class="tx-meta"><b>' + t.label + '</b><small>' + t.sub + '</small></div>'
@@ -218,30 +220,12 @@ KP.ready(function () {
       + '<span class="pill ' + pill + '" style="font-size:.61rem">' + t.status + '</span></div></div>';
   }).join(''));
 
-  function paintMarket() {
-    $('#marketList').html(['BTC', 'ETH', 'USDT', 'BNB'].map(function (s) {
-      var a = KP.ASSETS[s], ch = KP.rates.change24h(s);
-      return '<div class="asset-row">'
-        + '<div class="asset-icon sm" style="background:' + a.color + '">' + s.slice(0, 3) + '</div>'
-        + '<div class="min-w-0"><div class="ar-name" style="font-size:.82rem">' + s + '</div>'
-        + '<div class="ar-sub">' + a.name + '</div></div>'
-        + '<div class="ar-right"><div class="ar-amt">' + F.fiat(KP.rates.midFiat(s, C.currency), C.currency) + '</div>'
-        + '<div class="ar-sub ' + (ch >= 0 ? 'text-up' : 'text-down') + '">'
-        + (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch).toFixed(2) + '%</div></div></div>';
-    }).join(''));
-  }
-
-  // The row stays hidden until we know the app is installable here.
   if (window.KP && KP.pwa) {
     KP.pwa.onChange(function () {
-      document.getElementById('installRow').hidden = KP.pwa.isInstalled();
+      var el = document.getElementById('installRow');
+      if (el) el.hidden = KP.pwa.isInstalled();
     });
   }
-
-  function paintAll() { paintBalance(); paintPortfolio(); paintMarket(); }
-  paintAll();
-  KP.rates.onTick(paintAll);
-  setInterval(function () { $('#tickIn').text('updates in ' + KP.rates.secondsToTick() + 's'); }, 1000);
 });
 </script>
 </body>

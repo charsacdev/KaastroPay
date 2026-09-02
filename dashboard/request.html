@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request Payment | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="request" data-title="Request Payment" data-sub="Ask to be paid">
+<main class="main-content"><div class="row justify-content-center"><div class="col-lg-6 col-xl-5"><div id="mount"></div></div></div></main>
+
+<script src="../js/backoffice.js"></script>
+<script>KP.ready(function(){ KP.flows2.request(jQuery("#mount")); });</script>
+</body>
+</html>

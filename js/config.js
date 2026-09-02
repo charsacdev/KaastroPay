@@ -118,7 +118,11 @@
 
     /* ------------------- USD → local currency reference ------------------- */
     /* Mid-market. Spreads applied by the rates engine, set in admin. */
-    var USD_RATE = { NGN: 1500.00, GHS: 15.42, KES: 129.30, TZS: 2685.00, UGX: 3742.00 };
+    var USD_RATE = {
+        NGN: 1500.00, GHS: 15.42, KES: 129.30, TZS: 2685.00, UGX: 3742.00,
+        /* Send-abroad destinations we pay out to but do not host accounts in. */
+        RWF: 1305.00, ZAR: 18.20
+    };
 
     /* ------------------------------ Tiers ------------------------------ */
 
@@ -131,10 +135,14 @@
 
     /* ---------------------------- Formatting ---------------------------- */
 
+    /* Corridors we pay out to but do not host accounts in still need a symbol. */
+    var EXTRA_SYMBOLS = { RWF: { symbol: 'FRw', dp: 0 }, ZAR: { symbol: 'R', dp: 2 } };
+
     function fiat(amount, currency, opts) {
         opts = opts || {};
         var c = null;
         for (var k in COUNTRIES) { if (COUNTRIES[k].currency === currency) { c = COUNTRIES[k]; break; } }
+        if (!c) c = EXTRA_SYMBOLS[currency] || null;
         var sym = c ? c.symbol : (currency + ' ');
         var dp = opts.dp != null ? opts.dp : (c ? c.dp : 2);
         var n = Number(amount || 0);

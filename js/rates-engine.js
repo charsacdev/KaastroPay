@@ -12,11 +12,14 @@
     var TICK_MS = 30000;      // matches the "rates update every 30 seconds" promise
     var QUOTE_TTL = 30;       // seconds a quote stays dealable
 
-    /* Margins the admin sets. Basis points over/under mid. */
+    /* Margins the admin sets, in basis points.
+       `deposit` is taken off the mid when we credit an incoming crypto deposit
+       in Naira. `withdrawal` is added when a user pays Naira to send crypto
+       out. There is no buy/sell/swap — the platform never holds crypto. */
     var MARGINS = {
-        buy: 150,    // 1.50% above mid when a user buys crypto
-        sell: 150,   // 1.50% below mid when a user sells crypto
-        swap: 80     // 0.80% on a crypto-to-crypto swap
+        deposit: 150,      // 1.50% under mid on the way in
+        withdrawal: 150,   // 1.50% over mid on the way out
+        remittance: 200    // 2.00% on a cross-border payout
     };
 
     /* Per-country overrides. A market with thinner liquidity or a costlier
@@ -27,21 +30,29 @@
     function loadMargins() {
         try {
             var s = JSON.parse(localStorage.getItem('kaastro-margins') || 'null');
-            if (s) { MARGINS.buy = s.buy; MARGINS.sell = s.sell; MARGINS.swap = s.swap; }
+            if (s && s.deposit != null) {
+                MARGINS.deposit = s.deposit;
+                MARGINS.withdrawal = s.withdrawal;
+                MARGINS.remittance = s.remittance != null ? s.remittance : MARGINS.remittance;
+            }
         } catch (e) { }
         try {
             OVERRIDES = JSON.parse(localStorage.getItem('kaastro-margins-by-ccy') || '{}') || {};
         } catch (e) { OVERRIDES = {}; }
     }
     function saveMargins(m) {
-        MARGINS.buy = m.buy; MARGINS.sell = m.sell; MARGINS.swap = m.swap;
+        MARGINS.deposit = m.deposit; MARGINS.withdrawal = m.withdrawal;
+        MARGINS.remittance = m.remittance;
         try { localStorage.setItem('kaastro-margins', JSON.stringify(MARGINS)); } catch (e) { }
     }
 
     /* Pass null to clear a country back to the global spread. */
     function setCountryMargins(currency, m) {
-        if (m) { OVERRIDES[currency] = { buy: m.buy, sell: m.sell, swap: m.swap }; }
-        else { delete OVERRIDES[currency]; }
+        if (m) {
+            OVERRIDES[currency] = {
+                deposit: m.deposit, withdrawal: m.withdrawal, remittance: m.remittance
+            };
+        } else { delete OVERRIDES[currency]; }
         try { localStorage.setItem('kaastro-margins-by-ccy', JSON.stringify(OVERRIDES)); } catch (e) { }
     }
     function countryMargins(currency) { return OVERRIDES[currency] || null; }
@@ -50,9 +61,9 @@
     function effective(currency) {
         var o = OVERRIDES[currency];
         return {
-            buy: o ? o.buy : MARGINS.buy,
-            sell: o ? o.sell : MARGINS.sell,
-            swap: o ? o.swap : MARGINS.swap,
+            deposit: o ? o.deposit : MARGINS.deposit,
+            withdrawal: o ? o.withdrawal : MARGINS.withdrawal,
+            remittance: o && o.remittance != null ? o.remittance : MARGINS.remittance,
             overridden: !!o
         };
     }
@@ -120,19 +131,21 @@
         return midUsd(sym) * fxRate(currency);
     }
 
-    /* What the user actually deals at, in their own market. */
-    function buyRate(sym, currency) {
-        return midFiat(sym, currency) * (1 + effective(currency).buy / 10000);
+    /* The two rates the whole product runs on.
+       depositRate — Naira credited per unit of crypto received.
+       withdrawalRate — Naira charged per unit of crypto sent out. */
+    function depositRate(sym, currency) {
+        return midFiat(sym, currency) * (1 - effective(currency).deposit / 10000);
     }
-    function sellRate(sym, currency) {
-        return midFiat(sym, currency) * (1 - effective(currency).sell / 10000);
+    function withdrawalRate(sym, currency) {
+        return midFiat(sym, currency) * (1 + effective(currency).withdrawal / 10000);
     }
 
-    /* Crypto-to-crypto. No fiat leg, so the user's own market sets the spread. */
-    function swapRate(from, to, currency) {
-        var r = midUsd(from) / midUsd(to);
-        var bps = currency ? effective(currency).swap : MARGINS.swap;
-        return r * (1 - bps / 10000);
+    /* Cross-border: how much of `to` a unit of `from` buys, after our cut. */
+    function remitRate(fromCcy, toCcy) {
+        var usdFrom = 1 / (global.KP.USD_RATE[fromCcy] || 1);
+        var out = usdFrom * (global.KP.USD_RATE[toCcy] || 1);
+        return out * (1 - effective(fromCcy).remittance / 10000);
     }
 
     /* ------------------------------ quotes ------------------------------ */
@@ -211,9 +224,9 @@
         isFxOverridden: isFxOverridden,
         midUsd: midUsd,
         midFiat: midFiat,
-        buyRate: buyRate,
-        sellRate: sellRate,
-        swapRate: swapRate,
+        depositRate: depositRate,
+        withdrawalRate: withdrawalRate,
+        remitRate: remitRate,
         change24h: change24h,
         issueQuote: issueQuote,
         quoteSecondsLeft: quoteSecondsLeft,

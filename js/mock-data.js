@@ -158,13 +158,15 @@
         });
     }
 
-    /* ------------------------ Buys / Sells / Swaps ------------------------ */
+    /* --------------------------- Conversions ---------------------------- */
+    /* Every crypto deposit becomes one of these automatically. Nothing here is
+       a trade the user chose to make — it is the rail doing its job. */
 
     var TRADES = [];
     for (i = 0; i < 34; i++) {
         var tu = userAt(i * 5 + 2);
         var tc = global.KP.COUNTRIES[tu.country];
-        var kind = ['buy', 'sell', 'swap', 'buy', 'sell'][i % 5];
+        var kind = ['deposit_conversion', 'withdrawal_conversion'][i % 2];
         var s1 = ASSET_KEYS[i % ASSET_KEYS.length];
         var s2 = ASSET_KEYS[(i + 3) % ASSET_KEYS.length];
         if (s2 === s1) s2 = s1 === 'USDT' ? 'BTC' : 'USDT';
@@ -175,19 +177,18 @@
                         : [50, 120, 300, 800][i % 4];
         var usdV = qty * global.KP.ASSETS[s1].usd;
         TRADES.push({
-            ref: 'TRD-' + (77100 + i),
+            ref: 'CNV-' + (77100 + i),
             user: tu,
             kind: kind,
-            from: kind === 'buy' ? tc.currency : s1,
-            to: kind === 'buy' ? s1 : (kind === 'sell' ? tc.currency : s2),
+            from: kind === 'deposit_conversion' ? s1 : tc.currency,
+            to: kind === 'deposit_conversion' ? tc.currency : s1,
             qty: qty,
             usdValue: usdV,
             fiatValue: usdV * (global.KP.USD_RATE[tc.currency] || 1),
             currency: tc.currency,
-            rate: kind === 'swap'
-                ? global.KP.ASSETS[s1].usd / global.KP.ASSETS[s2].usd
-                : global.KP.ASSETS[s1].usd * (global.KP.USD_RATE[tc.currency] || 1),
-            marginEarnedUsd: usdV * (kind === 'swap' ? 0.008 : 0.015),
+            asset: s1,
+            rate: global.KP.ASSETS[s1].usd * (global.KP.USD_RATE[tc.currency] || 1),
+            marginEarnedUsd: usdV * 0.015,
             status: statusFor(i, 11, 23),
             date: dateBack(i % 10, (8 + i) % 24, (i * 13) % 60),
             daysAgo: i % 10
@@ -398,6 +399,87 @@
         { id: 'TK-4405', user: userAt(5), subject: 'Rate difference on swap', status: 'resolved', priority: 'low', last: 'Aug 30 · 11:30 AM', msgs: 3 }
     ];
 
+    /* ------------------------- Peer transfers -------------------------- */
+    /* Kaastro user to Kaastro user. Instant, free, and never leaves the
+       platform, so there is nothing to approve. */
+
+    var TRANSFERS = [];
+    for (i = 0; i < 18; i++) {
+        var sender = userAt(i * 3);
+        var recip = userAt(i * 3 + 4);
+        var sc = global.KP.COUNTRIES[sender.country];
+        var samt = [5000, 25000, 12000, 80000, 3500, 150000, 47000, 9000][i % 8]
+            * (sc.dp === 0 ? 30 : 1);
+        TRANSFERS.push({
+            ref: 'TRF-' + (64200 + i),
+            user: sender,
+            recipient: recip,
+            handle: '@' + recip.name.toLowerCase().split(' ')[0],
+            currency: sc.currency,
+            amount: samt,
+            note: ['Rent', 'Thanks!', 'For the goods', '', 'Lunch', 'Split the bill', '', 'Salary'][i % 8],
+            status: statusFor(i, 13, 29),
+            date: dateBack(i % 7, (8 + i) % 24, (i * 9) % 60),
+            daysAgo: i % 7
+        });
+    }
+
+    /* ------------------------- Payment requests ------------------------- */
+
+    var REQUESTS = [];
+    for (i = 0; i < 12; i++) {
+        var asker = userAt(i * 2 + 1);
+        var payer = userAt(i * 5 + 3);
+        var qc2 = global.KP.COUNTRIES[asker.country];
+        REQUESTS.push({
+            ref: 'REQ-' + (58100 + i),
+            user: asker,
+            from: payer,
+            currency: qc2.currency,
+            amount: [2000, 15000, 7500, 40000, 1200, 90000][i % 6] * (qc2.dp === 0 ? 30 : 1),
+            reason: ['Invoice 0042', 'Shared taxi', 'Design work', 'Materials', 'Ticket', 'Deposit'][i % 6],
+            status: ['pending', 'paid', 'pending', 'declined', 'paid', 'pending'][i % 6],
+            date: dateBack(i % 6, (10 + i) % 24, (i * 11) % 60),
+            daysAgo: i % 6
+        });
+    }
+
+    /* --------------------------- Send abroad ---------------------------- */
+    /* Naira in, another African currency out. The corridor decides the rate
+       and the payout rail on the far side. */
+
+    var CORRIDORS = [
+        { to: 'GH', name: 'Ghana', flag: '\uD83C\uDDEC\uD83C\uDDED', ccy: 'GHS', rail: 'MTN MoMo · Telecel Cash · bank', eta: 'Minutes' },
+        { to: 'KE', name: 'Kenya', flag: '\uD83C\uDDF0\uD83C\uDDEA', ccy: 'KES', rail: 'M-Pesa · Airtel Money · bank', eta: 'Minutes' },
+        { to: 'TZ', name: 'Tanzania', flag: '\uD83C\uDDF9\uD83C\uDDFF', ccy: 'TZS', rail: 'M-Pesa · Tigo Pesa · bank', eta: 'Under an hour' },
+        { to: 'UG', name: 'Uganda', flag: '\uD83C\uDDFA\uD83C\uDDEC', ccy: 'UGX', rail: 'MTN MoMo · Airtel Money', eta: 'Under an hour' },
+        { to: 'RW', name: 'Rwanda', flag: '\uD83C\uDDF7\uD83C\uDDFC', ccy: 'RWF', rail: 'MTN MoMo · Bank of Kigali', eta: 'Under an hour' },
+        { to: 'ZA', name: 'South Africa', flag: '\uD83C\uDDFF\uD83C\uDDE6', ccy: 'ZAR', rail: 'Bank transfer · Capitec, FNB, Standard', eta: '1\u20132 hours' }
+    ];
+
+    var REMITTANCES = [];
+    for (i = 0; i < 16; i++) {
+        var ru = userAt(i * 4 + 2);
+        var corr = CORRIDORS[i % CORRIDORS.length];
+        var rc = global.KP.COUNTRIES[ru.country] || global.KP.COUNTRIES.NG;
+        var ramt = [50000, 120000, 25000, 300000, 75000, 18000][i % 6];
+        REMITTANCES.push({
+            ref: 'ABR-' + (71300 + i),
+            user: ru,
+            corridor: corr,
+            fromCurrency: rc.currency,
+            amount: ramt,
+            fee: 500,
+            recipient: ['Ama Mensah', 'Wanjiru Kamau', 'Juma Mwakalinga', 'Nakato Ssali',
+                        'Uwase Claudine', 'Thabo Nkosi'][i % 6],
+            destination: corr.rail.split(' \u00b7 ')[0],
+            account: '+' + (233000000 + i * 7919),
+            status: statusFor(i, 7, 19),
+            date: dateBack(i % 8, (9 + i) % 24, (i * 13) % 60),
+            daysAgo: i % 8
+        });
+    }
+
     /* --------------------------- Notifications --------------------------- */
 
     var NOTIFS = [
@@ -505,6 +587,21 @@
                        UG: [5000, 10000, 20000, 50000, 100000, 200000] },
             field: 'Meter number', placeholder: '04223344556', fee: 0,
             meterTypes: ['Prepaid', 'Postpaid']
+        },
+        betting: {
+            id: 'betting', name: 'Betting', icon: 'fa-futbol', tone: 'qa-purple',
+            blurb: 'Fund your betting wallet',
+            providers: {
+                NG: ['Bet9ja', 'SportyBet', 'BetKing', '1xBet', 'NairaBet', 'MerryBet'],
+                GH: ['SportyBet Ghana', 'Betway Ghana', 'Soccabet'],
+                KE: ['SportPesa', 'Betika', 'Odibets'],
+                TZ: ['Betway Tanzania', 'Premier Bet'],
+                UG: ['SportPesa Uganda', 'Betway Uganda']
+            },
+            presets: { NG: [500, 1000, 2000, 5000, 10000, 20000], GH: [10, 20, 50, 100, 200, 500],
+                       KE: [100, 250, 500, 1000, 2000, 5000], TZ: [2000, 5000, 10000, 20000, 50000, 100000],
+                       UG: [2000, 5000, 10000, 20000, 50000, 100000] },
+            field: 'Betting ID', placeholder: 'Your user ID with the operator', fee: 0
         }
     };
 
@@ -572,15 +669,9 @@
         return { labels: labels, values: vals };
     }
 
-    /* The signed-in demo user's own wallet holdings. */
-    var MY_WALLETS = [
-        { asset: 'USDT', amount: 1240.50 },
-        { asset: 'BTC', amount: 0.01842 },
-        { asset: 'ETH', amount: 0.4120 },
-        { asset: 'USDC', amount: 310.00 },
-        { asset: 'BNB', amount: 0.0 },
-        { asset: 'TRX', amount: 2450.0 }
-    ];
+    /* No wallets. The platform does not hold crypto — a deposit converts to
+       Naira on confirmation, and a withdrawal sells Naira for coin at send
+       time. The only balance a user has is cash. */
 
     var ME = {
         id: 'KP-10240',
@@ -630,10 +721,13 @@
         REF: REF,
         USERS: USERS,
         ME: ME,
-        MY_WALLETS: MY_WALLETS,
         CRYPTO_DEPOSITS: CRYPTO_DEPOSITS,
         FIAT_DEPOSITS: FIAT_DEPOSITS,
         TRADES: TRADES,
+        TRANSFERS: TRANSFERS,
+        REQUESTS: REQUESTS,
+        REMITTANCES: REMITTANCES,
+        CORRIDORS: CORRIDORS,
         FIAT_WITHDRAWALS: FIAT_WITHDRAWALS,
         CRYPTO_WITHDRAWALS: CRYPTO_WITHDRAWALS,
         KYC_QUEUE: KYC_QUEUE,

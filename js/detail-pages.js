@@ -31,7 +31,7 @@
         if (!rec) {
             $el.html('<div class="card p-4"><div class="empty-state"><i class="fas fa-id-card"></i>'
                 + '<p>That submission no longer exists.</p>'
-                + '<a href="kyc.html" class="btn btn-primary btn-sm mt-3">Back to the queue</a></div></div>');
+                + '<a href="verification.html" class="btn btn-primary btn-sm mt-3">Back to the queue</a></div></div>');
             return;
         }
 
@@ -40,7 +40,7 @@
         var isLocked = locked(role, 'kyc');
 
         $el.html(
-            '<a href="kyc.html" class="btn btn-soft btn-sm mb-3"><i class="fas fa-arrow-left me-1"></i>Back to queue</a>'
+            '<a href="verification.html" class="btn btn-soft btn-sm mb-3"><i class="fas fa-arrow-left me-1"></i>Back to queue</a>'
             + '<div id="kGuard"></div>'
             + '<div class="row g-3">'
 
@@ -182,7 +182,7 @@
                     + (rec.status === 'approved'
                         ? u.name + ' is now Tier ' + u.tier + '.'
                         : 'The user can resubmit at any time.') + '</div></div>'
-                    + '<a href="kyc.html" class="btn btn-soft w-100 mt-2">Back to the queue</a>');
+                    + '<a href="verification.html" class="btn btn-soft w-100 mt-2">Back to the queue</a>');
                 return;
             }
             if (isLocked) {

@@ -77,7 +77,7 @@
     <div class="col-lg-5">
       <div class="card p-3">
         <div class="section-head"><h2>Recent bills</h2>
-          <a href="transactions.html" class="text-primary-k">See all</a></div>
+          <a href="insights.html" class="text-primary-k">See all</a></div>
         <div id="history"></div>
       </div>
 
@@ -88,7 +88,7 @@
             Bills are paid from your <span class="ccy"></span> cash balance, not from crypto.
             If your balance is short, sell some crypto first — it takes a few seconds.</p>
         </div>
-        <a href="sell.html" class="btn btn-soft btn-sm w-100 mt-2">Sell crypto for cash</a>
+        <a href="withdraw.html" class="btn btn-soft btn-sm w-100 mt-2">Sell crypto for cash</a>
       </div>
     </div>
   </div>
@@ -109,9 +109,9 @@ KP.ready(function () {
   $('#balLine').text('Balance ' + F.fiat(myFiat(), C.currency));
   $('#availLine').text('Available ' + F.fiat(myFiat(), C.currency));
 
-  $('#services').html(['airtime', 'data', 'electricity'].map(function (k) {
+  $('#services').html(['airtime', 'data', 'electricity', 'betting'].map(function (k) {
     var b = B[k];
-    return '<div class="col-4"><button class="biller-tile pick-service" data-k="' + k + '">'
+    return '<div class="col-6 col-sm-3"><button class="biller-tile pick-service" data-k="' + k + '">'
       + '<span class="qa-icon ' + b.tone + '"><i class="fas ' + b.icon + '"></i></span>'
       + '<span>' + b.name + '</span></button></div>';
   }).join(''));

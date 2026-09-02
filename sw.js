@@ -11,7 +11,7 @@
    for a navigation the network can satisfy quickly.
    ========================================================================== */
 
-const VERSION = 'kaastro-v1';
+const VERSION = 'kaastro-v2';
 const SHELL = VERSION + '-shell';
 const VENDOR = VERSION + '-vendor';
 const RUNTIME = VERSION + '-runtime';
@@ -34,13 +34,15 @@ const PRECACHE = [
   './js/review.js',
   './js/shell.js',
   './js/pwa.js',
+  './js/flows.js',
+  './js/flows2.js',
   './dashboard/index.html',
-  './dashboard/wallets.html',
-  './dashboard/buy.html',
-  './dashboard/sell.html',
-  './dashboard/swap.html',
+  './dashboard/deposit.html',
+  './dashboard/withdraw.html',
+  './dashboard/transfer.html',
   './dashboard/rates.html',
-  './dashboard/transactions.html',
+  './dashboard/insights.html',
+  './dashboard/verification.html',
   './images/logo.png',
   './images/icon-192.png',
   './images/icon-512.png'

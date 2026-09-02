@@ -8,10 +8,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    --primary-color: #10b981;
-    --primary-light: #d1fae5;
-    --primary-dark: #059669;
-    --primary-soft: rgba(16, 185, 129, 0.10);
+    /* Two greens doing two different jobs.
+       Lemon (#B2FB0C) is the button fill the client asked for. It is far too
+       bright to carry white text, so anything sitting on it uses --lemon-ink.
+       The brand green stays for icons, links, active states and chart lines,
+       where a lime would be illegible on a light ground. */
+    --lemon: #B2FB0C;
+    --lemon-hover: #C4FF3A;
+    --lemon-dark: #9FE00A;
+    --lemon-ink: #0B1A02;
+    --lemon-soft: rgba(178, 251, 12, 0.14);
+    --lemon-edge: rgba(178, 251, 12, 0.45);
+
+    --primary-color: #00BE3A;
+    --primary-light: #d6f7e0;
+    --primary-dark: #00902C;
+    --primary-soft: rgba(0, 190, 58, 0.10);
     --bg-body: #f6f8f9;
     --bg-card: #ffffff;
     --bg-sunk: #f1f5f9;
@@ -44,8 +56,11 @@
 }
 
 [data-bs-theme="dark"] {
-    --primary-light: rgba(16, 185, 129, 0.18);
-    --primary-soft: rgba(16, 185, 129, 0.13);
+    --primary-color: #04D03B;
+    --primary-dark: #2BE85C;
+    --primary-light: rgba(0, 190, 58, 0.20);
+    --primary-soft: rgba(0, 190, 58, 0.14);
+    --lemon-soft: rgba(178, 251, 12, 0.16);
     --bg-body: #050807;
     --bg-card: #101512;
     --bg-sunk: #0a0f0d;
@@ -513,12 +528,20 @@ a { text-decoration: none; }
 .input-group-text { background: var(--bg-sunk); border-color: var(--border-color); color: var(--text-muted); font-size: 0.84rem; }
 
 .btn { font-weight: 700; font-size: 0.87rem; border-radius: var(--radius-md); padding: 0.6rem 1.1rem; transition: var(--transition); }
-.btn-primary { background: var(--primary-color); border-color: var(--primary-color); color: #fff; }
-.btn-primary:hover, .btn-primary:focus { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
-.btn-primary:disabled { background: var(--primary-color); border-color: var(--primary-color); opacity: 0.45; }
-.btn-outline-primary { color: var(--primary-dark); border-color: var(--primary-color); }
-.btn-outline-primary:hover { background: var(--primary-color); border-color: var(--primary-color); color: #fff; }
-[data-bs-theme="dark"] .btn-outline-primary { color: var(--primary-color); }
+.btn-primary {
+    background: var(--lemon); border-color: var(--lemon); color: var(--lemon-ink);
+    box-shadow: 0 6px 16px -8px rgba(178, 251, 12, .8);
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+    background: var(--lemon-hover) !important; border-color: var(--lemon-hover) !important;
+    color: var(--lemon-ink) !important;
+}
+.btn-primary:disabled {
+    background: var(--lemon); border-color: var(--lemon); color: var(--lemon-ink);
+    opacity: 0.4; box-shadow: none;
+}
+.btn-outline-primary { color: var(--primary-dark); border-color: var(--lemon-dark); }
+.btn-outline-primary:hover { background: var(--lemon); border-color: var(--lemon); color: var(--lemon-ink); }
 .btn-soft { background: var(--bg-sunk); border: 1px solid var(--border-color); color: var(--text-main); }
 .btn-soft:hover { background: var(--border-color); color: var(--text-main); }
 .btn-sm { font-size: 0.77rem; padding: 0.35rem 0.7rem; }
@@ -1137,7 +1160,7 @@ hr { border-color: var(--border-color); opacity: 1; }
 }
 .install-step .is-n {
     width: 22px; height: 22px; flex: none; border-radius: 50%;
-    background: var(--primary-color); color: #fff;
+    background: var(--lemon); color: var(--lemon-ink);
     display: grid; place-items: center; font-size: 0.68rem; font-weight: 800;
 }
 .install-step .is-ico {
@@ -1183,3 +1206,205 @@ body[data-portal="user"] .update-bar { bottom: calc(var(--tabbar-h) + 22px); }
 .install-cta img { width: 44px; height: 44px; border-radius: 13px; flex: none; }
 .install-cta b { display: block; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.015em; }
 .install-cta span { font-size: 0.79rem; color: var(--hero-dim); line-height: 1.45; display: block; }
+
+
+/* ==========================================================================
+   Lemon accents — everything that reads as a primary action.
+   White is unreadable on #B2FB0C, so each of these sets its own ink.
+   ========================================================================== */
+
+.btn-install, .btn-lemon {
+    background: var(--lemon); border-color: var(--lemon); color: var(--lemon-ink);
+    font-weight: 800;
+    box-shadow: 0 6px 16px -8px rgba(178, 251, 12, .8);
+}
+.btn-install:hover, .btn-lemon:hover,
+.btn-install:focus, .btn-lemon:focus {
+    background: var(--lemon-hover); border-color: var(--lemon-hover); color: var(--lemon-ink);
+}
+
+/* Raised centre action in the mobile tab bar */
+.tabbar a.tb-fab .tb-ico {
+    background: var(--lemon);
+    color: var(--lemon-ink);
+    box-shadow: 0 8px 18px -8px rgba(178, 251, 12, .95);
+}
+.tabbar a.tb-fab.active .tb-ico { color: var(--lemon-ink); }
+
+.progress-bar { background-color: var(--lemon) !important; }
+
+/* Checkboxes and switches: bright fill needs a dark glyph */
+.form-check-input:checked { background-color: var(--lemon); border-color: var(--lemon); }
+.form-check-input:checked[type="checkbox"] {
+    --bs-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%230B1A02' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+}
+.form-check-input:checked[type="radio"] {
+    --bs-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%230B1A02'/%3e%3c/svg%3e");
+}
+.form-check-input:focus { border-color: var(--lemon-dark); box-shadow: 0 0 0 3px var(--lemon-soft); }
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--lemon-dark);
+    box-shadow: 0 0 0 3px var(--lemon-soft);
+}
+
+.stepper .stp.on .n { background: var(--lemon); border-color: var(--lemon); color: var(--lemon-ink); }
+.pin-dot.filled { background: var(--lemon); border-color: var(--lemon); }
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover,
+.dataTables_wrapper .dataTables_paginate .page-item.active .page-link {
+    background: var(--lemon) !important;
+    border-color: var(--lemon) !important;
+    color: var(--lemon-ink) !important;
+    box-shadow: 0 4px 10px -5px rgba(178, 251, 12, .9) !important;
+}
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
+    background: var(--lemon) !important;
+    color: var(--lemon-ink) !important;
+}
+
+/* The balance card's "Fund" is an action, so it takes the lemon. */
+.bc-link { color: var(--lemon); }
+.bc-link:hover { color: var(--lemon-hover); }
+
+.strip-dots span.on { background: var(--lemon); }
+.seg button.active { color: var(--lemon-ink); background: var(--lemon); box-shadow: none; }
+[data-bs-theme="dark"] .seg button.active { color: var(--lemon-ink); }
+
+.save-bar.dirty { background: var(--lemon-soft); border-color: var(--lemon-dark); }
+.save-bar.dirty .sb-note { color: var(--primary-dark); }
+
+/* ==========================================================================
+   Money-flow surfaces — from the app mockups
+   ========================================================================== */
+
+.how-strip { background: var(--bg-sunk); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.8rem 0.9rem; }
+.how-strip .hs-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 0.6rem; }
+.how-strip .hs-row { display: flex; align-items: center; gap: 0.4rem; }
+.how-strip .hs-step {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+    background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+    padding: 0.55rem 0.3rem; font-size: 0.68rem; font-weight: 700; text-align: center; line-height: 1.25;
+}
+.how-strip .hs-step i { font-size: 0.9rem; color: var(--primary-dark); }
+[data-bs-theme="dark"] .how-strip .hs-step i { color: var(--primary-color); }
+.how-strip .hs-sep { color: var(--text-muted); font-size: 0.6rem; flex: none; }
+
+/* Account details card */
+.acct-card { background: var(--bg-sunk); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem; }
+.acct-card .ac-top { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.75rem; font-size: 0.9rem; }
+.acct-card .ac-field { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.45rem 0; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; }
+.acct-card .ac-val { font-weight: 800; color: var(--text-main); font-variant-numeric: tabular-nums; text-align: right; }
+
+/* Balance strip above an amount field */
+.bal-strip { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; background: var(--bg-sunk); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.6rem 0.85rem; }
+.bal-strip span:first-child { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+.bal-strip b { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-left: auto; }
+
+/* Read-only asset/network chip */
+.pill-select { display: flex; align-items: center; gap: 0.4rem; background: var(--bg-sunk); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.5rem 0.7rem; font-size: 0.82rem; min-width: 0; overflow: hidden; }
+.pill-select span.text-muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; }
+
+/* Tier lock badge */
+.tier-lock { width: 104px; height: 104px; margin: 0 auto; border-radius: 28px; display: grid; place-items: center; gap: 2px; background: var(--bg-sunk); border: 2px solid var(--lemon); box-shadow: 0 0 34px -8px var(--lemon-edge); }
+.tier-lock i { font-size: 1.9rem; color: var(--lemon); }
+.tier-lock span { font-size: 0.62rem; font-weight: 900; letter-spacing: .13em; color: var(--lemon); }
+
+/* Verification checklist row */
+.chk-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; font-weight: 600; }
+.chk-row:last-child { border-bottom: none; }
+.chk-row i { font-size: 0.95rem; color: var(--text-muted); flex: none; }
+.chk-row i.done { color: var(--primary-dark); }
+[data-bs-theme="dark"] .chk-row i.done { color: var(--primary-color); }
+
+/* Favourites row */
+.fav-row { display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.fav-row::-webkit-scrollbar { display: none; }
+.fav-chip { flex: none; width: 68px; background: none; border: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 0.35rem; color: var(--text-main); font-size: 0.72rem; font-weight: 700; }
+.fav-chip span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-av { position: relative; display: block; }
+.fav-av img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
+.fav-av i { position: absolute; right: -2px; bottom: -2px; font-size: 0.8rem; color: var(--primary-dark); background: var(--bg-card); border-radius: 50%; }
+[data-bs-theme="dark"] .fav-av i { color: var(--primary-color); }
+
+/* Three-across figure row */
+.flow-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.flow-3 > div { min-width: 0; }
+.flow-3 span { display: block; font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.flow-3 b { display: block; font-size: clamp(0.95rem, 3.4vw, 1.18rem); font-weight: 800; letter-spacing: -0.03em; margin-top: 0.2rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* QR scanner */
+.scanner { position: relative; border-radius: var(--radius-lg); overflow: hidden; background: #0b0f0d; aspect-ratio: 1 / 1; display: grid; place-items: center; }
+.scanner .sc-hint { color: rgba(255,255,255,.35); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.scanner .sc-hint i { font-size: 1.6rem; }
+.sc-frame { position: absolute; inset: 14%; }
+.sc-frame .c { position: absolute; width: 34px; height: 34px; border: 3px solid var(--lemon); }
+.sc-frame .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 10px 0 0 0; }
+.sc-frame .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 10px 0 0; }
+.sc-frame .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 10px; }
+.sc-frame .br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 10px 0; }
+.sc-line { position: absolute; left: 6%; right: 6%; height: 2px; background: var(--lemon); box-shadow: 0 0 14px 2px var(--lemon-edge); animation: scanSweep 2.6s ease-in-out infinite; }
+@keyframes scanSweep { 0%,100% { top: 8%; } 50% { top: 90%; } }
+@media (prefers-reduced-motion: reduce) { .sc-line { animation: none; top: 50%; } }
+
+/* ==========================================================================
+   Home screen — greeting, tier banner, promo slider, the two-rate board
+   ========================================================================== */
+
+.greet { font-size: 1rem; color: var(--text-muted); font-weight: 600; margin: 0 0 0.85rem; }
+
+.tier-banner {
+    display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+    background: var(--bg-card); border: 1px solid var(--primary-color);
+    border-radius: var(--radius-lg); padding: 0.75rem 0.9rem; margin-bottom: 0.9rem;
+}
+.tier-banner b { display: block; font-size: 0.88rem; font-weight: 800; line-height: 1.25; }
+.tier-banner span span { display: block; font-size: 0.76rem; color: var(--text-muted); }
+
+/* Four actions get a caption line under the label */
+.action-tile small {
+    display: block; font-size: 0.62rem; color: var(--text-muted);
+    font-weight: 600; line-height: 1.2; margin-top: -2px;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Promo slider */
+.promo-slider .carousel-indicators { bottom: 6px; margin-bottom: 0; }
+.promo-slider .carousel-indicators button {
+    width: 6px; height: 6px; border-radius: 99px; border: none;
+    background: rgba(11, 26, 2, .35); opacity: 1; margin: 0 3px;
+}
+.promo-slider .carousel-indicators .active { width: 18px; background: var(--lemon-ink); }
+.promo-card {
+    display: flex; align-items: center; gap: 1rem;
+    background: linear-gradient(120deg, #7FD40A 0%, #B2FB0C 55%, #D6FF5E 100%);
+    color: var(--lemon-ink);
+    border-radius: var(--radius-lg); padding: 1.15rem 1.25rem 1.6rem;
+    position: relative; overflow: hidden; min-height: 152px;
+}
+.promo-card b { display: block; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+.promo-card span { display: block; font-size: 0.82rem; margin-top: 0.3rem; opacity: .82; line-height: 1.45; }
+.promo-card .btn-light { font-weight: 800; border: none; }
+.promo-card .promo-art {
+    position: absolute; right: -10px; bottom: -14px;
+    font-size: 6.5rem; opacity: .16; pointer-events: none;
+}
+
+/* The two rates that matter */
+.rate-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.rate-box {
+    background: var(--bg-sunk); border: 1px solid var(--border-color);
+    border-radius: var(--radius-md); padding: 0.85rem 0.9rem; min-width: 0;
+}
+.rate-box .rb-ico { width: 34px; height: 34px; border-radius: 11px; font-size: 0.8rem; margin-bottom: 0.5rem; }
+.rate-box .rb-label {
+    display: block; font-size: 0.72rem; color: var(--text-muted);
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+}
+.rate-box b {
+    display: block; font-size: clamp(1.15rem, 4.4vw, 1.45rem); font-weight: 800;
+    letter-spacing: -0.03em; margin-top: 0.15rem; font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 380px) { .rate-pair { grid-template-columns: 1fr; } }

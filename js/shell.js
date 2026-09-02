@@ -10,50 +10,46 @@
 
     var NAV = {
         user: [
-            { s: 'Wallet' },
-            { id: 'home', href: 'index.html', icon: 'fa-house', label: 'Dashboard' },
-            { id: 'wallets', href: 'wallets.html', icon: 'fa-wallet', label: 'My Wallets' },
-            { s: 'Move money' },
-            { id: 'deposit-crypto', href: 'deposit-crypto.html', icon: 'fa-bitcoin-sign', label: 'Deposit Crypto' },
-            { id: 'deposit-fiat', href: 'deposit-fiat.html', icon: 'fa-building-columns', label: 'Deposit Cash' },
-            { id: 'withdraw-crypto', href: 'withdraw-crypto.html', icon: 'fa-paper-plane', label: 'Send Crypto' },
-            { id: 'withdraw-fiat', href: 'withdraw-fiat.html', icon: 'fa-money-bill-transfer', label: 'Withdraw Cash' },
-            { s: 'Trade' },
-            { id: 'buy', href: 'buy.html', icon: 'fa-cart-shopping', label: 'Buy Crypto' },
-            { id: 'sell', href: 'sell.html', icon: 'fa-hand-holding-dollar', label: 'Sell Crypto' },
-            { id: 'swap', href: 'swap.html', icon: 'fa-right-left', label: 'Swap' },
-            { id: 'rates', href: 'rates.html', icon: 'fa-chart-line', label: 'Rates' },
-            { s: 'Bills' },
+            { id: 'home', href: 'index.html', icon: 'fa-house', label: 'Home' },
+            { s: 'Money' },
+            { id: 'deposit', href: 'deposit.html', icon: 'fa-arrow-down', label: 'Deposit' },
+            { id: 'withdraw', href: 'withdraw.html', icon: 'fa-arrow-up', label: 'Withdraw' },
+            { id: 'transfer', href: 'transfer.html', icon: 'fa-paper-plane', label: 'Transfer' },
+            { id: 'request', href: 'request.html', icon: 'fa-hand-holding-dollar', label: 'Request' },
+            { id: 'send-abroad', href: 'send-abroad.html', icon: 'fa-earth-africa', label: 'Send Abroad' },
+            { id: 'scan', href: 'scan.html', icon: 'fa-qrcode', label: 'Scan &amp; Pay' },
+            { s: 'Services' },
             { id: 'bills', href: 'bills.html', icon: 'fa-bolt', label: 'Pay Bills' },
+            { id: 'rates', href: 'rates.html', icon: 'fa-chart-line', label: 'Today\u2019s Rates' },
             { s: 'Account' },
+            { id: 'insights', href: 'insights.html', icon: 'fa-chart-pie', label: 'Insights' },
+            { id: 'verification', href: 'verification.html', icon: 'fa-user-shield', label: 'Verification' },
             { id: 'notifications', href: 'notifications.html', icon: 'fa-bell', label: 'Notifications', badge: 'notifs' },
-            { id: 'transactions', href: 'transactions.html', icon: 'fa-clock-rotate-left', label: 'Transactions' },
-            { id: 'kyc', href: 'kyc.html', icon: 'fa-user-shield', label: 'Verification' },
-            { id: 'profile', href: 'profile.html', icon: 'fa-gear', label: 'Profile & Security' },
+            { id: 'profile', href: 'profile.html', icon: 'fa-gear', label: 'Profile &amp; Security' },
             { id: 'support', href: 'support.html', icon: 'fa-headset', label: 'Support' }
         ],
         agent: [
             { id: 'dashboard', href: 'dashboard.html', icon: 'fa-gauge-high', label: 'Dashboard' },
             { id: 'users', href: 'users.html', icon: 'fa-users', label: 'Users' },
-            { id: 'kyc', href: 'kyc.html', icon: 'fa-user-shield', label: 'KYC Queue', badge: 'kyc' },
+            { id: 'kyc', href: 'verification.html', icon: 'fa-user-shield', label: 'KYC Queue', badge: 'kyc' },
             { s: 'Queues' },
             { id: 'deposits', href: 'deposits.html', icon: 'fa-arrow-down', label: 'Deposits', badge: 'deposits' },
             { id: 'withdrawals', href: 'withdrawals.html', icon: 'fa-arrow-up', label: 'Withdrawals', badge: 'withdrawals' },
             { id: 'trades', href: 'trades.html', icon: 'fa-right-left', label: 'Trades' },
             { s: 'Other' },
-            { id: 'transactions', href: 'transactions.html', icon: 'fa-list', label: 'All Transactions' },
+            { id: 'transactions', href: 'insights.html', icon: 'fa-list', label: 'All Transactions' },
             { id: 'support', href: 'support.html', icon: 'fa-headset', label: 'Support', badge: 'tickets' },
             { id: 'settings', href: 'settings.html', icon: 'fa-gear', label: 'Settings' }
         ],
         admin: [
             { id: 'dashboard', href: 'dashboard.html', icon: 'fa-gauge-high', label: 'Dashboard' },
             { id: 'users', href: 'users.html', icon: 'fa-users', label: 'Users' },
-            { id: 'kyc', href: 'kyc.html', icon: 'fa-user-shield', label: 'KYC Queue', badge: 'kyc' },
+            { id: 'kyc', href: 'verification.html', icon: 'fa-user-shield', label: 'KYC Queue', badge: 'kyc' },
             { s: 'Queues' },
             { id: 'deposits', href: 'deposits.html', icon: 'fa-arrow-down', label: 'Deposits', badge: 'deposits' },
             { id: 'withdrawals', href: 'withdrawals.html', icon: 'fa-arrow-up', label: 'Withdrawals', badge: 'withdrawals' },
             { id: 'trades', href: 'trades.html', icon: 'fa-right-left', label: 'Trades' },
-            { id: 'transactions', href: 'transactions.html', icon: 'fa-list', label: 'All Transactions' },
+            { id: 'transactions', href: 'insights.html', icon: 'fa-list', label: 'All Transactions' },
             { s: 'Control' },
             { id: 'rates', href: 'rates.html', icon: 'fa-percent', label: 'Rates & Margins' },
             { id: 'fees', href: 'fees.html', icon: 'fa-receipt', label: 'Fee Manager' },
@@ -68,21 +64,21 @@
         ]
     };
 
+    /* Five tabs, with Scan raised in the middle — the shape in the mockups. */
     var TABBAR = [
         { id: 'home', href: 'index.html', icon: 'fa-house', label: 'Home' },
-        { id: 'wallets', href: 'wallets.html', icon: 'fa-wallet', label: 'Wallets' },
-        { id: 'buy', href: 'buy.html', icon: 'fa-right-left', label: 'Trade', fab: true },
-        { id: 'transactions', href: 'transactions.html', icon: 'fa-clock-rotate-left', label: 'History' },
-        { id: 'profile', href: 'profile.html', icon: 'fa-user', label: 'Profile', dot: 'notifs' }
+        { id: 'insights', href: 'insights.html', icon: 'fa-chart-pie', label: 'Insights' },
+        { id: 'scan', href: 'scan.html', icon: 'fa-qrcode', label: 'Scan', fab: true },
+        { id: 'rates', href: 'rates.html', icon: 'fa-chart-line', label: 'Rates' },
+        { id: 'profile', href: 'profile.html', icon: 'fa-user', label: 'More', dot: 'notifs' }
     ];
 
     /* Pages that are not themselves a tab still light one up, so the bar never
        shows an empty state while the user is inside a flow. */
     var TAB_ALIAS = {
-        'deposit-crypto': 'wallets', 'deposit-fiat': 'wallets',
-        'withdraw-crypto': 'wallets', 'withdraw-fiat': 'wallets',
-        sell: 'buy', swap: 'buy', bills: 'buy', rates: 'home',
-        kyc: 'profile', support: 'profile', notifications: 'profile'
+        deposit: 'home', withdraw: 'home', transfer: 'home',
+        request: 'home', 'send-abroad': 'home', bills: 'home',
+        verification: 'profile', support: 'profile', notifications: 'profile'
     };
 
     var PORTAL_META = {
@@ -185,7 +181,7 @@
             '<div class="d-none d-md-block lh-sm"><div style="font-size:.8rem;font-weight:700">' + who + '</div>' + role + '</div></div>' +
             '<ul class="dropdown-menu dropdown-menu-end p-2">' +
             (portal === 'user' ? '<li><a class="dropdown-item" href="profile.html"><i class="fas fa-user me-2"></i>Profile</a></li>' +
-                '<li><a class="dropdown-item" href="kyc.html"><i class="fas fa-user-shield me-2"></i>Verification</a></li>' : '') +
+                '<li><a class="dropdown-item" href="verification.html"><i class="fas fa-user-shield me-2"></i>Verification</a></li>' : '') +
             '<li><hr class="dropdown-divider"></li>' +
             '<li><a class="dropdown-item text-danger" href="' + loginHref(portal) + '"><i class="fas fa-right-from-bracket me-2"></i>Log out</a></li>' +
             '</ul></div></div></header>';
