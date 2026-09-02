@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="home" data-title="Dashboard" data-sub="">
+
+<main class="main-content">
+  <div id="kycBanner"></div>
+
+  <div class="row g-3">
+
+    <!-- Balance + actions, laid out as in the app mockup -->
+    <div class="col-lg-5">
+      <div class="balance-card">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div class="bc-label">Total Balance <i class="fas fa-eye cursor-pointer" id="eyeBtn"></i></div>
+          <span class="bc-chip" id="fiatCcy">NGN</span>
+        </div>
+        <div class="bc-amount" id="fiatBal">—</div>
+        <div class="bc-sub-label">Available Balance</div>
+        <div class="bc-sub-value" id="availBal">—</div>
+        <hr style="border-color:rgba(255,255,255,.1);margin:.85rem 0 .6rem">
+        <div class="d-flex justify-content-between align-items-center gap-2">
+          <span class="bc-sub-label" style="margin:0" id="vaLine">—</span>
+          <a href="deposit-fiat.html" class="bc-link">Fund <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+
+      <div class="action-row mt-3">
+        <a href="deposit-crypto.html" class="action-tile">
+          <span class="qa-icon qa-green"><i class="fas fa-arrow-down"></i></span><span>Deposit</span></a>
+        <a href="buy.html" class="action-tile">
+          <span class="qa-icon qa-blue"><i class="fas fa-right-left"></i></span><span>Trade</span></a>
+        <a href="withdraw-fiat.html" class="action-tile">
+          <span class="qa-icon qa-amber"><i class="fas fa-arrow-up"></i></span><span>Withdraw</span></a>
+        <a href="wallets.html" class="action-tile">
+          <span class="qa-icon qa-slate"><i class="fas fa-ellipsis"></i></span><span>More</span></a>
+      </div>
+    </div>
+
+    <!-- Portfolio -->
+    <div class="col-lg-7">
+      <div class="portfolio-card h-100 d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div class="min-w-0">
+            <div class="st-label" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:700">
+              Crypto portfolio</div>
+            <div class="pc-amount mt-1" id="cryptoVal">—</div>
+            <div class="small text-muted" id="cryptoUsd">—</div>
+          </div>
+          <a href="wallets.html" class="btn btn-soft btn-sm flex-shrink-0">
+            <span class="d-none d-sm-inline">All wallets </span><i class="fas fa-arrow-right"></i></a>
+        </div>
+        <hr class="my-3">
+        <div id="topAssets" class="flex-grow-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick services, 4 × 2 as in the mockup -->
+  <div class="card p-3 mt-3">
+    <div class="section-head">
+      <h2>Quick Services</h2>
+      <a href="wallets.html" class="text-primary-k">See all</a>
+    </div>
+    <div class="service-grid" id="services"></div>
+  </div>
+
+  <div class="card p-3 mt-3">
+    <div class="section-head">
+      <h2>Pay a bill</h2>
+      <a href="bills.html" class="text-primary-k">See all</a>
+    </div>
+    <div class="row g-2">
+      <div class="col-4"><a href="bills.html?s=airtime" class="biller-tile">
+        <span class="qa-icon qa-green"><i class="fas fa-mobile-screen"></i></span><span>Airtime</span></a></div>
+      <div class="col-4"><a href="bills.html?s=data" class="biller-tile">
+        <span class="qa-icon qa-blue"><i class="fas fa-wifi"></i></span><span>Data</span></a></div>
+      <div class="col-4"><a href="bills.html?s=electricity" class="biller-tile">
+        <span class="qa-icon qa-amber"><i class="fas fa-bolt"></i></span><span>Electricity</span></a></div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-0">
+    <div class="col-lg-7">
+      <div class="card p-3 h-100">
+        <div class="section-head">
+          <h2>Recent Transactions</h2>
+          <a href="transactions.html" class="text-primary-k">See all</a>
+        </div>
+        <div id="recentTx"></div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card p-3 h-100">
+        <div class="section-head">
+          <h2>Market</h2>
+          <span class="small text-muted" id="tickIn"></span>
+        </div>
+        <div id="marketList"></div>
+        <a href="rates.html" class="btn btn-soft btn-sm w-100 mt-2">Full rates</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var me = KP.data.ME, C = KP.currentCountry(), F = KP.fmt;
+
+  // The demo user's cash sits in NGN. Other country views show it converted so
+  // the navbar switcher demonstrates a real Ghana or Kenya session.
+  function myFiat() {
+    if (C.currency === 'NGN') return me.fiatBalance;
+    return (me.fiatBalance / KP.USD_RATE.NGN) * KP.USD_RATE[C.currency];
+  }
+
+  var hidden = false;
+  function paintBalance() {
+    var v = myFiat();
+    $('#fiatBal').text(hidden ? '••••••' : F.fiat(v, C.currency));
+    $('#availBal').text(hidden ? '••••••' : F.fiat(v, C.currency));
+    $('#fiatCcy').text(C.currency);
+  }
+  $('#eyeBtn').on('click', function () {
+    hidden = !hidden;
+    $(this).attr('class', 'fas ' + (hidden ? 'fa-eye-slash' : 'fa-eye') + ' cursor-pointer');
+    paintBalance(); paintPortfolio();
+  });
+
+  $('#vaLine').text(C.fundingRail === 'virtual_account'
+    ? me.virtualAccount.bank + ' · ' + me.virtualAccount.number
+    : C.fundingLabel + ' · ' + C.banks[0]);
+
+  if (me.tier < 3) {
+    $('#kycBanner').html('<div class="sys-banner sys-kyc">'
+      + '<i class="fas fa-user-shield fs-5"></i>'
+      + '<div class="flex-grow-1" style="min-width:180px"><b>You are on Tier ' + me.tier + '.</b> '
+      + '<span class="small">Daily limit ' + F.usd(KP.TIERS[me.tier].dailyUsd) + '. Verify further to raise it.</span></div>'
+      + '<a href="kyc.html" class="btn btn-primary btn-sm">Upgrade</a></div>');
+  }
+
+  function paintPortfolio() {
+    var usdTotal = KP.data.MY_WALLETS.reduce(function (s, w) {
+      return s + w.amount * KP.rates.midUsd(w.asset);
+    }, 0);
+    $('#cryptoVal').text(hidden ? '••••••' : F.fiat(usdTotal * KP.USD_RATE[C.currency], C.currency));
+    $('#cryptoUsd').text('≈ ' + F.usd(usdTotal) + ' across '
+      + KP.data.MY_WALLETS.filter(function (w) { return w.amount > 0; }).length + ' assets');
+
+    var held = KP.data.MY_WALLETS.filter(function (w) { return w.amount > 0; })
+      .sort(function (a, b) { return b.amount * KP.rates.midUsd(b.asset) - a.amount * KP.rates.midUsd(a.asset); })
+      .slice(0, 3);
+
+    $('#topAssets').html(held.map(function (w) {
+      var a = KP.ASSETS[w.asset];
+      var val = w.amount * KP.rates.midUsd(w.asset);
+      var ch = KP.rates.change24h(w.asset);
+      return '<div class="asset-row">'
+        + '<div class="asset-icon" style="background:' + a.color + '">' + a.symbol.slice(0, 4) + '</div>'
+        + '<div class="min-w-0"><div class="ar-name">' + a.name + '</div>'
+        + '<div class="ar-sub">' + F.crypto(w.amount, w.asset) + '</div></div>'
+        + '<div class="ar-right"><div class="ar-amt">' + F.fiat(val * KP.USD_RATE[C.currency], C.currency) + '</div>'
+        + '<div class="ar-sub ' + (ch >= 0 ? 'text-up' : 'text-down') + '">'
+        + (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%</div></div></div>';
+    }).join(''));
+  }
+
+  // Eight tiles, 4 × 2 — matching the mockup's service grid.
+  $('#services').html([
+    ['deposit-crypto.html', 'fa-bitcoin-sign', 'qa-green', 'Deposit Crypto', ''],
+    ['deposit-fiat.html', 'fa-building-columns', 'qa-blue', 'Deposit Cash', ''],
+    ['buy.html', 'fa-cart-shopping', 'qa-green', 'Buy', ''],
+    ['sell.html', 'fa-hand-holding-dollar', 'qa-amber', 'Sell', ''],
+    ['swap.html', 'fa-right-left', 'qa-purple', 'Swap', 'New'],
+    ['withdraw-crypto.html', 'fa-paper-plane', 'qa-red', 'Send Crypto', ''],
+    ['withdraw-fiat.html', 'fa-money-bill-transfer', 'qa-blue', 'Withdraw', ''],
+    ['bills.html', 'fa-bolt', 'qa-amber', 'Pay Bills', 'New']
+  ].map(function (s) {
+    return '<a href="' + s[0] + '" class="service-tile">'
+      + '<span class="qa-icon ' + s[2] + '"><i class="fas ' + s[1] + '"></i>'
+      + (s[4] ? '<span class="service-badge">' + s[4] + '</span>' : '') + '</span>'
+      + '<span>' + s[3] + '</span></a>';
+  }).join(''));
+
+  $('#recentTx').html(KP.data.myTransactions().slice(0, 6).map(function (t) {
+    var cls = t.type === 'swap' ? 'tx-swap' : (t.dir === 'in' ? 'tx-in' : 'tx-out');
+    var ic = t.type === 'swap' ? 'fa-right-left' : (t.dir === 'in' ? 'fa-arrow-down' : 'fa-arrow-up');
+    var amt = (t.dir === 'in' ? '+' : '−') + (t.fiat != null ? F.fiat(t.fiat, 'NGN') : F.crypto(t.amount, t.asset));
+    var pill = t.status === 'successful' ? 'pill-success' : t.status === 'failed' ? 'pill-failed' : 'pill-processing';
+    return '<div class="tx-row">'
+      + '<div class="tx-icon ' + cls + '"><i class="fas ' + ic + '"></i></div>'
+      + '<div class="tx-meta"><b>' + t.label + '</b><small>' + t.sub + '</small></div>'
+      + '<div class="tx-amt-col"><span class="amt ' + (t.dir === 'in' ? 'text-up' : '') + '">' + amt + '</span>'
+      + '<span class="pill ' + pill + '" style="font-size:.61rem">' + t.status + '</span></div></div>';
+  }).join(''));
+
+  function paintMarket() {
+    $('#marketList').html(['BTC', 'ETH', 'USDT', 'BNB'].map(function (s) {
+      var a = KP.ASSETS[s], ch = KP.rates.change24h(s);
+      return '<div class="asset-row">'
+        + '<div class="asset-icon sm" style="background:' + a.color + '">' + s.slice(0, 3) + '</div>'
+        + '<div class="min-w-0"><div class="ar-name" style="font-size:.82rem">' + s + '</div>'
+        + '<div class="ar-sub">' + a.name + '</div></div>'
+        + '<div class="ar-right"><div class="ar-amt">' + F.fiat(KP.rates.midFiat(s, C.currency), C.currency) + '</div>'
+        + '<div class="ar-sub ' + (ch >= 0 ? 'text-up' : 'text-down') + '">'
+        + (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch).toFixed(2) + '%</div></div></div>';
+    }).join(''));
+  }
+
+  function paintAll() { paintBalance(); paintPortfolio(); paintMarket(); }
+  paintAll();
+  KP.rates.onTick(paintAll);
+  setInterval(function () { $('#tickIn').text('updates in ' + KP.rates.secondsToTick() + 's'); }, 1000);
+});
+</script>
+</body>
+</html>

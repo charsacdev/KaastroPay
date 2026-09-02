@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="admin" data-page="dashboard" data-title="Overview" data-sub="Platform performance at a glance">
+
+<main class="main-content">
+  <div id="banners"></div>
+
+  <div class="row g-3">
+    <div class="col-6 col-lg-3" id="s1"></div>
+    <div class="col-6 col-lg-3" id="s2"></div>
+    <div class="col-6 col-lg-3" id="s3"></div>
+    <div class="col-6 col-lg-3" id="s4"></div>
+    <div class="col-6 col-lg-3" id="s5"></div>
+    <div class="col-6 col-lg-3" id="s6"></div>
+    <div class="col-6 col-lg-3" id="s7"></div>
+    <div class="col-6 col-lg-3" id="s8"></div>
+  </div>
+
+  <div class="row g-3 mt-0">
+    <div class="col-lg-8">
+      <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <h2 class="card-title">Volume this week</h2>
+          <span class="small text-muted">USD equivalent</span>
+        </div>
+        <canvas id="volChart" height="180"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card p-3 h-100">
+        <h2 class="card-title mb-2">By transaction type</h2>
+        <canvas id="typeChart" height="170"></canvas>
+        <div id="typeLegend" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-0">
+    <div class="col-lg-4">
+      <div class="card p-3 h-100">
+        <h2 class="card-title mb-2">Top countries</h2>
+        <div id="countryList"></div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card p-3 h-100">
+        <h2 class="card-title mb-2">Most traded assets</h2>
+        <div id="assetList"></div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="card-title">System status</h2>
+          <span class="pill" id="sysPill"></span>
+        </div>
+        <div id="sysList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-0">
+    <div class="col-lg-7">
+      <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="card-title">Needs attention</h2>
+          <span class="small text-muted">oldest first</span>
+        </div>
+        <div id="attention"></div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="card-title">Manual confirmations</h2>
+          <a href="agents.html" class="small fw-bold text-primary-k">Per agent <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <p class="text-muted" style="font-size:.78rem">
+          Every bypass of the automated rail. Review these weekly — a rising count on one
+          agent is the first sign of a problem.</p>
+        <div id="manualLog"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/backoffice.js"></script>
+<script>
+KP.ready(function () {
+  var F = KP.fmt, BO = KP.bo, D = KP.data, st = D.stats(), p = D.pendingCounts();
+
+  if (KP.rails.panic.isActive()) {
+    $('#banners').html('<div class="sys-banner sys-panic"><i class="fas fa-triangle-exclamation fs-5"></i>'
+      + '<div class="flex-grow-1"><b>Platform freeze is ON.</b> <span class="small">Set by '
+      + KP.rails.panic.by() + ' on ' + KP.rails.panic.at() + '.</span></div>'
+      + '<a href="settings.html" class="btn btn-sm btn-soft">Lift it</a></div>');
+  }
+
+  $('#s1').html(BO.statTile({ label: 'Total volume', value: '$' + F.compact(st.volumeUsd), icon: 'fa-chart-simple', tone: 'green', delta: 12.4 }));
+  $('#s2').html(BO.statTile({ label: 'Gross profit', value: '$' + F.compact(st.profitUsd), icon: 'fa-sack-dollar', tone: 'amber', delta: 8.1 }));
+  $('#s3').html(BO.statTile({ label: 'Transactions', value: F.compact(st.txCount), icon: 'fa-arrow-right-arrow-left', tone: 'blue', delta: 5.7 }));
+  $('#s4').html(BO.statTile({ label: 'Success rate', value: st.successRate.toFixed(1) + '%', icon: 'fa-circle-check', tone: 'green', delta: -0.6 }));
+  $('#s5').html(BO.statTile({ label: 'Active users', value: F.compact(st.activeUsers), icon: 'fa-users', tone: 'purple', delta: 15.2 }));
+  $('#s6').html(BO.statTile({ label: 'New today', value: st.newToday, icon: 'fa-user-plus', tone: 'green', note: 'registered in the last 24h' }));
+  $('#s7').html(BO.statTile({ label: 'Liquidity', value: '$' + F.compact(st.liquidityUsd), icon: 'fa-vault', tone: 'blue', note: 'across hot and warm' }));
+  $('#s8').html(BO.statTile({ label: 'Awaiting review', value: p.kyc + p.cryptoDeposits + p.fiatDeposits + p.fiatWithdrawals + p.cryptoWithdrawals,
+    icon: 'fa-clock', tone: 'amber', note: 'across every queue' }));
+
+  var wk = D.weekSeries();
+  function drawCharts() {
+    BO.barChart(document.getElementById('volChart'), wk.labels, wk.values, '#10b981');
+    var types = [
+      { k: 'Buys', v: D.TRADES.filter(function (t) { return t.kind === 'buy'; }).length, c: '#10b981' },
+      { k: 'Sells', v: D.TRADES.filter(function (t) { return t.kind === 'sell'; }).length, c: '#0ea5e9' },
+      { k: 'Swaps', v: D.TRADES.filter(function (t) { return t.kind === 'swap'; }).length, c: '#8b5cf6' },
+      { k: 'Deposits', v: D.CRYPTO_DEPOSITS.length + D.FIAT_DEPOSITS.length, c: '#f59e0b' },
+      { k: 'Withdrawals', v: D.FIAT_WITHDRAWALS.length + D.CRYPTO_WITHDRAWALS.length, c: '#ef4444' }
+    ];
+    BO.donut(document.getElementById('typeChart'), types);
+    var tot = types.reduce(function (s, x) { return s + x.v; }, 0);
+    $('#typeLegend').html(types.map(function (t) {
+      return '<div class="d-flex align-items-center gap-2 py-1">'
+        + '<span style="width:9px;height:9px;border-radius:3px;background:' + t.c + ';flex:none"></span>'
+        + '<span style="font-size:.8rem;font-weight:600">' + t.k + '</span>'
+        + '<span class="ms-auto text-muted" style="font-size:.78rem">' + Math.round(t.v / tot * 100) + '%</span></div>';
+    }).join(''));
+  }
+  drawCharts();
+  $(window).on('resize', drawCharts);
+
+  // Volume by country, derived from the users behind each trade.
+  var byCountry = {};
+  D.TRADES.forEach(function (t) {
+    byCountry[t.user.country] = (byCountry[t.user.country] || 0) + t.usdValue;
+  });
+  var cMax = Math.max.apply(null, Object.keys(byCountry).map(function (k) { return byCountry[k]; }));
+  $('#countryList').html(Object.keys(byCountry)
+    .sort(function (a, b) { return byCountry[b] - byCountry[a]; })
+    .map(function (cc) {
+      var C = KP.COUNTRIES[cc];
+      return '<div class="py-2">'
+        + '<div class="d-flex justify-content-between align-items-center mb-1">'
+        + '<span style="font-size:.84rem;font-weight:700">' + C.flag + ' ' + C.name + '</span>'
+        + '<span class="t-mono">' + F.usd(byCountry[cc] * 46) + '</span></div>'
+        + '<div class="progress" style="height:5px"><div class="progress-bar" '
+        + 'style="width:' + (byCountry[cc] / cMax * 100) + '%;background:var(--primary-color)"></div></div></div>';
+    }).join(''));
+
+  var byAsset = {};
+  D.TRADES.forEach(function (t) {
+    var s = t.kind === 'buy' ? t.to : t.from;
+    if (KP.ASSETS[s]) byAsset[s] = (byAsset[s] || 0) + t.usdValue;
+  });
+  $('#assetList').html(Object.keys(byAsset)
+    .sort(function (a, b) { return byAsset[b] - byAsset[a]; })
+    .slice(0, 5)
+    .map(function (s) {
+      var a = KP.ASSETS[s];
+      return '<div class="asset-row">'
+        + '<div class="asset-icon sm" style="background:' + a.color + '">' + s.slice(0, 3) + '</div>'
+        + '<div><div class="ar-name" style="font-size:.83rem">' + s + '</div>'
+        + '<div class="ar-sub">' + a.name + '</div></div>'
+        + '<div class="ar-right"><div class="ar-amt">' + F.usd(byAsset[s] * 46) + '</div></div></div>';
+    }).join(''));
+
+  var frozen = KP.rails.panic.isActive();
+  $('#sysPill').attr('class', 'pill ' + (frozen ? 'pill-failed' : 'pill-success'))
+    .text(frozen ? 'degraded' : 'all systems normal');
+  $('#sysList').html([
+    { n: 'Bank payout provider', s: frozen ? 'failed' : 'successful', d: frozen ? 'Frozen by admin' : 'Operational · 99.94%' },
+    { n: 'Mobile money rail', s: 'successful', d: 'Operational · 99.71%' },
+    { n: 'Chain watchers', s: 'successful', d: 'TRC20, BEP20, ERC20, BTC in sync' },
+    { n: 'Rate feeds', s: 'successful', d: '3 of 3 agreeing' },
+    { n: 'KYC provider', s: 'pending', d: 'Elevated latency · 4.2s average' }
+  ].map(function (x) {
+    return '<div class="asset-row"><div class="flex-grow-1">'
+      + '<div class="ar-name" style="font-size:.83rem">' + x.n + '</div>'
+      + '<div class="ar-sub">' + x.d + '</div></div>'
+      + BO.pill(x.s) + '</div>';
+  }).join(''));
+
+  var att = [];
+  D.KYC_QUEUE.filter(function (k) { return k.status === 'pending'; }).forEach(function (k) {
+    att.push({ ref: k.ref, what: 'KYC · ' + k.user.name, detail: k.idType + ' · Tier ' + k.targetTier,
+      age: k.daysAgo, href: 'kyc.html', status: 'pending', tone: 'swap', icon: 'fa-user-shield' });
+  });
+  D.FIAT_WITHDRAWALS.filter(function (w) { return w.status === 'pending' || w.status === 'processing'; }).forEach(function (w) {
+    att.push({ ref: w.ref, what: 'Payout · ' + w.user.name, detail: F.fiat(w.amount, w.currency) + ' → ' + w.destination,
+      age: w.daysAgo, href: 'withdrawals.html', status: w.status, tone: 'out', icon: 'fa-arrow-up' });
+  });
+  D.FIAT_DEPOSITS.filter(function (d) { return d.status === 'pending'; }).forEach(function (d) {
+    att.push({ ref: d.ref, what: 'Cash deposit · ' + d.user.name, detail: F.fiat(d.amount, d.currency) + ' · ' + d.source,
+      age: d.daysAgo, href: 'deposits.html', status: 'pending', tone: 'in', icon: 'fa-building-columns' });
+  });
+  att.sort(function (a, b) { return b.age - a.age; });
+
+  $('#attention').html(att.slice(0, 7).map(function (it) {
+    return '<a href="' + it.href + '" class="tx-row text-decoration-none" style="color:inherit">'
+      + '<div class="tx-icon tx-' + it.tone + '"><i class="fas ' + it.icon + '"></i></div>'
+      + '<div class="tx-meta"><b>' + it.what + '</b><small>' + it.detail + ' · ' + it.ref + '</small></div>'
+      + '<div class="tx-amt-col"><span class="amt" style="font-size:.78rem">'
+      + (it.age === 0 ? 'today' : it.age + 'd ago') + '</span>' + BO.pill(it.status) + '</div></a>';
+  }).join('') || '<div class="empty-state"><i class="fas fa-mug-hot"></i><p>Every queue is clear.</p></div>');
+
+  var log = KP.rails.manual.log();
+  $('#manualLog').html(log.length
+    ? log.slice(0, 6).map(function (e) {
+        return '<div class="asset-row"><div class="qa-icon qa-purple" style="width:32px;height:32px;font-size:.72rem">'
+          + '<i class="fas fa-hand"></i></div><div class="flex-grow-1 min-w-0">'
+          + '<div class="ar-name" style="font-size:.8rem">' + e.what + ' · ' + e.amount + '</div>'
+          + '<div class="ar-sub text-truncate">' + e.actor + ' · ' + e.at
+          + (e.approver ? ' · co-signed ' + e.approver : '') + '</div></div></div>';
+      }).join('')
+    : '<div class="empty-state py-3"><i class="fas fa-hand"></i><p>No manual confirmations recorded.</p></div>');
+});
+</script>
+</body>
+</html>

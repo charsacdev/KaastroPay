@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AML compliance | Kaastro Pay</title>
+<meta name="description" content="Kaastro Pay's anti-money-laundering programme: KYC tiers, screening, transaction monitoring, reporting and how to raise a concern.">
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+<script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||'light');}catch(e){}})();</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" href="css/kaastro.css">
+<link rel="stylesheet" href="css/public.css">
+</head>
+<body data-active="aml">
+
+<section class="sec">
+  <div class="container">
+    <div class="row g-4 g-lg-5">
+      <div class="col-lg-8">
+        <div class="sec-eyebrow">Legal</div>
+        <h1 class="sec-title">AML &amp; compliance policy</h1>
+        <div class="doc-meta mt-3 mb-4">
+          <span><i class="fas fa-calendar me-1"></i>Effective 1 September 2026</span>
+          <span><i class="fas fa-rotate me-1"></i>Version 2.1</span>
+          <span><i class="fas fa-earth-africa me-1"></i>NG · GH · KE · TZ · UG</span>
+        </div>
+
+        <div class="k-alert k-warn mb-4">
+          <i class="fas fa-triangle-exclamation"></i>
+          <div><b>Prototype notice.</b>
+            This is a demonstration build describing an illustrative programme. It has not
+            been reviewed by counsel and is not a filed regulatory document.</div>
+        </div>
+
+        <div class="doc-body">
+
+          <h2 id="commitment">1. Our commitment</h2>
+          <p>
+            A crypto-to-cash platform is exactly the kind of business criminals would like
+            to use. We take that seriously, and we would rather lose a customer than take
+            money we cannot account for.
+          </p>
+          <p>
+            Our programme covers customer identification, sanctions screening, ongoing
+            transaction monitoring, record keeping, reporting, and staff training. A named
+            compliance officer owns it and reports to the board.
+          </p>
+
+          <h2 id="kyc">2. Know Your Customer</h2>
+          <p>
+            Every user is identity-verified before they can move money. There is no
+            anonymous tier and no way to trade without completing it.
+          </p>
+          <h3>What we verify, per country</h3>
+          <div class="table-wrap my-3">
+            <table class="k-table" style="min-width:0">
+              <thead><tr><th>Country</th><th>Primary identifier</th><th>Also required</th></tr></thead>
+              <tbody id="idRows"></tbody>
+            </table>
+          </div>
+          <h3>Tiers and limits</h3>
+          <p>
+            Limits rise as verification deepens. Limits are enforced in our own systems —
+            not in the app interface and not by a payment provider — so they cannot be
+            bypassed by calling an API directly.
+          </p>
+          <div class="table-wrap my-3">
+            <table class="k-table" style="min-width:0">
+              <thead><tr><th>Tier</th><th>Requires</th><th class="text-end">Daily limit</th></tr></thead>
+              <tbody id="tierRows"></tbody>
+            </table>
+          </div>
+          <p>
+            We re-verify periodically, and always when a material detail changes or
+            activity no longer matches the profile we hold.
+          </p>
+
+          <h2 id="screening">3. Screening</h2>
+          <ul>
+            <li><strong>Sanctions</strong> — every user is screened at onboarding and rescreened whenever lists are updated.</li>
+            <li><strong>Politically exposed persons</strong> — matches trigger enhanced due diligence and senior sign-off before the account can trade.</li>
+            <li><strong>Adverse media</strong> — checked at onboarding and on escalation.</li>
+            <li><strong>Blockchain analytics</strong> — deposit addresses are screened against known illicit clusters, mixers and sanctioned addresses.</li>
+          </ul>
+          <p>
+            A positive sanctions match freezes the account immediately. We do not release
+            those funds without regulatory direction.
+          </p>
+
+          <h2 id="monitoring">4. Transaction monitoring</h2>
+          <p>
+            Monitoring runs continuously against the transaction stream, not in a nightly
+            batch. Patterns we alert on include:
+          </p>
+          <ul>
+            <li><strong>Structuring</strong> — repeated amounts sitting just under a reporting or tier threshold.</li>
+            <li><strong>Rapid in-and-out</strong> — funds deposited and withdrawn with no genuine trading, which is what a pass-through account looks like.</li>
+            <li><strong>Velocity anomalies</strong> — activity that jumps sharply against the account's own history.</li>
+            <li><strong>Counterparty clustering</strong> — many unrelated users paying out to one destination.</li>
+            <li><strong>Tainted deposits</strong> — funds arriving from an address linked to theft, ransomware or a sanctioned entity.</li>
+            <li><strong>Third-party funding</strong> — cash arriving from an account that is not in the customer's name.</li>
+          </ul>
+          <p>
+            Alerts go to a human. Where the concern is material we suspend the account and
+            hold the funds while we investigate.
+          </p>
+
+          <h2 id="manual">5. Manual intervention controls</h2>
+          <p>
+            When a provider fails, an agent can confirm a deposit or payout by hand so
+            customers are not left stranded. That capability is also the most obvious
+            internal fraud risk in a business like ours, so it is tightly controlled:
+          </p>
+          <ul>
+            <li>A documented reason and written notes are mandatory.</li>
+            <li>Supporting evidence must be attached — a statement, an explorer record, or provider correspondence.</li>
+            <li>Amounts above a set threshold require a second approver.</li>
+            <li>Each agent has a daily cap on manual actions.</li>
+            <li>Every action is permanently attributed and reviewed weekly by an administrator, who watches each agent's manual-to-automatic ratio.</li>
+          </ul>
+
+          <h2 id="reporting">6. Reporting and record keeping</h2>
+          <p>
+            We file suspicious transaction reports with the financial intelligence unit in
+            the relevant jurisdiction, within the statutory deadline. We do not tip off the
+            subject of a report — if your account is restricted for this reason we may be
+            legally barred from telling you why.
+          </p>
+          <p>
+            Identity records, transaction records and the reasoning behind decisions are
+            retained for at least five years after an account closes.
+          </p>
+
+          <h2 id="restricted">7. What we will not process</h2>
+          <ul>
+            <li>Funds from darknet marketplaces, ransomware, or known theft.</li>
+            <li>Transactions involving sanctioned individuals, entities or jurisdictions.</li>
+            <li>Mixer or tumbler output where the source cannot be established.</li>
+            <li>Deposits from a third party on a customer's behalf.</li>
+            <li>Activity consistent with unlicensed money transmission or running an exchange on top of ours.</li>
+          </ul>
+
+          <h2 id="training">8. Staff and governance</h2>
+          <p>
+            Every employee completes AML training at induction and annually. Agents get
+            additional training on their specific escalation duties. The programme is
+            independently reviewed each year, and findings go to the board.
+          </p>
+
+          <h2 id="report">9. Raising a concern</h2>
+          <p>
+            If you believe an account is being used for fraud or money laundering, or you
+            have found a security vulnerability, tell us:
+          </p>
+          <ul>
+            <li><strong>compliance@kaastropay.com</strong> — suspicious activity, law enforcement requests, regulatory correspondence.</li>
+            <li><strong>security@kaastropay.com</strong> — vulnerability disclosure. Report privately first and we will credit you.</li>
+          </ul>
+          <p>
+            Reports can be made anonymously. We do not retaliate against anyone who raises
+            a concern in good faith.
+          </p>
+
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="doc-toc card p-3"></div>
+        <div class="card p-3 mt-3">
+          <h4 style="font-size:.7rem;text-transform:uppercase;letter-spacing:.11em;font-weight:800;color:var(--text-muted)">Related</h4>
+          <a href="terms.html" class="btn btn-soft btn-sm w-100 mb-2">Terms of service</a>
+          <a href="privacy.html" class="btn btn-soft btn-sm w-100">Privacy policy</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/rates-engine.js"></script>
+<script src="js/mock-data.js"></script>
+<script src="js/rails.js"></script>
+<script src="js/legal.js"></script>
+<script>
+$(function () {
+  $('#idRows').html(KP.COUNTRY_LIST.map(function (c) {
+    return '<tr><td class="t-strong">' + c.flag + ' ' + c.name + '</td>'
+      + '<td>' + c.idLabel + '</td>'
+      + '<td class="text-muted">Photo ID, selfie, proof of address</td></tr>';
+  }).join(''));
+
+  $('#tierRows').html(KP.TIERS.map(function (t) {
+    return '<tr><td><span class="tier-badge tier-' + t.id + '">' + t.name + '</span></td>'
+      + '<td class="text-muted">' + t.needs + '</td>'
+      + '<td class="text-end t-strong">'
+      + (t.dailyUsd ? KP.fmt.usd(t.dailyUsd) : 'Cannot transact') + '</td></tr>';
+  }).join(''));
+});
+</script>
+</body>
+</html>

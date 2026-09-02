@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Wallets | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="wallets" data-title="My wallets" data-sub="Every asset you hold">
+
+<main class="main-content">
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="portfolio-card">
+        <div class="st-label">Total portfolio</div>
+        <div class="pc-amount mt-1" id="total">—</div>
+        <div class="small text-muted" id="totalUsd">—</div>
+        <hr class="my-3">
+        <div class="d-flex gap-2">
+          <a href="deposit-crypto.html" class="btn btn-primary btn-sm flex-grow-1">Deposit</a>
+          <a href="buy.html" class="btn btn-soft btn-sm flex-grow-1">Buy</a>
+        </div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="st-label mb-2">Cash balance</div>
+        <div class="d-flex align-items-baseline gap-2">
+          <div style="font-size:1.35rem;font-weight:800;letter-spacing:-.03em" id="cash">—</div>
+          <span class="pill pill-neutral" id="cashCcy"></span>
+        </div>
+        <a href="withdraw-fiat.html" class="btn btn-soft btn-sm w-100 mt-3">Withdraw to bank</a>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+          <h2 class="card-title">Assets</h2>
+          <div class="d-flex align-items-center gap-2">
+            <span class="small text-muted" id="tickIn"></span>
+            <div class="seg" id="filterSeg">
+              <button class="active" data-f="all">All</button>
+              <button data-f="held">Held</button>
+            </div>
+          </div>
+        </div>
+        <div id="list"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var C = KP.currentCountry(), F = KP.fmt, me = KP.data.ME;
+  var filter = 'all';
+
+  $('#cashCcy').text(C.currency);
+  $('#cash').text(F.fiat(C.currency === 'NGN' ? me.fiatBalance
+    : (me.fiatBalance / KP.USD_RATE.NGN) * KP.USD_RATE[C.currency], C.currency));
+
+  function paint() {
+    var totalUsd = KP.data.MY_WALLETS.reduce(function (s, w) {
+      return s + w.amount * KP.rates.midUsd(w.asset);
+    }, 0);
+    $('#total').text(F.fiat(totalUsd * KP.USD_RATE[C.currency], C.currency));
+    $('#totalUsd').text('≈ ' + F.usd(totalUsd));
+
+    var rows = KP.data.MY_WALLETS
+      .filter(function (w) { return filter === 'all' || w.amount > 0; })
+      .sort(function (a, b) { return b.amount * KP.rates.midUsd(b.asset) - a.amount * KP.rates.midUsd(a.asset); });
+
+    if (!rows.length) {
+      $('#list').html('<div class="empty-state"><i class="fas fa-wallet"></i>'
+        + '<p>You are not holding any crypto yet.</p>'
+        + '<a href="buy.html" class="btn btn-primary btn-sm mt-3">Buy your first</a></div>');
+      return;
+    }
+
+    $('#list').html(rows.map(function (w) {
+      var a = KP.ASSETS[w.asset];
+      var px = KP.rates.midUsd(w.asset);
+      var val = w.amount * px;
+      var ch = KP.rates.change24h(w.asset);
+      var empty = w.amount === 0;
+      return '<div class="asset-row">'
+        + '<div class="asset-icon lg" style="background:' + a.color + (empty ? ';opacity:.4' : '') + '">' + a.symbol.slice(0, 4) + '</div>'
+        + '<div class="flex-grow-1 min-w-0">'
+        + '<div class="ar-name">' + a.symbol + ' <span class="text-muted fw-normal" style="font-size:.76rem">' + a.name + '</span></div>'
+        + '<div class="ar-sub">' + F.fiat(px * KP.USD_RATE[C.currency], C.currency)
+        + ' <span class="' + (ch >= 0 ? 'text-up' : 'text-down') + '">' + (ch >= 0 ? '▲' : '▼') + Math.abs(ch).toFixed(2) + '%</span></div></div>'
+        + '<div class="ar-right d-none d-sm-block">'
+        + '<div class="ar-amt">' + F.crypto(w.amount, w.asset) + '</div>'
+        + '<div class="ar-sub">' + (empty ? '—' : F.fiat(val * KP.USD_RATE[C.currency], C.currency)) + '</div></div>'
+        + '<div class="dropdown ms-2"><button class="icon-btn" data-bs-toggle="dropdown"><i class="fas fa-ellipsis"></i></button>'
+        + '<ul class="dropdown-menu dropdown-menu-end p-2">'
+        + '<li><a class="dropdown-item" href="deposit-crypto.html"><i class="fas fa-arrow-down me-2"></i>Deposit</a></li>'
+        + '<li><a class="dropdown-item" href="buy.html"><i class="fas fa-cart-shopping me-2"></i>Buy</a></li>'
+        + (empty ? '' : '<li><a class="dropdown-item" href="sell.html"><i class="fas fa-hand-holding-dollar me-2"></i>Sell</a></li>'
+          + '<li><a class="dropdown-item" href="swap.html"><i class="fas fa-right-left me-2"></i>Swap</a></li>'
+          + '<li><a class="dropdown-item" href="withdraw-crypto.html"><i class="fas fa-paper-plane me-2"></i>Send out</a></li>')
+        + '</ul></div></div>';
+    }).join(''));
+  }
+
+  $('#filterSeg button').on('click', function () {
+    $('#filterSeg button').removeClass('active');
+    $(this).addClass('active');
+    filter = $(this).data('f');
+    paint();
+  });
+
+  paint();
+  KP.rates.onTick(paint);
+  setInterval(function () { $('#tickIn').text(KP.rates.secondsToTick() + 's'); }, 1000);
+});
+</script>
+</body>
+</html>

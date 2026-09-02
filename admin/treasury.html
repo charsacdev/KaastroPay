@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Treasury | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="admin" data-page="treasury" data-title="Treasury" data-sub="What we hold, and where">
+
+<main class="main-content">
+  <div class="row g-3">
+    <div class="col-6 col-lg-3" id="t1"></div>
+    <div class="col-6 col-lg-3" id="t2"></div>
+    <div class="col-6 col-lg-3" id="t3"></div>
+    <div class="col-6 col-lg-3" id="t4"></div>
+  </div>
+
+  <div class="row g-3 mt-0">
+    <div class="col-lg-7">
+      <div class="card p-3">
+        <h2 class="card-title mb-1">Crypto holdings</h2>
+        <p class="text-muted" style="font-size:.8rem">
+          Hot holds a rolling day of outflows. Warm tops it up under policy signing.
+          Cold holds the rest behind a documented multi-person procedure.</p>
+        <div class="table-wrap mt-2">
+          <table class="k-table">
+            <thead><tr>
+              <th>Asset</th><th class="text-end">Hot</th><th class="text-end">Warm</th>
+              <th class="text-end">Cold</th><th class="text-end">Total</th><th class="text-end">USD value</th>
+            </tr></thead>
+            <tbody id="cryptoRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card p-3">
+        <h2 class="card-title mb-2">Fiat float by country</h2>
+        <div id="fiatList"></div>
+      </div>
+      <div class="card p-3 mt-3">
+        <h2 class="card-title mb-2">Reconciliation</h2>
+        <div id="recon"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-3 mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="card-title">Custody split</h2>
+      <span class="small text-muted">as a share of total value</span>
+    </div>
+    <div id="splitBars"></div>
+  </div>
+</main>
+
+<script src="../js/backoffice.js"></script>
+<script>
+KP.ready(function () {
+  var F = KP.fmt, BO = KP.bo;
+
+  // Deterministic holdings per asset, split across the three wallet tiers.
+  var HOLD = {
+    USDT: { hot: 184000, warm: 320000, cold: 1240000 },
+    USDC: { hot: 42000, warm: 88000, cold: 310000 },
+    BTC:  { hot: 1.84, warm: 4.20, cold: 18.60 },
+    ETH:  { hot: 22.4, warm: 61.0, cold: 240.0 },
+    BNB:  { hot: 84.0, warm: 190.0, cold: 620.0 },
+    TRX:  { hot: 420000, warm: 900000, cold: 2800000 }
+  };
+
+  var hotUsd = 0, warmUsd = 0, coldUsd = 0;
+  Object.keys(HOLD).forEach(function (s) {
+    var px = KP.rates.midUsd(s);
+    hotUsd += HOLD[s].hot * px;
+    warmUsd += HOLD[s].warm * px;
+    coldUsd += HOLD[s].cold * px;
+  });
+  var totalUsd = hotUsd + warmUsd + coldUsd;
+
+  $('#t1').html(BO.statTile({ label: 'Total custody', value: '$' + F.compact(totalUsd), icon: 'fa-vault', tone: 'green', note: 'across all wallets' }));
+  $('#t2').html(BO.statTile({ label: 'Hot wallet', value: '$' + F.compact(hotUsd), icon: 'fa-fire', tone: 'red', note: (hotUsd / totalUsd * 100).toFixed(1) + '% — keep under 8%' }));
+  $('#t3').html(BO.statTile({ label: 'Warm wallet', value: '$' + F.compact(warmUsd), icon: 'fa-shield-halved', tone: 'amber', note: 'policy co-signing' }));
+  $('#t4').html(BO.statTile({ label: 'Cold storage', value: '$' + F.compact(coldUsd), icon: 'fa-snowflake', tone: 'blue', note: 'multi-person procedure' }));
+
+  $('#cryptoRows').html(Object.keys(HOLD).map(function (s) {
+    var a = KP.ASSETS[s], h = HOLD[s];
+    var tot = h.hot + h.warm + h.cold;
+    return '<tr>'
+      + '<td><div class="d-flex align-items-center gap-2">'
+      + '<span class="asset-icon sm" style="background:' + a.color + '">' + s.slice(0, 3) + '</span>'
+      + '<span class="t-strong">' + s + '</span></div></td>'
+      + '<td class="text-end t-mono">' + F.crypto(h.hot, s, { noSymbol: true }) + '</td>'
+      + '<td class="text-end t-mono">' + F.crypto(h.warm, s, { noSymbol: true }) + '</td>'
+      + '<td class="text-end t-mono">' + F.crypto(h.cold, s, { noSymbol: true }) + '</td>'
+      + '<td class="text-end t-strong">' + F.crypto(tot, s, { noSymbol: true }) + '</td>'
+      + '<td class="text-end t-strong">' + F.usd(tot * KP.rates.midUsd(s)) + '</td></tr>';
+  }).join(''));
+
+  var FLOAT = { NG: 84000000, GH: 420000, KE: 3100000, TZ: 88000000, UG: 140000000 };
+  var maxF = Math.max.apply(null, KP.COUNTRY_LIST.map(function (c) {
+    return FLOAT[c.code] / (KP.USD_RATE[c.currency] || 1);
+  }));
+  $('#fiatList').html(KP.COUNTRY_LIST.map(function (c) {
+    var usd = FLOAT[c.code] / (KP.USD_RATE[c.currency] || 1);
+    var low = usd < 6000;
+    return '<div class="py-2">'
+      + '<div class="d-flex justify-content-between align-items-center mb-1">'
+      + '<span style="font-size:.84rem;font-weight:700">' + c.flag + ' ' + c.name
+      + (low ? ' <span class="pill pill-pending ms-1">low</span>' : '') + '</span>'
+      + '<span class="t-mono">' + F.fiat(FLOAT[c.code], c.currency) + '</span></div>'
+      + '<div class="progress" style="height:5px"><div class="progress-bar" style="width:'
+      + (usd / maxF * 100) + '%;background:' + (low ? 'var(--warn)' : 'var(--primary-color)') + '"></div></div>'
+      + '<div class="ar-sub mt-1">≈ ' + F.usd(usd) + ' available for payouts</div></div>';
+  }).join(''));
+
+  $('#recon').html([
+    { n: 'Ledger balances', s: 'successful', d: 'Recomputed sums match projections' },
+    { n: 'On-chain vs ledger', s: 'successful', d: 'All six assets agree' },
+    { n: 'Payout provider', s: 'pending', d: '2 breaks · $1,840 unreconciled' },
+    { n: 'Journal balance proof', s: 'successful', d: 'Every journal sums to zero' }
+  ].map(function (x) {
+    return '<div class="asset-row"><div class="flex-grow-1">'
+      + '<div class="ar-name" style="font-size:.83rem">' + x.n + '</div>'
+      + '<div class="ar-sub">' + x.d + '</div></div>' + BO.pill(x.s) + '</div>';
+  }).join('')
+    + '<div class="ar-sub mt-2">Last run: today, 04:00. Next run in 6 hours.</div>');
+
+  var split = [
+    { k: 'Hot', v: hotUsd, c: '#ef4444', note: 'operational float' },
+    { k: 'Warm', v: warmUsd, c: '#f59e0b', note: 'policy co-signed' },
+    { k: 'Cold', v: coldUsd, c: '#0ea5e9', note: 'offline' }
+  ];
+  $('#splitBars').html(
+    '<div class="d-flex rounded overflow-hidden mb-2" style="height:14px">'
+    + split.map(function (s) {
+        return '<div style="width:' + (s.v / totalUsd * 100) + '%;background:' + s.c + '"></div>';
+      }).join('') + '</div>'
+    + '<div class="d-flex flex-wrap gap-3">' + split.map(function (s) {
+        return '<div class="d-flex align-items-center gap-2">'
+          + '<span style="width:9px;height:9px;border-radius:3px;background:' + s.c + '"></span>'
+          + '<span style="font-size:.82rem;font-weight:700">' + s.k + '</span>'
+          + '<span class="text-muted" style="font-size:.8rem">' + F.usd(s.v)
+          + ' · ' + (s.v / totalUsd * 100).toFixed(1) + '% · ' + s.note + '</span></div>';
+      }).join('') + '</div>'
+    + '<div class="k-alert k-warn mt-3"><i class="fas fa-triangle-exclamation"></i><div>'
+    + '<b>Hot wallet sizing is a policy, not a preference.</b>'
+    + 'It should hold roughly one day of outflows and no more. Everything above that is '
+    + 'unnecessary exposure sitting on an internet-connected key.</div></div>');
+});
+</script>
+</body>
+</html>

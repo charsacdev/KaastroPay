@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create your account | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+<script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||'light');}catch(e){}})();</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" href="css/kaastro.css">
+<link rel="stylesheet" href="css/public.css">
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a href="index.html" class="brand-logo mb-4">
+      <img src="images/logo.png" alt="Kaastro Pay" class="brand-img">
+    </a>
+
+    <h1>Create your account</h1>
+    <p class="sub mb-4">Your country sets your currency — pick carefully, it stays with the account.</p>
+
+    <label class="form-label">Where are you?</label>
+    <div class="d-grid gap-2 mb-3" id="countries"></div>
+
+    <div class="k-alert k-info mb-3" id="ccyNote"></div>
+
+    <div class="row g-2 mb-3">
+      <div class="col-6">
+        <label class="form-label">First name</label>
+        <input class="form-control" placeholder="Chukwudi">
+      </div>
+      <div class="col-6">
+        <label class="form-label">Last name</label>
+        <input class="form-control" placeholder="Okeke">
+      </div>
+    </div>
+
+    <label class="form-label">Email</label>
+    <input type="email" class="form-control mb-3" placeholder="you@example.com">
+
+    <label class="form-label">Phone number</label>
+    <div class="input-group mb-3">
+      <span class="input-group-text" id="dial">+234</span>
+      <input class="form-control" placeholder="803 123 4567">
+    </div>
+
+    <label class="form-label">Password</label>
+    <div class="input-group mb-1">
+      <input type="password" class="form-control" id="pw" placeholder="At least 8 characters">
+      <button class="btn btn-soft" id="pwToggle"><i class="fas fa-eye"></i></button>
+    </div>
+    <div class="progress mb-1" style="height:4px">
+      <div class="progress-bar" id="pwBar" style="width:0;background:var(--down)"></div>
+    </div>
+    <div class="form-text mb-3" id="pwHint">Use a mix of letters, numbers and symbols.</div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="terms">
+      <label class="form-check-label" for="terms" style="font-size:.82rem">
+        I agree to the <a href="#" class="text-primary-k">terms</a> and
+        <a href="#" class="text-primary-k">privacy policy</a>.</label>
+    </div>
+
+    <button class="btn btn-primary w-100" id="go">Create account</button>
+
+    <p class="text-center mt-3 mb-0" style="font-size:.85rem">
+      Already have one? <a href="login.html" class="text-primary-k fw-bold">Log in</a></p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/rates-engine.js"></script>
+<script src="js/mock-data.js"></script>
+<script src="js/rails.js"></script>
+<script>
+$(function () {
+  var DIAL = { NG: '+234', GH: '+233', KE: '+254', TZ: '+255', UG: '+256' };
+  var picked = KP.currentCountry().code;
+
+  function paint() {
+    $('#countries').html(KP.COUNTRY_LIST.map(function (c) {
+      return '<button class="country-opt' + (c.code === picked ? ' selected' : '') + '" data-cc="' + c.code + '">'
+        + '<span class="co-flag">' + c.flag + '</span>'
+        + '<span><span class="co-name">' + c.name + '</span>'
+        + '<span class="co-ccy">' + c.currency + ' · ' + c.idLabel + '</span></span>'
+        + '<i class="fas fa-circle-check co-check"></i></button>';
+    }).join(''));
+
+    var c = KP.COUNTRIES[picked];
+    $('#dial').text(DIAL[picked]);
+    $('#ccyNote').html('<i class="fas fa-circle-info"></i><div>'
+      + '<b>Your balance will be in ' + c.currency + '.</b>'
+      + 'You will fund by ' + (c.fundingRail === 'virtual_account'
+        ? 'a dedicated account number we issue you'
+        : 'mobile money') + ', and verify with your ' + c.idLabel + '.</div>');
+  }
+  paint();
+
+  $(document).on('click', '.country-opt', function () {
+    picked = $(this).data('cc');
+    KP.setCountry(picked);
+    paint();
+  });
+
+  $('#pwToggle').on('click', function () {
+    var t = $('#pw').attr('type') === 'password' ? 'text' : 'password';
+    $('#pw').attr('type', t);
+    $(this).find('i').attr('class', t === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash');
+  });
+
+  $('#pw').on('input', function () {
+    var v = $(this).val();
+    var score = 0;
+    if (v.length >= 8) score++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+    if (/\d/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    var colors = ['var(--down)', 'var(--down)', 'var(--warn)', 'var(--info)', 'var(--up)'];
+    var words = ['Too short', 'Weak', 'Getting there', 'Good', 'Strong'];
+    $('#pwBar').css({ width: (score / 4 * 100) + '%', background: colors[score] });
+    $('#pwHint').text(v ? words[score] : 'Use a mix of letters, numbers and symbols.');
+  });
+
+  $('#go').on('click', function () {
+    if (!$('#terms').is(':checked')) {
+      KP.rails.toast('Accept the terms to continue.', 'danger');
+      return;
+    }
+    location.href = 'verify-code.html';
+  });
+});
+</script>
+</body>
+</html>

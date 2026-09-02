@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deposit Crypto | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="deposit-crypto" data-title="Deposit crypto" data-sub="Send coins to your Kaastro wallet">
+
+<main class="main-content">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-xl-5">
+
+      <!-- Step 0 — how do you want to do this? -->
+      <div id="stepMethod">
+        <div class="card p-3 p-md-4">
+          <h2 class="card-title mb-1">How would you like to deposit?</h2>
+          <p class="text-muted mb-3" style="font-size:.82rem">
+            Pick the automatic rail when our chain watchers are healthy. If they are lagging,
+            the alternative route gets you credited by an agent instead.</p>
+
+          <div class="d-grid gap-2">
+            <button class="method-card" data-m="auto">
+              <span class="qa-icon qa-green"><i class="fas fa-bolt"></i></span>
+              <span class="mc-body">
+                <span class="mc-title">Fast network deposit
+                  <span class="pill pill-success">recommended</span></span>
+                <span class="mc-desc">We watch the chain and credit you automatically once the
+                  network confirms. Nothing to upload, nothing to wait on us for.</span>
+                <span class="mc-meta">
+                  <span class="pill pill-neutral"><i class="fas fa-clock"></i>2–15 min</span>
+                  <span class="pill pill-neutral"><i class="fas fa-robot"></i>Automatic</span>
+                </span>
+              </span>
+              <i class="fas fa-chevron-right text-muted align-self-center"></i>
+            </button>
+
+            <button class="method-card" data-m="manual">
+              <span class="qa-icon qa-amber"><i class="fas fa-hand"></i></span>
+              <span class="mc-body">
+                <span class="mc-title">Alternative transfer</span>
+                <span class="mc-desc">Send to the same address, then upload the transaction hash
+                  and a screenshot. An agent confirms it by hand — use this if our watchers are
+                  down or your deposit has not shown up.</span>
+                <span class="mc-meta">
+                  <span class="pill pill-pending"><i class="fas fa-clock"></i>Up to 30 min</span>
+                  <span class="pill pill-manual"><i class="fas fa-user-tie"></i>Agent reviewed</span>
+                </span>
+              </span>
+              <i class="fas fa-chevron-right text-muted align-self-center"></i>
+            </button>
+          </div>
+
+          <div class="k-alert k-info mt-3" id="netHealth">
+            <i class="fas fa-signal"></i>
+            <div><b>All chain watchers are healthy.</b>
+              TRC20, BEP20, ERC20 and Bitcoin are all in sync right now.</div>
+          </div>
+        </div>
+
+        <div class="text-center mt-3">
+          <a href="deposit-fiat.html" class="small fw-bold text-primary-k">
+            Depositing cash instead? <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+      </div>
+
+      <!-- Steps 1–3 -->
+      <div id="stepFlow" class="d-none">
+
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <button class="icon-btn" id="backToMethod"><i class="fas fa-arrow-left"></i></button>
+          <span class="pill" id="modePill"></span>
+        </div>
+
+        <div class="stepper mb-3">
+          <div class="stp on" data-step="1"><span class="n">1</span>Asset</div>
+          <div class="line"></div>
+          <div class="stp" data-step="2"><span class="n">2</span>Network</div>
+          <div class="line"></div>
+          <div class="stp" data-step="3"><span class="n">3</span>Address</div>
+        </div>
+
+        <div class="card p-3 p-md-4" id="step1">
+          <h2 class="card-title mb-1">Choose an asset</h2>
+          <p class="text-muted mb-3" style="font-size:.82rem">Which coin are you sending?</p>
+          <div id="assetList"></div>
+        </div>
+
+        <div class="card p-3 p-md-4 d-none" id="step2">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <button class="icon-btn back-btn" data-to="1"><i class="fas fa-arrow-left"></i></button>
+            <div><h2 class="card-title mb-0">Choose a network</h2>
+              <p class="text-muted mb-0" style="font-size:.78rem" id="step2Sub"></p></div>
+          </div>
+          <div id="netList" class="d-grid gap-2"></div>
+          <div class="k-alert k-warn mt-3">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div><b>The network must match.</b>
+              Each network has its own address. Sending on a different network, or a different
+              coin to this address, means the funds cannot be recovered automatically — it
+              becomes a manual recovery case with no guarantee.</div>
+          </div>
+          <button class="btn btn-primary w-100 mt-3" id="toStep3" disabled>Continue</button>
+        </div>
+
+        <div class="card p-3 p-md-4 d-none" id="step3">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <button class="icon-btn back-btn" data-to="2"><i class="fas fa-arrow-left"></i></button>
+            <div><h2 class="card-title mb-0" id="step3Title">Your deposit address</h2>
+              <p class="text-muted mb-0" style="font-size:.78rem" id="step3Sub"></p></div>
+          </div>
+
+          <div class="text-center"><div class="qr-box" id="qrBox"></div></div>
+
+          <label class="form-label mt-3">Wallet address</label>
+          <div class="address-box" id="addrText"></div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-soft flex-grow-1 kp-copy" id="copyBtn"><i class="fas fa-copy me-1"></i>Copy address</button>
+            <button class="btn btn-soft" id="shareBtn"><i class="fas fa-share-nodes"></i></button>
+          </div>
+
+          <div class="summary-rows mt-3" id="depSummary"></div>
+
+          <!-- Automatic rail -->
+          <div id="autoPane">
+            <div class="k-alert k-info mt-3">
+              <i class="fas fa-circle-info"></i>
+              <div><b>Credited after confirmations.</b>
+                Your balance updates once the network confirms. The coins land in your crypto
+                wallet — selling to <span class="ccy"></span> is your choice, at the rate showing
+                when you sell.</div>
+            </div>
+            <div class="card mt-3" style="background:var(--bg-sunk)">
+              <div class="p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <b style="font-size:.82rem">Waiting for your deposit</b>
+                  <span class="pill pill-pending"><i class="fas fa-circle"></i>Listening</span>
+                </div>
+                <p class="text-muted mb-2" style="font-size:.76rem">
+                  This page updates on its own as soon as we see the transaction on-chain.
+                  You can safely close it — we will notify you.</p>
+                <button class="btn btn-soft btn-sm w-100" id="switchManual">
+                  <i class="fas fa-hand me-1"></i>Not showing up? Submit it manually</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alternative rail -->
+          <div id="manualPane" class="d-none">
+            <div class="k-alert k-warn mt-3">
+              <i class="fas fa-hand"></i>
+              <div><b>Alternative transfer.</b>
+                Send to the address above, then give us the details below. An agent will verify
+                it on the block explorer and credit you by hand.</div>
+            </div>
+
+            <label class="form-label mt-3">Amount sent</label>
+            <div class="input-group mb-3">
+              <input class="form-control" id="mAmount" inputmode="decimal" placeholder="0.00">
+              <span class="input-group-text" id="mAsset">USDT</span>
+            </div>
+
+            <label class="form-label">Transaction hash</label>
+            <input class="form-control mb-1" id="mHash" placeholder="0x… or the hash from your wallet">
+            <div class="form-text mb-3">Copy it from the wallet or exchange you sent from.</div>
+
+            <label class="form-label">Screenshot of the transaction</label>
+            <input type="file" class="form-control mb-1" id="mProof" accept="image/*">
+            <div class="form-text mb-3">Must show the amount, the destination address and the time.</div>
+
+            <label class="form-label">Note (optional)</label>
+            <textarea class="form-control mb-3" id="mNote" rows="2" placeholder="Anything the agent should know"></textarea>
+
+            <button class="btn btn-primary w-100" id="mSubmit">Submit for manual review</button>
+            <p class="text-muted text-center mt-2 mb-0" style="font-size:.72rem">
+              Agents work two shifts, so this is picked up around the clock.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+KP.ready(function () {
+  var C = KP.currentCountry(), F = KP.fmt;
+  var sel = { asset: null, network: null, address: null, mode: 'auto' };
+
+  $('.ccy').text(C.currency);
+
+  $('#assetList').html(KP.ASSET_LIST.map(function (a) {
+    return '<button class="net-opt mb-2 pick-asset" data-sym="' + a.symbol + '">'
+      + '<span class="asset-icon" style="background:' + a.color + '">' + a.symbol.slice(0, 4) + '</span>'
+      + '<span><span class="no-name">' + a.symbol + '</span>'
+      + '<span class="no-sub">' + a.name + ' · min ' + F.crypto(a.minDeposit, a.symbol) + '</span></span>'
+      + '<i class="fas fa-chevron-right no-check ms-auto" style="opacity:.35"></i></button>';
+  }).join(''));
+
+  function setMode(m) {
+    sel.mode = m;
+    $('#modePill')
+      .attr('class', 'pill ' + (m === 'auto' ? 'pill-success' : 'pill-manual'))
+      .html('<i class="fas ' + (m === 'auto' ? 'fa-bolt' : 'fa-hand') + '"></i>'
+        + (m === 'auto' ? 'Fast network deposit' : 'Alternative transfer'));
+    $('#autoPane').toggleClass('d-none', m !== 'auto');
+    $('#manualPane').toggleClass('d-none', m === 'auto');
+  }
+
+  $('.method-card').on('click', function () {
+    setMode($(this).data('m'));
+    $('#stepMethod').addClass('d-none');
+    $('#stepFlow').removeClass('d-none');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  $('#backToMethod').on('click', function () {
+    $('#stepFlow').addClass('d-none');
+    $('#stepMethod').removeClass('d-none');
+    goStep(1);
+  });
+
+  $('#switchManual').on('click', function () {
+    setMode('manual');
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
+
+  function goStep(n) {
+    $('#step1,#step2,#step3').addClass('d-none');
+    $('#step' + n).removeClass('d-none');
+    $('.stepper .stp').each(function () {
+      var s = +$(this).data('step');
+      $(this).toggleClass('on', s === n).toggleClass('done', s < n);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  $(document).on('click', '.pick-asset', function () {
+    sel.asset = $(this).data('sym');
+    sel.network = null;
+    var a = KP.ASSETS[sel.asset];
+    $('#step2Sub').text(a.name + ' · ' + a.symbol);
+    $('#mAsset').text(a.symbol);
+    $('#netList').html(a.networks.map(function (n) {
+      return '<button class="net-opt pick-net" data-net="' + n.id + '">'
+        + '<span class="asset-icon sm" style="background:' + a.color + '">' + n.id.slice(0, 3) + '</span>'
+        + '<span><span class="no-name">' + n.name + '</span>'
+        + '<span class="no-sub">' + n.note + ' · ' + n.conf + ' confirmations</span></span>'
+        + '<i class="fas fa-circle-check no-check"></i></button>';
+    }).join(''));
+    $('#toStep3').prop('disabled', true);
+    goStep(2);
+  });
+
+  $(document).on('click', '.pick-net', function () {
+    $('.pick-net').removeClass('selected');
+    $(this).addClass('selected');
+    sel.network = $(this).data('net');
+    $('#toStep3').prop('disabled', false);
+  });
+
+  $(document).on('click', '.back-btn', function () { goStep(+$(this).data('to')); });
+
+  $('#toStep3').on('click', function () {
+    var a = KP.ASSETS[sel.asset];
+    var net = a.networks.filter(function (n) { return n.id === sel.network; })[0];
+
+    // Addresses are derived per user, per asset, per network — never shared
+    // across networks, so a wrong-network send is always identifiable.
+    var seed = KP.data.ME.id.length + sel.asset.length * 7 + sel.network.length * 13;
+    sel.address = sel.asset === 'BTC' ? KP.data.hashAddr('bc1q', seed, 42)
+      : sel.network === 'TRC20' ? KP.data.hashAddr('T', seed, 34)
+      : KP.data.hashAddr('0x', seed, 42);
+
+    $('#step3Title').text('Send ' + sel.asset + ' (' + sel.network + ')');
+    $('#step3Sub').text('Only ' + sel.asset + ' on ' + net.name);
+    $('#addrText').text(sel.address);
+    $('#copyBtn').attr('data-copy', sel.address);
+
+    $('#qrBox').empty();
+    new QRCode(document.getElementById('qrBox'), {
+      text: sel.address, width: 168, height: 168,
+      colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
+    });
+
+    $('#depSummary').html(
+      '<div class="sr"><span>Asset</span><span>' + a.name + ' (' + a.symbol + ')</span></div>'
+      + '<div class="sr"><span>Network</span><span>' + net.name + '</span></div>'
+      + '<div class="sr"><span>Minimum deposit</span><span>' + F.crypto(a.minDeposit, a.symbol) + '</span></div>'
+      + '<div class="sr"><span>Confirmations needed</span><span>' + net.conf + '</span></div>'
+      + '<div class="sr total"><span>Deposit fee</span><span>None</span></div>'
+    );
+    goStep(3);
+  });
+
+  $('#shareBtn').on('click', function () {
+    if (navigator.share) {
+      navigator.share({ title: 'My Kaastro ' + sel.asset + ' address', text: sel.address });
+    } else {
+      navigator.clipboard.writeText(sel.address);
+      KP.rails.toast('Address copied — paste it wherever you need');
+    }
+  });
+
+  $('#mSubmit').on('click', function () {
+    if (!$('#mAmount').val() || !$('#mHash').val().trim() || !$('#mProof').val()) {
+      KP.rails.toast('Amount, transaction hash and screenshot are all required.', 'danger');
+      return;
+    }
+    var ref = 'DEP-C' + Math.floor(48300 + Math.abs(parseFloat($('#mAmount').val())) % 90);
+    KP.receipt.show({
+      title: 'Submitted for review',
+      ref: ref,
+      amount: F.crypto(parseFloat($('#mAmount').val()) || 0, sel.asset),
+      sub: 'Alternative transfer · awaiting an agent',
+      status: 'pending',
+      rows: [
+        ['Reference', ref],
+        ['Asset', sel.asset + ' · ' + sel.network],
+        ['Transaction hash', $('#mHash').val().trim().slice(0, 22) + '…'],
+        ['Submitted', new Date().toLocaleString()],
+        ['Reviewed by', 'Next available agent']
+      ],
+      note: 'You will be notified as soon as an agent confirms this deposit.'
+    });
+  });
+});
+</script>
+</body>
+</html>

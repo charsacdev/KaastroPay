@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pay Bills | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="bills" data-title="Pay bills" data-sub="Airtime, data and electricity from your cash balance">
+
+<main class="main-content">
+  <div id="guard"></div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card p-3 p-md-4">
+
+        <div class="section-head"><h2>Choose a service</h2>
+          <span class="small text-muted" id="balLine"></span></div>
+
+        <div class="row g-2 mb-3" id="services"></div>
+
+        <div id="form" class="d-none">
+          <hr class="my-3">
+
+          <label class="form-label">Provider</label>
+          <select class="form-select mb-3" id="provider"></select>
+
+          <div id="meterTypeWrap" class="d-none">
+            <label class="form-label">Meter type</label>
+            <div class="seg mb-3" id="meterType"></div>
+          </div>
+
+          <label class="form-label" id="accLabel">Phone number</label>
+          <div class="input-group mb-1">
+            <input class="form-control" id="account" autocomplete="off">
+            <button class="btn btn-soft" id="pickContact" title="Use my number"><i class="fas fa-user"></i></button>
+          </div>
+          <div class="form-text mb-3" id="accHint"></div>
+
+          <div id="bundleWrap" class="d-none">
+            <label class="form-label">Bundle</label>
+            <div class="row g-2 mb-3" id="bundles"></div>
+          </div>
+
+          <div id="amountWrap">
+            <label class="form-label">Amount</label>
+            <div class="row g-2 mb-2" id="presets"></div>
+            <div class="amount-box mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="ab-label">You pay</span>
+                <span class="small text-muted" id="availLine"></span>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-1">
+                <input type="text" inputmode="decimal" id="amount" placeholder="0.00">
+                <span class="ab-side" style="cursor:default"><span class="ccy"></span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-rows mb-3" id="summary"></div>
+          <button class="btn btn-primary w-100 kp-submit" id="payBtn" disabled>Pay now</button>
+          <p class="text-muted text-center mt-2 mb-0" style="font-size:.72rem">
+            <i class="fas fa-lock me-1"></i>Confirmed with your transaction PIN</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card p-3">
+        <div class="section-head"><h2>Recent bills</h2>
+          <a href="transactions.html" class="text-primary-k">See all</a></div>
+        <div id="history"></div>
+      </div>
+
+      <div class="card p-3 mt-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="fas fa-circle-info mt-1 text-muted"></i>
+          <p class="small text-muted mb-0">
+            Bills are paid from your <span class="ccy"></span> cash balance, not from crypto.
+            If your balance is short, sell some crypto first — it takes a few seconds.</p>
+        </div>
+        <a href="sell.html" class="btn btn-soft btn-sm w-100 mt-2">Sell crypto for cash</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var C = KP.currentCountry(), F = KP.fmt, me = KP.data.ME, B = KP.data.BILLERS;
+  var sel = { service: null, bundle: null };
+
+  $('.ccy').text(C.currency);
+  var frozen = KP.rails.guardPanic($('#guard'), 'Bill payments');
+
+  function myFiat() {
+    return C.currency === 'NGN' ? me.fiatBalance
+      : (me.fiatBalance / KP.USD_RATE.NGN) * KP.USD_RATE[C.currency];
+  }
+  $('#balLine').text('Balance ' + F.fiat(myFiat(), C.currency));
+  $('#availLine').text('Available ' + F.fiat(myFiat(), C.currency));
+
+  $('#services').html(['airtime', 'data', 'electricity'].map(function (k) {
+    var b = B[k];
+    return '<div class="col-4"><button class="biller-tile pick-service" data-k="' + k + '">'
+      + '<span class="qa-icon ' + b.tone + '"><i class="fas ' + b.icon + '"></i></span>'
+      + '<span>' + b.name + '</span></button></div>';
+  }).join(''));
+
+  $(document).on('click', '.pick-service', function () {
+    $('.biller-tile').removeClass('selected');
+    $(this).addClass('selected');
+    sel.service = $(this).data('k');
+    sel.bundle = null;
+    buildForm();
+    $('#form').removeClass('d-none');
+  });
+
+  function buildForm() {
+    var b = B[sel.service];
+    var list = (b.providers[C.code] || b.providers.NG);
+
+    $('#provider').html(list.map(function (p) { return '<option>' + p + '</option>'; }).join(''));
+    $('#accLabel').text(b.field);
+    $('#account').attr('placeholder', b.placeholder).val('');
+    $('#accHint').text(sel.service === 'electricity'
+      ? 'We will verify the meter and show the customer name before you pay.'
+      : 'Enter the number you are topping up. We detect the network automatically.');
+
+    $('#meterTypeWrap').toggleClass('d-none', sel.service !== 'electricity');
+    if (sel.service === 'electricity') {
+      $('#meterType').html(b.meterTypes.map(function (t, i) {
+        return '<button class="' + (i === 0 ? 'active' : '') + '" data-t="' + t + '">' + t + '</button>';
+      }).join(''));
+    }
+
+    var isData = sel.service === 'data';
+    $('#bundleWrap').toggleClass('d-none', !isData);
+    $('#amountWrap').toggleClass('d-none', isData);
+
+    if (isData) {
+      var bundles = b.bundles[C.code] || b.bundles.NG;
+      $('#bundles').html(bundles.map(function (x, i) {
+        return '<div class="col-6"><button class="amount-chip pick-bundle" data-i="' + i + '">'
+          + x[0] + '<br><span class="text-muted" style="font-weight:600">' + F.fiat(x[1], C.currency) + '</span>'
+          + '</button></div>';
+      }).join(''));
+    } else {
+      var presets = b.presets[C.code] || b.presets.NG;
+      $('#presets').html(presets.map(function (v) {
+        return '<div class="col-4"><button class="amount-chip pick-amount" data-v="' + v + '">'
+          + F.fiat(v, C.currency) + '</button></div>';
+      }).join(''));
+      $('#amount').val('');
+    }
+    paint();
+  }
+
+  $(document).on('click', '#meterType button', function () {
+    $('#meterType button').removeClass('active');
+    $(this).addClass('active');
+  });
+
+  $(document).on('click', '.pick-amount', function () {
+    $('.pick-amount').removeClass('selected');
+    $(this).addClass('selected');
+    $('#amount').val($(this).data('v'));
+    paint();
+  });
+
+  $(document).on('click', '.pick-bundle', function () {
+    $('.pick-bundle').removeClass('selected');
+    $(this).addClass('selected');
+    var b = B.data.bundles[C.code] || B.data.bundles.NG;
+    sel.bundle = b[+$(this).data('i')];
+    paint();
+  });
+
+  $('#account').on('input', paint);
+  $('#amount').on('input', function () { $('.pick-amount').removeClass('selected'); paint(); });
+  $('#pickContact').on('click', function () { $('#account').val(me.phone); paint(); });
+
+  function value() {
+    if (sel.service === 'data') return sel.bundle ? sel.bundle[1] : 0;
+    return parseFloat(($('#amount').val() || '').replace(/,/g, '')) || 0;
+  }
+
+  function paint() {
+    if (!sel.service) return;
+    var v = value(), b = B[sel.service];
+    $('#summary').html(
+      '<div class="sr"><span>Service</span><span>' + b.name
+        + (sel.bundle ? ' · ' + sel.bundle[0] : '') + '</span></div>'
+      + '<div class="sr"><span>Provider</span><span>' + ($('#provider').val() || '—') + '</span></div>'
+      + '<div class="sr"><span>' + b.field + '</span><span>' + ($('#account').val() || '—') + '</span></div>'
+      + '<div class="sr"><span>Fee</span><span>' + F.fiat(0, C.currency) + '</span></div>'
+      + '<div class="sr total"><span>Total</span><span>' + F.fiat(v, C.currency) + '</span></div>'
+    );
+    var enough = v > 0 && v <= myFiat();
+    var hasAcc = ($('#account').val() || '').trim().length >= 6;
+    $('#payBtn').prop('disabled', !enough || !hasAcc || frozen)
+      .text(v > myFiat() ? 'Not enough cash balance'
+          : !hasAcc && v > 0 ? 'Enter the ' + b.field.toLowerCase()
+          : v ? 'Pay ' + F.fiat(v, C.currency) : 'Pay now');
+  }
+
+  $('#payBtn').on('click', function () {
+    var v = value(), b = B[sel.service];
+    KP.rails.requirePin('Pay ' + F.fiat(v, C.currency) + ' for ' + b.name).then(function (ok) {
+      if (!ok) return;
+      var ref = 'BIL-' + Math.floor(20500 + v % 400);
+      var isElec = sel.service === 'electricity';
+      var token = isElec ? '4821 7739 0146 5528 9903' : null;
+      KP.receipt.show({
+        title: b.name + ' payment',
+        ref: ref,
+        amount: F.fiat(v, C.currency),
+        sub: b.name + ' · ' + $('#provider').val(),
+        status: 'successful',
+        rows: [
+          ['Reference', ref],
+          ['Service', b.name + (sel.bundle ? ' · ' + sel.bundle[0] : '')],
+          ['Provider', $('#provider').val()],
+          [b.field, $('#account').val()],
+          (isElec ? ['Token', token] : ['Delivered to', $('#account').val()]),
+          ['Amount', F.fiat(v, C.currency)],
+          ['Fee', F.fiat(0, C.currency)],
+          ['Date', new Date().toLocaleString()]
+        ],
+        note: isElec ? 'Enter the token on your meter keypad to load the units.'
+                     : 'Delivered instantly. Dial your provider code to confirm the balance.'
+      });
+      paintHistory();
+    });
+  });
+
+  function paintHistory() {
+    $('#history').html(KP.data.BILL_HISTORY.map(function (h) {
+      var b = B[h.service.toLowerCase()] || B.airtime;
+      var pill = h.status === 'successful' ? 'pill-success' : 'pill-failed';
+      return '<div class="tx-row cursor-pointer open-bill" data-ref="' + h.ref + '">'
+        + '<div class="qa-icon ' + b.tone + ' sm"><i class="fas ' + b.icon + '"></i></div>'
+        + '<div class="tx-meta"><b>' + h.service + ' · ' + h.provider + '</b>'
+        + '<small>' + h.account + ' · ' + h.ref + '</small></div>'
+        + '<div class="tx-amt-col"><span class="amt">' + F.fiat(h.amount, h.currency) + '</span>'
+        + '<span class="pill ' + pill + '" style="font-size:.61rem">' + h.status + '</span></div></div>';
+    }).join(''));
+  }
+  paintHistory();
+
+  // Deep link from the dashboard shortcuts: bills.html?s=airtime
+  var pre = (location.search.match(/[?&]s=(\w+)/) || [])[1];
+  if (pre && KP.data.BILLERS[pre]) $('.pick-service[data-k="' + pre + '"]').trigger('click');
+
+  $(document).on('click', '.open-bill', function () {
+    var h = KP.data.BILL_HISTORY.filter(function (x) { return x.ref === $(this).data('ref'); }.bind(this))[0];
+    if (!h) return;
+    KP.receipt.show({
+      title: h.service + ' payment',
+      ref: h.ref,
+      amount: F.fiat(h.amount, h.currency),
+      sub: h.service + ' · ' + h.provider,
+      status: h.status,
+      rows: [
+        ['Reference', h.ref],
+        ['Service', h.service],
+        ['Provider', h.provider],
+        ['Account', h.account],
+        (h.token ? ['Token', h.token] : ['Delivered to', h.account]),
+        ['Amount', F.fiat(h.amount, h.currency)],
+        ['Date', h.date]
+      ],
+      note: h.token ? 'Enter the token on your meter keypad to load the units.'
+                    : 'Delivered instantly.'
+    });
+  });
+});
+</script>
+</body>
+</html>

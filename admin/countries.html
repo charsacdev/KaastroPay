@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Countries | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="admin" data-page="countries" data-title="Countries" data-sub="A new market should be configuration, not a code change">
+
+<main class="main-content">
+  <div class="card p-3">
+    <div class="table-wrap">
+      <table class="k-table" style="min-width:900px">
+        <thead><tr>
+          <th>Country</th><th>Currency</th><th>Identity check</th>
+          <th>Funding rail</th><th>Payout rail</th><th>Users</th><th>Status</th><th class="text-end"></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-0">
+    <div class="col-lg-6">
+      <div class="card p-3 h-100">
+        <h2 class="card-title mb-2">Why the rails differ</h2>
+        <p class="text-muted" style="font-size:.84rem">
+          A dedicated bank account tied to a BVN is a Nigerian construct. It has no
+          equivalent in Ghana, Kenya, Tanzania or Uganda, where the realistic funding
+          rail is mobile money.</p>
+        <p class="text-muted mb-0" style="font-size:.84rem">
+          The same is true of identity: NIN and BVN in Nigeria, the Ghana Card in Ghana,
+          NIDA in Tanzania. The verification flow is one page with five behaviours,
+          driven entirely by this table.</p>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card p-3 h-100">
+        <h2 class="card-title mb-2">Adding a market</h2>
+        <div id="checklist"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/backoffice.js"></script>
+<script>
+KP.ready(function () {
+  var BO = KP.bo, D = KP.data;
+
+  function userCount(cc) {
+    return D.USERS.filter(function (u) { return u.country === cc; }).length;
+  }
+
+  function paint() {
+    $('#rows').html(KP.COUNTRY_LIST.map(function (c) {
+      return '<tr>'
+        + '<td><div class="d-flex align-items-center gap-2">'
+        + '<span style="font-size:1.2rem">' + c.flag + '</span>'
+        + '<div style="line-height:1.25"><div class="t-strong">' + c.name + '</div>'
+        + '<div class="t-mono">' + c.code + '</div></div></div></td>'
+        + '<td><span class="t-strong">' + c.currency + '</span> <span class="t-mono">' + c.symbol + '</span></td>'
+        + '<td class="t-strong">' + c.idLabel + '</td>'
+        + '<td>' + (c.fundingRail === 'virtual_account'
+          ? '<span class="pill pill-success"><i class="fas fa-building-columns"></i>Virtual account</span>'
+          : '<span class="pill pill-confirming"><i class="fas fa-mobile-screen"></i>Mobile money</span>') + '</td>'
+        + '<td class="t-mono">' + (c.payoutRail === 'bank' ? 'Bank transfer' : 'Mobile money') + '</td>'
+        + '<td class="t-strong">' + userCount(c.code) + '</td>'
+        + '<td>' + BO.pill(c.enabled ? 'active' : 'blocked') + '</td>'
+        + '<td class="text-end"><div class="form-check form-switch d-inline-block">'
+        + '<input class="form-check-input toggle-c" type="checkbox" data-cc="' + c.code + '"'
+        + (c.enabled ? ' checked' : '') + '></div></td>'
+        + '</tr>';
+    }).join(''));
+  }
+
+  $(document).on('change', '.toggle-c', function () {
+    var cc = $(this).data('cc');
+    KP.COUNTRIES[cc].enabled = $(this).is(':checked');
+    KP.rails.toast(KP.COUNTRIES[cc].name + ' is now '
+      + (KP.COUNTRIES[cc].enabled ? 'open for signups.' : 'closed to new signups.'),
+      KP.COUNTRIES[cc].enabled ? 'dark' : 'warning');
+    paint();
+  });
+
+  $('#checklist').html([
+    ['Currency and decimals', 'TZS and UGX have no minor unit — amounts round to whole numbers.'],
+    ['Identity provider', 'Which national database, and what the number looks like.'],
+    ['Funding rail', 'Virtual accounts where they exist, mobile money where they do not.'],
+    ['Payout provider', 'Two per country, minimum — single-provider is how you get a full outage.'],
+    ['Tier limits', 'Local regulator caps often differ from your global tiers.']
+  ].map(function (x, i) {
+    return '<div class="asset-row">'
+      + '<div class="qa-icon qa-blue" style="width:30px;height:30px;font-size:.7rem;font-weight:800">' + (i + 1) + '</div>'
+      + '<div><div class="ar-name" style="font-size:.83rem">' + x[0] + '</div>'
+      + '<div class="ar-sub">' + x[1] + '</div></div></div>';
+  }).join(''));
+
+  paint();
+});
+</script>
+</body>
+</html>

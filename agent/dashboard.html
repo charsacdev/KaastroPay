@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Dashboard | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="agent" data-page="dashboard" data-title="Agent dashboard" data-sub="Queues waiting on you">
+
+<main class="main-content">
+  <div id="banners"></div>
+
+  <div class="row g-3">
+    <div class="col-6 col-lg-3" id="s1"></div>
+    <div class="col-6 col-lg-3" id="s2"></div>
+    <div class="col-6 col-lg-3" id="s3"></div>
+    <div class="col-6 col-lg-3" id="s4"></div>
+  </div>
+
+  <div class="row g-3 mt-0">
+    <div class="col-lg-7">
+      <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="card-title">Oldest items waiting</h2>
+          <span class="small text-muted">act on these first</span>
+        </div>
+        <div id="oldest"></div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card p-3">
+        <h2 class="card-title mb-2">Your shift</h2>
+        <div id="shiftBox"></div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="card-title">Your manual actions</h2>
+          <span class="pill pill-manual" id="manualCount">0</span>
+        </div>
+        <p class="text-muted" style="font-size:.78rem">
+          Every manual confirmation is permanently attributed to you and reviewable by an admin.</p>
+        <div id="manualLog"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/backoffice.js"></script>
+<script>
+KP.ready(function () {
+  var F = KP.fmt, BO = KP.bo, p = KP.data.pendingCounts();
+
+  if (KP.rails.panic.isActive()) {
+    $('#banners').html('<div class="sys-banner sys-panic"><i class="fas fa-triangle-exclamation fs-5"></i>'
+      + '<div class="flex-grow-1"><b>Platform freeze is ON.</b> <span class="small">Set by '
+      + KP.rails.panic.by() + ' on ' + KP.rails.panic.at() + '. Users cannot withdraw or trade.</span></div>'
+      + '<a href="settings.html" class="btn btn-sm btn-soft">Manage</a></div>');
+  }
+  KP.rails.applyShiftLock($('#banners'));
+
+  $('#s1').html(BO.statTile({ label: 'KYC waiting', value: p.kyc, icon: 'fa-user-shield', tone: 'blue', note: 'documents to review' }));
+  $('#s2').html(BO.statTile({ label: 'Deposits', value: p.cryptoDeposits + p.fiatDeposits, icon: 'fa-arrow-down', tone: 'green', note: 'crypto and cash' }));
+  $('#s3').html(BO.statTile({ label: 'Withdrawals', value: p.fiatWithdrawals + p.cryptoWithdrawals, icon: 'fa-arrow-up', tone: 'amber', note: 'awaiting payout' }));
+  $('#s4').html(BO.statTile({ label: 'Open tickets', value: p.tickets, icon: 'fa-headset', tone: 'purple', note: 'users waiting on a reply' }));
+
+  // Oldest across every queue, so nothing rots at the bottom of one list.
+  var items = [];
+  KP.data.CRYPTO_DEPOSITS.filter(function (d) { return d.status === 'pending' || d.status === 'confirming'; })
+    .forEach(function (d) {
+      items.push({ ref: d.ref, who: d.user, what: 'Crypto deposit', detail: F.crypto(d.amount, d.asset) + ' · ' + d.network,
+        age: d.daysAgo, href: 'deposits.html', status: d.status, tone: 'in', icon: 'fa-arrow-down' });
+    });
+  KP.data.FIAT_DEPOSITS.filter(function (d) { return d.status === 'pending'; })
+    .forEach(function (d) {
+      items.push({ ref: d.ref, who: d.user, what: 'Cash deposit' + (d.manual ? ' · proof uploaded' : ''),
+        detail: F.fiat(d.amount, d.currency), age: d.daysAgo, href: 'deposits.html', status: d.status, tone: 'in', icon: 'fa-building-columns' });
+    });
+  KP.data.FIAT_WITHDRAWALS.filter(function (w) { return w.status === 'pending' || w.status === 'processing'; })
+    .forEach(function (w) {
+      items.push({ ref: w.ref, who: w.user, what: 'Cash withdrawal', detail: F.fiat(w.amount, w.currency) + ' → ' + w.destination,
+        age: w.daysAgo, href: 'withdrawals.html', status: w.status, tone: 'out', icon: 'fa-arrow-up' });
+    });
+  KP.data.CRYPTO_WITHDRAWALS.filter(function (w) { return w.status === 'pending'; })
+    .forEach(function (w) {
+      items.push({ ref: w.ref, who: w.user, what: 'Crypto send', detail: F.crypto(w.amount, w.asset) + ' · ' + w.network,
+        age: w.daysAgo, href: 'withdrawals.html', status: w.status, tone: 'out', icon: 'fa-paper-plane' });
+    });
+  KP.data.KYC_QUEUE.filter(function (k) { return k.status === 'pending'; })
+    .forEach(function (k) {
+      items.push({ ref: k.ref, who: k.user, what: 'KYC · ' + k.idType, detail: 'Tier ' + k.targetTier + ' request',
+        age: k.daysAgo, href: 'kyc.html', status: 'pending', tone: 'swap', icon: 'fa-user-shield' });
+    });
+
+  items.sort(function (a, b) { return b.age - a.age; });
+
+  $('#oldest').html(items.slice(0, 8).map(function (it) {
+    return '<a href="' + it.href + '" class="tx-row text-decoration-none" style="color:inherit">'
+      + '<div class="tx-icon tx-' + it.tone + '"><i class="fas ' + it.icon + '"></i></div>'
+      + '<div class="tx-meta"><b>' + it.what + ' · ' + it.who.name + '</b>'
+      + '<small>' + it.detail + ' · ' + it.ref + '</small></div>'
+      + '<div class="tx-amt-col"><span class="amt" style="font-size:.78rem">'
+      + (it.age === 0 ? 'today' : it.age + 'd ago') + '</span>' + BO.pill(it.status) + '</div></a>';
+  }).join('') || '<div class="empty-state"><i class="fas fa-mug-hot"></i><p>All queues are clear.</p></div>');
+
+  var S = KP.rails.shift;
+  $('#shiftBox').html(
+    '<div class="d-flex align-items-center gap-2 mb-2">'
+    + '<span class="qa-icon ' + (S.inShift() ? 'qa-green' : 'qa-red') + '" style="width:40px;height:40px;font-size:.9rem">'
+    + '<i class="fas ' + (S.ASSIGNED === 'morning' ? 'fa-sun' : 'fa-moon') + '"></i></span>'
+    + '<div><b style="font-size:.9rem">' + S.LABELS[S.ASSIGNED] + '</b><br>'
+    + '<small class="text-muted">Assigned shift</small></div>'
+    + '<span class="ms-auto">' + BO.pill(S.inShift() ? 'active' : 'blocked') + '</span></div>'
+    + '<p class="text-muted mb-0" style="font-size:.78rem">'
+    + (S.inShift()
+      ? 'You are on shift. Approvals, rejections and manual confirmations are enabled.'
+      : 'Outside your window, approvals are read-only. Use the clock control in the top bar to preview the other state.')
+    + '</p>');
+
+  var log = KP.rails.manual.log();
+  $('#manualCount').text(log.length);
+  $('#manualLog').html(log.length
+    ? log.slice(0, 5).map(function (e) {
+        return '<div class="asset-row"><div class="qa-icon qa-purple" style="width:32px;height:32px;font-size:.72rem">'
+          + '<i class="fas fa-hand"></i></div><div class="flex-grow-1 min-w-0">'
+          + '<div class="ar-name" style="font-size:.8rem">' + e.what + ' · ' + e.amount + '</div>'
+          + '<div class="ar-sub text-truncate">' + e.ref + ' · ' + e.at
+          + (e.approver ? ' · co-signed by ' + e.approver : '') + '</div></div></div>';
+      }).join('')
+    : '<div class="empty-state py-3"><i class="fas fa-hand"></i><p>No manual confirmations yet.</p></div>');
+});
+</script>
+</body>
+</html>

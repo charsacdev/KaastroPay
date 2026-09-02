@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="support" data-title="Support" data-sub="We usually reply in minutes">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <div class="col-lg-4">
+      <div class="card p-3">
+        <h2 class="card-title mb-2">Common questions</h2>
+        <div class="accordion accordion-flush" id="faq"></div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card p-3 p-md-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="card-title">Your tickets</h2>
+          <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#newTicket">
+            <i class="fas fa-plus me-1"></i>New ticket</button>
+        </div>
+
+        <div class="collapse mb-3" id="newTicket">
+          <div class="card p-3" style="background:var(--bg-sunk)">
+            <label class="form-label">What is this about?</label>
+            <select class="form-select mb-3">
+              <option>Deposit not credited</option>
+              <option>Withdrawal delayed</option>
+              <option>Wrong network / wrong asset sent</option>
+              <option>KYC or verification</option>
+              <option>Rate or fee question</option>
+              <option>Something else</option>
+            </select>
+            <label class="form-label">Transaction reference (if any)</label>
+            <input class="form-control mb-3" placeholder="e.g. DEP-C48231">
+            <label class="form-label">Describe the problem</label>
+            <textarea class="form-control mb-3" rows="3" placeholder="What happened, and when?"></textarea>
+            <button class="btn btn-primary w-100" id="sendTicket">Send to support</button>
+          </div>
+        </div>
+
+        <div id="ticketList"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var FAQ = [
+    ['My deposit has not arrived', 'Crypto credits after the network confirms — 12 confirmations on TRC20, 2 on Bitcoin. If the transaction shows on the explorer but not here after an hour, open a ticket with the hash.'],
+    ['I sent the wrong network', 'Tell us immediately with the hash and the address you used. Recovery is manual and never guaranteed, but the sooner we know the better the odds.'],
+    ['Why is my sell rate lower than the chart?', 'The chart is the mid-market price. Your buy price sits above it and your sell price below — that gap is our spread, and it is the same for every user in your country.'],
+    ['How long do withdrawals take?', 'Cash payouts usually land in under five minutes. Crypto sends depend on the network. If a provider is down, an agent confirms it by hand instead.'],
+    ['Why do I need to verify my identity?', 'Your national ID is what lets us issue your deposit account and raise your limits. It is a regulatory requirement in every country we operate in.']
+  ];
+
+  $('#faq').html(FAQ.map(function (f, i) {
+    return '<div class="accordion-item" style="background:transparent;border-color:var(--border-color)">'
+      + '<h3 class="accordion-header"><button class="accordion-button collapsed" style="background:transparent;color:var(--text-main);font-size:.85rem;font-weight:700" '
+      + 'data-bs-toggle="collapse" data-bs-target="#f' + i + '">' + f[0] + '</button></h3>'
+      + '<div id="f' + i + '" class="accordion-collapse collapse" data-bs-parent="#faq">'
+      + '<div class="accordion-body text-muted" style="font-size:.82rem">' + f[1] + '</div></div></div>';
+  }).join(''));
+
+  var mine = KP.data.TICKETS.slice(0, 4);
+  $('#ticketList').html(mine.map(function (t) {
+    var pill = t.status === 'open' ? 'pill-pending' : t.status === 'resolved' ? 'pill-success' : 'pill-processing';
+    return '<div class="asset-row">'
+      + '<div class="qa-icon ' + (t.priority === 'high' ? 'qa-red' : 'qa-blue') + '" style="width:38px;height:38px;font-size:.8rem">'
+      + '<i class="fas fa-comment-dots"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name text-truncate">' + t.subject + '</div>'
+      + '<div class="ar-sub">' + t.id + ' · ' + t.msgs + ' messages · ' + t.last + '</div></div>'
+      + '<span class="pill ' + pill + '">' + t.status + '</span></div>';
+  }).join(''));
+
+  $('#sendTicket').on('click', function () {
+    $('#newTicket').collapse('hide');
+    KP.rails.toast('Ticket created. An agent will reply shortly.');
+  });
+});
+</script>
+</body>
+</html>

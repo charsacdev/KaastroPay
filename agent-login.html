@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent sign in | Kaastro Pay</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+<script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||'light');}catch(e){}})();</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" href="css/kaastro.css">
+<link rel="stylesheet" href="css/public.css">
+</head>
+<body>
+
+<div class="auth-wrap"><div class="auth-card">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <a href="index.html" class="brand-logo ps-0">
+      <img src="images/logo.png" alt="Kaastro Pay" class="brand-img">
+    </a>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
+  </div>
+  <span class="staff-badge staff-agent mb-3"><i class="fas fa-user-tie"></i>Agent portal</span>
+  <h1>Agent sign in</h1>
+  <p class="sub mb-4">Staff access only. Every action you take here is attributed to you and logged.</p>
+
+  <label class="form-label">Work email</label>
+  <input class="form-control mb-3" value="james@kaastropay.com">
+
+  <label class="form-label">Password</label>
+  <div class="input-group mb-3">
+    <input type="password" class="form-control" value="agent-demo">
+    <button class="btn btn-soft pw-toggle" type="button"><i class="fas fa-eye"></i></button>
+  </div>
+
+  <label class="form-label">Authenticator code</label>
+  <input class="form-control mb-1" id="otp" inputmode="numeric" maxlength="6" placeholder="6-digit code">
+  <div class="form-text mb-3">Two-factor is mandatory for every staff account.</div>
+
+  <a href="agent/dashboard.html" class="btn btn-primary w-100">Sign in</a>
+
+  <p class="text-center mt-3 mb-0" style="font-size:.8rem;color:var(--text-muted)">
+    Not staff? <a href="login.html" class="text-primary-k fw-bold">Customer log in</a></p>
+
+  <div class="k-alert k-warn mt-4">
+    <i class="fas fa-shield-halved"></i>
+    <div><b>Approvals are shift-bound.</b>You can only approve, reject or manually confirm
+      inside your assigned window.</div>
+  </div>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/rates-engine.js"></script>
+<script src="js/mock-data.js"></script>
+<script src="js/rails.js"></script>
+<script>
+$(function () {
+  $('#themeBtn').on('click', function () {
+    KP.rails.theme.apply(KP.rails.theme.current() === 'dark' ? 'light' : 'dark');
+  });
+  $('.pw-toggle').on('click', function () {
+    var $i = $(this).closest('.input-group').find('input');
+    var t = $i.attr('type') === 'password' ? 'text' : 'password';
+    $i.attr('type', t);
+    $(this).find('i').attr('class', t === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash');
+  });
+
+});
+</script>
+</body>
+</html>

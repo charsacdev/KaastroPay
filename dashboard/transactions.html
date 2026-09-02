@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transactions | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="transactions" data-title="Transactions" data-sub="Everything that moved">
+
+<main class="main-content">
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3" id="s1"></div>
+    <div class="col-6 col-lg-3" id="s2"></div>
+    <div class="col-6 col-lg-3" id="s3"></div>
+    <div class="col-6 col-lg-3" id="s4"></div>
+  </div>
+
+  <div class="card p-3">
+    <div class="filterbar mb-3">
+      <button class="chip-btn active" data-f="all">All</button>
+      <button class="chip-btn" data-f="deposit">Deposits</button>
+      <button class="chip-btn" data-f="buy">Buys</button>
+      <button class="chip-btn" data-f="sell">Sells</button>
+      <button class="chip-btn" data-f="swap">Swaps</button>
+      <button class="chip-btn" data-f="withdrawal">Withdrawals</button>
+      <button class="chip-btn" data-f="bill">Bills</button>
+      <button class="btn btn-soft btn-sm ms-auto" id="exportCsv">
+        <i class="fas fa-file-csv me-1"></i>Export</button>
+    </div>
+
+    <div class="table-responsive">
+      <table id="txTable" class="table w-100 dt-nowrap">
+        <thead>
+          <tr>
+            <th>Transaction</th>
+            <th>Reference</th>
+            <th>Type</th>
+            <th>Details</th>
+            <th>Asset</th>
+            <th class="text-end">Amount</th>
+            <th class="text-end">Value</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th class="text-end">Receipt</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var F = KP.fmt, C = KP.currentCountry();
+  var all = KP.data.myTransactions();
+  var filter = 'all';
+  var dt = null;
+
+  function statusPill(s) {
+    var m = { successful: 'pill-success', failed: 'pill-failed', processing: 'pill-processing',
+              pending: 'pill-pending', confirming: 'pill-confirming' };
+    return '<span class="pill ' + (m[s] || 'pill-neutral') + '">' + s + '</span>';
+  }
+
+  function tile(el, label, value, icon, tone, note) {
+    $(el).html('<div class="stat-tile"><div class="st-top"><span class="st-label">' + label + '</span>'
+      + '<span class="st-icon qa-' + tone + '"><i class="fas ' + icon + '"></i></span></div>'
+      + '<div class="st-value">' + value + '</div><div class="st-note">' + note + '</div></div>');
+  }
+  tile('#s1', 'Total', all.length, 'fa-list', 'blue', 'all time');
+  tile('#s2', 'Credits', all.filter(function (t) { return t.dir === 'in' && t.status === 'successful'; }).length,
+       'fa-arrow-down', 'green', 'money in');
+  tile('#s3', 'Debits', all.filter(function (t) { return t.dir === 'out'; }).length,
+       'fa-arrow-up', 'amber', 'money out');
+  tile('#s4', 'In progress', all.filter(function (t) { return t.status !== 'successful' && t.status !== 'failed'; }).length,
+       'fa-clock', 'purple', 'not settled yet');
+
+  function rows() {
+    return all.filter(function (t) { return filter === 'all' || t.type === filter; });
+  }
+
+  function build() {
+    var data = rows().map(function (t) {
+      var cls = t.type === 'swap' ? 'tx-swap' : (t.dir === 'in' ? 'tx-in' : 'tx-out');
+      var ic = t.type === 'swap' ? 'fa-right-left'
+             : t.type === 'bill' ? 'fa-bolt'
+             : (t.dir === 'in' ? 'fa-arrow-down' : 'fa-arrow-up');
+      var sign = t.dir === 'in' ? '+' : '−';
+      var qty = t.asset ? sign + F.crypto(t.amount, t.asset) : '—';
+      var val = t.fiat != null ? sign + F.fiat(t.fiat, 'NGN')
+              : sign + F.fiat(t.amount * KP.rates.midUsd(t.asset) * KP.USD_RATE.NGN, 'NGN');
+
+      return [
+        '<div class="d-flex align-items-center gap-2">'
+          + '<span class="tx-icon ' + cls + '" style="width:30px;height:30px;font-size:.66rem">'
+          + '<i class="fas ' + ic + '"></i></span>'
+          + '<span class="t-strong">' + t.label + '</span></div>',
+        '<span class="t-mono">' + t.ref + '</span>',
+        '<span class="text-capitalize">' + t.type + '</span>',
+        '<span class="t-mono">' + t.sub + '</span>',
+        t.asset ? '<span class="t-strong">' + t.asset + '</span>' : '<span class="text-muted">—</span>',
+        '<span class="t-strong ' + (t.dir === 'in' ? 'text-up' : '') + '">' + qty + '</span>',
+        '<span class="t-strong ' + (t.dir === 'in' ? 'text-up' : '') + '">' + val + '</span>',
+        statusPill(t.status),
+        '<span class="t-mono">' + t.date.replace(/,\s*\d{4}\s*·/, ' ·') + '</span>',
+        '<button class="btn btn-sm btn-soft rx-open" data-ref="' + t.ref + '" title="Receipt">'
+          + '<i class="fas fa-receipt"></i></button>'
+      ];
+    });
+
+    if (dt) { dt.clear(); dt.rows.add(data); dt.draw(false); return; }
+
+    dt = $('#txTable').DataTable({
+      data: data,
+      autoWidth: false,
+      responsive: { details: { type: 'inline' } },
+      order: [],
+      pageLength: 10,
+      lengthMenu: [10, 25, 50, 100],
+      columnDefs: [
+        { targets: [5, 6, 9], className: 'text-end' },
+        { targets: 9, orderable: false },
+        // What survives a narrow screen, in order: the name, the value, the
+        // status, then the receipt button. Everything else folds into the row.
+        { targets: 0, responsivePriority: 1 },
+        { targets: 6, responsivePriority: 2 },
+        { targets: 7, responsivePriority: 3 },
+        { targets: 9, responsivePriority: 4 },
+        { targets: 8, responsivePriority: 5 },
+        { targets: 1, responsivePriority: 6 },
+        { targets: 3, responsivePriority: 7 },
+        { targets: 5, responsivePriority: 8 },
+        { targets: 4, responsivePriority: 9 },
+        { targets: 2, responsivePriority: 10 }
+      ],
+      language: {
+        search: '', searchPlaceholder: 'Search transactions…',
+        lengthMenu: '_MENU_ per page',
+        info: '_START_–_END_ of _TOTAL_',
+        infoEmpty: 'Nothing here',
+        zeroRecords: '<div class="empty-state"><i class="fas fa-receipt"></i><p>No transactions match this filter.</p></div>',
+        emptyTable: '<div class="empty-state"><i class="fas fa-receipt"></i><p>Nothing here yet.</p></div>',
+        paginate: { previous: '<i class="fas fa-chevron-left"></i>', next: '<i class="fas fa-chevron-right"></i>' }
+      }
+    });
+  }
+
+  $('.chip-btn').on('click', function () {
+    $('.chip-btn').removeClass('active');
+    $(this).addClass('active');
+    filter = $(this).data('f');
+    build();
+  });
+
+  $(document).on('click', '.rx-open', function () {
+    var ref = $(this).data('ref');
+    var t = all.filter(function (x) { return x.ref === ref; })[0];
+    if (!t) return;
+
+    var sign = t.dir === 'in' ? '+' : '−';
+    var big = t.fiat != null ? F.fiat(t.fiat, 'NGN') : F.crypto(t.amount, t.asset);
+    var rows = [
+      ['Reference', t.ref],
+      ['Type', t.type.charAt(0).toUpperCase() + t.type.slice(1) + ' · ' + t.kind],
+      ['Description', t.label],
+      ['Details', t.sub]
+    ];
+    if (t.asset) rows.push(['Asset', t.asset]);
+    if (t.asset) rows.push(['Quantity', F.crypto(t.amount, t.asset, { full: true })]);
+    if (t.fiat != null) rows.push(['Cash value', F.fiat(t.fiat, 'NGN')]);
+    rows.push(['Direction', t.dir === 'in' ? 'Credit' : 'Debit']);
+    rows.push(['Date', t.date]);
+
+    KP.receipt.show({
+      title: 'Transaction receipt',
+      ref: t.ref,
+      amount: sign + big,
+      sub: t.label,
+      status: t.status,
+      rows: rows,
+      note: t.status === 'failed'
+        ? 'This deposit was below the minimum. The amount is held and can be released by an agent — open a ticket with this reference.'
+        : 'Keep this receipt for your records.'
+    });
+  });
+
+  $('#exportCsv').on('click', function () {
+    var head = ['Reference', 'Type', 'Description', 'Details', 'Asset', 'Quantity', 'Value NGN', 'Status', 'Date'];
+    var lines = [head.join(',')].concat(rows().map(function (t) {
+      return [t.ref, t.type, t.label, t.sub, t.asset || '',
+              t.asset ? t.amount : '', t.fiat != null ? t.fiat : '', t.status, t.date]
+        .map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(',');
+    }));
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'kaastro-transactions.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+    KP.rails.toast('Exported ' + rows().length + ' transactions');
+  });
+
+  build();
+});
+</script>
+</body>
+</html>

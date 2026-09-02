@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verification | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="kyc" data-title="Verification" data-sub="Your tier decides your limits">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <div class="col-lg-5">
+      <div class="card p-3 p-md-4">
+        <div class="d-flex align-items-center gap-3">
+          <img src="../images/avatar-john.jpg" class="rounded-circle" width="54" height="54" alt="">
+          <div>
+            <h2 class="card-title mb-1" id="uName"></h2>
+            <span class="pill pill-success"><i class="fas fa-circle-check"></i>Verified account</span>
+          </div>
+        </div>
+        <hr class="my-3">
+        <div class="st-label mb-2">Current tier</div>
+        <div class="d-flex align-items-baseline gap-2">
+          <div style="font-size:1.6rem;font-weight:800;letter-spacing:-.03em" id="tierName"></div>
+          <span class="tier-badge" id="tierBadge"></span>
+        </div>
+        <div class="summary-rows mt-3">
+          <div class="sr"><span>Daily limit</span><span id="dLimit"></span></div>
+          <div class="sr"><span>Per transaction</span><span id="tLimit"></span></div>
+          <div class="sr total"><span>Used today</span><span id="used"></span></div>
+        </div>
+        <div class="progress mt-2" style="height:6px">
+          <div class="progress-bar" id="usedBar" style="background:var(--primary-color);width:0"></div>
+        </div>
+      </div>
+
+      <div class="card p-3 mt-3">
+        <div class="st-label mb-2">Your details on file</div>
+        <div class="summary-rows">
+          <div class="sr"><span>Country</span><span id="dCountry"></span></div>
+          <div class="sr"><span>ID type</span><span id="dIdType"></span></div>
+          <div class="sr"><span>ID number</span><span id="dIdNum"></span></div>
+          <div class="sr total"><span>Verified on</span><span id="dWhen"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card p-3 p-md-4">
+        <h2 class="card-title mb-1">Verification steps</h2>
+        <p class="text-muted mb-3" style="font-size:.82rem">
+          Each step unlocks the next tier. You only ever do this once.</p>
+        <div id="steps"></div>
+      </div>
+
+      <div class="card p-3 mt-3">
+        <h2 class="card-title mb-2">All tiers</h2>
+        <div class="table-wrap">
+          <table class="k-table">
+            <thead><tr><th>Tier</th><th>Requires</th><th class="text-end">Daily</th><th class="text-end">Per transaction</th></tr></thead>
+            <tbody id="tierRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var C = KP.currentCountry(), F = KP.fmt, me = KP.data.ME;
+  var t = KP.TIERS[me.tier];
+
+  $('#uName').text(me.name);
+  $('#tierName').text(t.name);
+  $('#tierBadge').addClass('tier-' + me.tier).text('Tier ' + me.tier);
+  $('#dLimit').text(F.usd(t.dailyUsd));
+  $('#tLimit').text(F.usd(t.perTxUsd));
+
+  var usedUsd = 340;
+  $('#used').text(F.usd(usedUsd));
+  $('#usedBar').css('width', Math.min(100, (usedUsd / t.dailyUsd) * 100) + '%');
+
+  $('#dCountry').text(C.flag + ' ' + C.name);
+  $('#dIdType').text(C.idLabel);
+  $('#dIdNum').text('••••••' + '4821');
+  $('#dWhen').text(KP.data.shortDate(48));
+
+  // Steps are per country: Nigeria asks for NIN or BVN, Ghana for the Ghana
+  // Card, and so on. One flow, five behaviours.
+  var STEPS = [
+    { n: 1, title: 'Email and phone', sub: 'Confirm the code we sent you', tier: 0, state: 'done' },
+    { n: 2, title: C.idLabel, sub: 'Your government identity number', tier: 1, state: 'done' },
+    { n: 3, title: 'Photo ID and selfie', sub: 'Upload your document and take a live selfie', tier: 2, state: 'done' },
+    { n: 4, title: 'Proof of address', sub: 'A utility bill or bank statement under 3 months old', tier: 3, state: 'todo' },
+    { n: 5, title: 'Source of funds', sub: 'Only for Tier 3 limits', tier: 3, state: 'locked' }
+  ];
+
+  $('#steps').html(STEPS.map(function (s) {
+    var icon = s.state === 'done' ? 'fa-circle-check' : s.state === 'todo' ? 'fa-circle-arrow-right' : 'fa-lock';
+    var tone = s.state === 'done' ? 'qa-green' : s.state === 'todo' ? 'qa-blue' : 'qa-amber';
+    var pill = s.state === 'done'
+      ? '<span class="pill pill-success">verified</span>'
+      : s.state === 'todo'
+        ? '<button class="btn btn-primary btn-sm start-step" data-n="' + s.n + '">Start</button>'
+        : '<span class="pill pill-neutral">locked</span>';
+    return '<div class="asset-row">'
+      + '<div class="qa-icon ' + tone + '" style="width:38px;height:38px;font-size:.85rem"><i class="fas ' + icon + '"></i></div>'
+      + '<div class="flex-grow-1"><div class="ar-name">' + s.title + '</div>'
+      + '<div class="ar-sub">' + s.sub + '</div></div>'
+      + '<div class="ar-right">' + pill + '</div></div>';
+  }).join(''));
+
+  $('#tierRows').html(KP.TIERS.map(function (x) {
+    return '<tr' + (x.id === me.tier ? ' style="background:var(--primary-soft)"' : '') + '>'
+      + '<td class="t-strong">' + x.name + (x.id === me.tier ? ' <span class="pill pill-success ms-1">you</span>' : '') + '</td>'
+      + '<td class="text-muted">' + x.needs + '</td>'
+      + '<td class="text-end t-strong">' + (x.dailyUsd ? F.usd(x.dailyUsd) : '—') + '</td>'
+      + '<td class="text-end t-strong">' + (x.perTxUsd ? F.usd(x.perTxUsd) : '—') + '</td></tr>';
+  }).join(''));
+
+  $(document).on('click', '.start-step', function () {
+    KP.rails.toast('Upload flow opens here — document capture is a native step in the app.');
+  });
+});
+</script>
+</body>
+</html>

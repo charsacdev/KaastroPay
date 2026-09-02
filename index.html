@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaastro Pay — Crypto in. Your own money out.</title>
+<meta name="description" content="Built by traders, for traders. Buy, sell and swap crypto and cash out to your local currency in minutes across Nigeria, Ghana, Kenya, Tanzania and Uganda.">
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+<script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||'light');}catch(e){}})();</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" href="css/kaastro.css">
+<link rel="stylesheet" href="css/public.css">
+</head>
+<body>
+
+<nav class="pub-nav">
+  <div class="container d-flex align-items-center justify-content-between gap-2">
+    <a href="index.html" class="brand-logo">
+      <img src="images/logo.png" alt="Kaastro Pay" class="brand-img">
+    </a>
+    <div class="d-none d-lg-flex align-items-center gap-1">
+      <a href="#how" class="nav-link-pub">How it works</a>
+      <a href="#markets" class="nav-link-pub">Markets</a>
+      <a href="#security" class="nav-link-pub">Security</a>
+      <a href="about.html" class="nav-link-pub">About</a>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
+      <a href="login.html" class="btn btn-soft btn-sm d-none d-sm-inline-block">Log in</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================== Hero ============================== -->
+<header class="hero">
+  <div class="hero-glow"></div>
+  <canvas id="heroChart" aria-hidden="true"></canvas>
+  <div class="float-layer" id="floatLayer" aria-hidden="true"></div>
+  <div class="container position-relative">
+    <div class="row align-items-center g-4 g-lg-5">
+
+      <div class="col-lg-6">
+        <span class="eyebrow-pill"><i class="fas fa-bolt"></i>Built by traders, for traders</span>
+        <h1 class="mt-3">Crypto in. Your own money out.</h1>
+        <p class="lede mt-3">
+          Send crypto to your Kaastro wallet or fund with cash from your bank. Buy, sell and
+          swap at rates you can see, then withdraw in Naira, Cedis or Shillings — whatever
+          your country actually uses.
+        </p>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <a href="register.html" class="btn btn-primary btn-lg">Create a free account</a>
+          <a href="#how" class="btn btn-soft btn-lg">See how it works</a>
+        </div>
+        <div class="hero-points mt-4">
+          <span><i class="fas fa-shield-halved"></i>Verified accounts only</span>
+          <span><i class="fas fa-clock"></i>Payouts in minutes</span>
+          <span><i class="fas fa-eye"></i>No hidden spread</span>
+        </div>
+
+        <div class="face-stack mt-4" id="heroFaces"></div>
+      </div>
+
+      <!-- Rates live inside the app, on a phone. Pick a country and the
+           screen re-renders in that country's currency. -->
+      <div class="col-lg-6">
+        <div class="hero-visual">
+
+          <!-- A real person using the thing, so the page opens on a face
+               rather than on a spec sheet. -->
+          <div class="hero-photo">
+            <img src="images/hero-trader.png" width="1024" height="1024"
+                 alt="A trader checking her Kaastro Pay balance on her phone">
+          </div>
+
+          <div class="payout-chip">
+            <span class="pc-ico"><i class="fas fa-check"></i></span>
+            <span><b>₦150,000 paid out</b><span>GTBank · settled in 52s</span></span>
+          </div>
+
+          <div class="phone">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+
+              <div class="phone-status">
+                <span>9:41</span>
+                <span class="ps-icons">
+                  <i class="fas fa-signal"></i><i class="fas fa-wifi"></i><i class="fas fa-battery-full"></i>
+                </span>
+              </div>
+
+              <div class="ph-head">
+                <div>
+                  <div class="ph-title">Today's rates</div>
+                  <div class="ph-sub" id="phSub">Live mid-market</div>
+                </div>
+                <div class="ph-country" id="phCountry"></div>
+              </div>
+
+              <div class="ph-flags mb-2" id="phFlags"></div>
+
+              <div id="phRates"></div>
+
+              <button class="ph-cta" onclick="location.href='register.html'">Start trading</button>
+
+              <div class="ph-foot">
+                <span><i class="fas fa-circle text-up" style="font-size:.4rem"></i> Live</span>
+                <span id="phTick"></span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Trusted by traders -->
+    <div class="trust-bar mt-5">
+      <div class="trust-item"><b>38,400+</b><span>Traders on the platform</span></div>
+      <div class="trust-item"><b>$2.4M</b><span>Settled every month</span></div>
+      <div class="trust-item"><b>1 min</b><span>Average payout time</span></div>
+      <div class="trust-item"><b>5</b><span>Countries live</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ========================= Built by traders ========================= -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-5">
+        <div class="photo-card tall position-relative">
+          <img src="images/team-collaboration.png" width="740" height="493"
+               alt="The Kaastro Pay team celebrating together in the office">
+          <div class="photo-cap">
+            <b>We are our own first customers</b>
+            <span>Everyone here trades on the platform with their own money.</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="sec-eyebrow">Why we built this</div>
+        <h2 class="sec-title">Built by traders, for traders</h2>
+        <p class="sec-lede">
+          We spent years cashing out through group chats, vendors who went quiet at
+          midnight, and rates nobody would explain. Kaastro Pay is the platform we
+          wanted then: one rate, published; one balance; and money that arrives when
+          it says it will.
+        </p>
+        <div class="row g-3 mt-2" id="traderPoints"></div>
+        <a href="about.html" class="btn btn-soft mt-3">Read our story</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= No more waiting ========================= -->
+<section class="sec">
+  <div class="container">
+    <div class="row g-4 g-lg-5 align-items-center">
+      <div class="col-lg-6">
+        <div class="sec-eyebrow">Speed</div>
+        <h2 class="sec-title">No more waiting games</h2>
+        <p class="sec-lede">
+          Every step has a number attached to it, and we publish them. If something is
+          going to be slow, you find out before you commit — not afterwards.
+        </p>
+        <div class="row g-3 mt-2" id="waitPoints"></div>
+      </div>
+      <div class="col-lg-6">
+        <div class="photo-card wide position-relative">
+          <img src="images/payout-success.png" width="740" height="493"
+               alt="A customer celebrating a cash payout from Kaastro Pay">
+          <div class="photo-badge tl">
+            <b>1 min</b><span>average payout</span>
+          </div>
+          <div class="photo-badge br">
+            <b>99.7%</b><span>settle first time</span>
+          </div>
+          <div class="photo-cap">
+            <b>Cashed out before the kettle boiled</b>
+            <span>Sell, confirm, and the money is in your bank account.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== Everything in one balance ====================== -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-eyebrow">The product</div>
+    <h2 class="sec-title">Everything, in one balance</h2>
+    <p class="sec-lede">One account holds your cash and your crypto. Moving between them takes one tap.</p>
+    <div class="row g-3 mt-2" id="features"></div>
+  </div>
+</section>
+
+<!-- ============================== How it works ============================== -->
+<section class="sec" id="how">
+  <div class="container">
+    <div class="sec-eyebrow">Getting started</div>
+    <h2 class="sec-title">Four steps, about five minutes</h2>
+    <p class="sec-lede">Account, then verification, then you are trading. You only verify once.</p>
+    <div class="row g-3 mt-2" id="steps"></div>
+    <div class="k-alert k-info mt-4">
+      <i class="fas fa-circle-info"></i>
+      <div><b>Verification is what unlocks the account.</b>
+        Until your national ID is confirmed we cannot issue your deposit details or hold
+        money for you. That is a rule from the regulator in every market we operate in,
+        not a policy of ours.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== Markets ============================== -->
+<section class="sec sec-alt" id="markets">
+  <div class="container">
+    <div class="sec-eyebrow">Where we operate</div>
+    <h2 class="sec-title">Your country, your currency, your rails</h2>
+    <p class="sec-lede">
+      A dedicated bank account is a Nigerian thing. Mobile money is how Ghana and Kenya
+      actually move money. We use whichever one your country really uses — same app,
+      the right plumbing.
+    </p>
+    <div class="row g-3 mt-2" id="countryCards"></div>
+  </div>
+</section>
+
+<!-- ============================== Security ============================== -->
+<section class="sec" id="security">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="sec-eyebrow">Security &amp; speed</div>
+        <h2 class="sec-title">Fast is only good if it is also safe</h2>
+        <p class="sec-lede">
+          Speed comes from automation, not from skipping checks. Here is what sits
+          between your money and a bad day.
+        </p>
+        <a href="aml.html" class="btn btn-soft mt-3">Our AML policy</a>
+      </div>
+      <div class="col-lg-7">
+        <div class="card p-3 p-md-4">
+          <div id="securityList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== Trust ============================== -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+      <div>
+        <div class="sec-eyebrow">Trusted by traders</div>
+        <h2 class="sec-title">What people actually say</h2>
+      </div>
+      <div class="face-stack" id="quoteFaces"></div>
+    </div>
+    <div class="quote-slider mt-3">
+      <div id="quoteCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5500">
+        <div class="carousel-inner" id="quotes"></div>
+      </div>
+      <div class="quote-nav">
+        <button type="button" data-bs-target="#quoteCarousel" data-bs-slide="prev" aria-label="Previous">
+          <i class="fas fa-chevron-left"></i></button>
+        <div class="quote-dots" id="quoteDots"></div>
+        <button type="button" data-bs-target="#quoteCarousel" data-bs-slide="next" aria-label="Next">
+          <i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== CTA ============================== -->
+<section class="sec">
+  <div class="container">
+    <div class="cta-band">
+      <h2>Ready to stop waiting on vendors?</h2>
+      <p>Create an account, verify once, and cash out at a rate you can see.</p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a href="register.html" class="btn btn-primary btn-lg">Create a free account</a>
+        <a href="login.html" class="btn btn-soft btn-lg">I already have one</a>
+      </div>
+      <div class="face-stack justify-content-center mt-4" id="ctaFaces"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== Footer ============================== -->
+<footer class="pub-footer">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <a href="index.html" class="brand-logo mb-3 ps-0">
+          <img src="images/logo.png" alt="Kaastro Pay" class="brand-img">
+        </a>
+        <p style="max-width:36ch">
+          Crypto to local currency across Africa. Built by traders, for traders.</p>
+        <p class="mb-0" style="font-size:.78rem">
+          Prototype build — no real funds move on this site.</p>
+      </div>
+      <div class="col-6 col-lg-2">
+        <h4>Product</h4>
+        <a href="register.html">Create account</a>
+        <a href="login.html">Log in</a>
+        <a href="#how">How it works</a>
+        <a href="#markets">Markets</a>
+        <a href="#security">Security</a>
+      </div>
+      <div class="col-6 col-lg-2">
+        <h4>Company</h4>
+        <a href="about.html">About us</a>
+        <a href="about.html#story">Our story</a>
+        <a href="about.html#contact">Contact</a>
+      </div>
+      <div class="col-6 col-lg-2">
+        <h4>Legal</h4>
+        <a href="terms.html">Terms of service</a>
+        <a href="privacy.html">Privacy policy</a>
+        <a href="aml.html">AML compliance</a>
+        <a href="aml.html#kyc">KYC policy</a>
+      </div>
+      <div class="col-6 col-lg-2">
+        <h4>Support</h4>
+        <a href="about.html#contact">Contact us</a>
+        <a href="login.html">Help centre</a>
+        <a href="aml.html#report">Report an issue</a>
+      </div>
+    </div>
+    <hr class="my-4">
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+      <span>© 2026 Kaastro Pay. All rights reserved.</span>
+      <span>Nigeria · Ghana · Kenya · Tanzania · Uganda</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/rates-engine.js"></script>
+<script src="js/mock-data.js"></script>
+<script src="js/rails.js"></script>
+<script>
+$(function () {
+  var F = KP.fmt;
+  var cc = KP.currentCountry().code;
+
+  $('#themeBtn').on('click', function () {
+    KP.rails.theme.apply(KP.rails.theme.current() === 'dark' ? 'light' : 'dark');
+  });
+
+  /* ---------------- phone screen ---------------- */
+
+  function paintPhone() {
+    var C = KP.COUNTRIES[cc];
+
+    $('#phCountry').html('<span>' + C.flag + '</span><span>' + C.currency + '</span>'
+      + '<i class="fas fa-chevron-down" style="font-size:.5rem;opacity:.6"></i>');
+    $('#phSub').text('1 unit in ' + C.currency);
+
+    $('#phFlags').html(KP.COUNTRY_LIST.map(function (c) {
+      return '<button class="ph-flag' + (c.code === cc ? ' active' : '') + '" data-cc="' + c.code + '">'
+        + '<span>' + c.flag + '</span><span>' + c.currency + '</span></button>';
+    }).join(''));
+
+    $('#phRates').html(['USDT', 'BTC', 'ETH', 'BNB'].map(function (s) {
+      var a = KP.ASSETS[s], ch = KP.rates.change24h(s);
+      return '<div class="ph-rate">'
+        + '<span class="pr-ico" style="background:' + a.color + '">' + s.slice(0, 3) + '</span>'
+        + '<span><span class="pr-name">' + s + '</span><span class="pr-sub">' + a.name + '</span></span>'
+        + '<span class="pr-right"><span class="pr-px">' + F.fiat(KP.rates.midFiat(s, C.currency), C.currency) + '</span><br>'
+        + '<span class="pr-ch ' + (ch >= 0 ? 'text-up' : 'text-down') + '">'
+        + (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch).toFixed(2) + '%</span></span></div>';
+    }).join(''));
+  }
+
+  $(document).on('click', '.ph-flag, #phCountry', function () {
+    var next = $(this).data('cc');
+    if (!next) {
+      // Tapping the header chip cycles to the next market.
+      var codes = KP.COUNTRY_LIST.map(function (c) { return c.code; });
+      next = codes[(codes.indexOf(cc) + 1) % codes.length];
+    }
+    cc = next;
+    KP.setCountry(cc);
+    paintPhone();
+  });
+
+  paintPhone();
+  KP.rates.onTick(paintPhone);
+  setInterval(function () { $('#phTick').text('updates in ' + KP.rates.secondsToTick() + 's'); }, 1000);
+
+  /* ---------------- sections ---------------- */
+
+  $('#traderPoints').html([
+    ['fa-eye', 'qa-green', 'One published rate', 'The rate on the screen is the rate you get. Buy and sell prices sit either side of mid, and we show you both.'],
+    ['fa-moon', 'qa-blue', 'Open at 3am', 'No vendor to wake up. The platform settles on its own, and an agent picks up the exceptions.'],
+    ['fa-receipt', 'qa-purple', 'A receipt for everything', 'Every trade records the rate that was applied. Nothing is reconstructed after the fact.'],
+    ['fa-comments', 'qa-amber', 'Answers, not excuses', 'When something is delayed you get the reason and a reference, not a shrug.']
+  ].map(function (f) {
+    return '<div class="col-sm-6"><div class="feature">'
+      + '<div class="qa-icon ' + f[1] + '"><i class="fas ' + f[0] + '"></i></div>'
+      + '<h3>' + f[2] + '</h3><p>' + f[3] + '</p></div></div>';
+  }).join(''));
+
+  $('#waitPoints').html([
+    ['1 min', 'Average cash payout', 'From confirming a withdrawal to money in your bank or mobile money wallet.'],
+    ['30 sec', 'Rate refresh', 'Prices update on a visible timer, and your quote is locked when you confirm.'],
+    ['12', 'Confirmations on TRC20', 'Published per network, so you know the wait before you send.'],
+    ['24/7', 'Agent cover', 'Two shifts, so a stuck transaction never sits until morning.']
+  ].map(function (w) {
+    return '<div class="col-6"><div class="feature h-100">'
+      + '<div style="font-size:1.5rem;font-weight:800;letter-spacing:-.035em" class="text-primary-k">' + w[0] + '</div>'
+      + '<h3 style="margin-top:.3rem">' + w[1] + '</h3><p>' + w[2] + '</p></div></div>';
+  }).join(''));
+
+  $('#features').html([
+    ['fa-arrow-down', 'qa-green', 'Deposit crypto', 'Send USDT, USDC, BTC, ETH, BNB or TRX to an address that is yours alone, on the network you choose.'],
+    ['fa-building-columns', 'qa-blue', 'Deposit cash', 'A dedicated account number in Nigeria, mobile money elsewhere. Credits in under a minute.'],
+    ['fa-cart-shopping', 'qa-green', 'Buy crypto', 'Spend your cash balance and the coins land instantly — no blockchain wait, because they never leave custody.'],
+    ['fa-hand-holding-dollar', 'qa-amber', 'Sell crypto', 'Convert to your local currency at a rate that is pinned the moment you confirm.'],
+    ['fa-right-left', 'qa-purple', 'Swap instantly', 'BTC to USDT, ETH to BNB. Both legs internal, so no network fee and nothing to wait for.'],
+    ['fa-money-bill-transfer', 'qa-blue', 'Withdraw cash', 'Payout to your bank or mobile money in your own currency, usually within five minutes.'],
+    ['fa-paper-plane', 'qa-red', 'Send crypto out', 'Withdraw to any external wallet, with address whitelisting so a stolen session cannot invent a destination.'],
+    ['fa-chart-line', 'qa-green', 'Watch the market', 'Live prices per asset in your currency, with history and a converter built in.']
+  ].map(function (f) {
+    return '<div class="col-sm-6 col-lg-3"><div class="feature">'
+      + '<div class="qa-icon ' + f[1] + '"><i class="fas ' + f[0] + '"></i></div>'
+      + '<h3>' + f[2] + '</h3><p>' + f[3] + '</p></div></div>';
+  }).join(''));
+
+  $('#steps').html([
+    ['Create your account', 'Email, phone, and the country you are in. Your country sets your currency, so pick carefully — it stays with the account.'],
+    ['Verify your identity', 'Your national ID and a selfie. This is what unlocks your deposit details and your limits.'],
+    ['Fund your balance', 'Send crypto to your wallet address, or transfer cash to the account number we issue you.'],
+    ['Trade and cash out', 'Buy, sell or swap, then withdraw to your bank whenever you want.']
+  ].map(function (s, i) {
+    return '<div class="col-sm-6 col-lg-3"><div class="step-card">'
+      + '<div class="sc-n">' + (i + 1) + '</div><h3>' + s[0] + '</h3><p>' + s[1] + '</p></div></div>';
+  }).join(''));
+
+  $('#countryCards').html(KP.COUNTRY_LIST.map(function (c) {
+    return '<div class="col-sm-6 col-lg-4"><div class="country-card">'
+      + '<div class="cc-top"><span class="cc-flag">' + c.flag + '</span>'
+      + '<span><span class="cc-name">' + c.name + '</span>'
+      + '<span class="cc-ccy">' + c.currency + ' · ' + c.symbol + '</span></span>'
+      + '<span class="pill pill-success ms-auto"><i class="fas fa-circle"></i>Live</span></div>'
+      + '<div class="cc-row"><span>You verify with</span><span>' + c.idLabel + '</span></div>'
+      + '<div class="cc-row"><span>You fund by</span><span>' + c.fundingLabel + '</span></div>'
+      + '<div class="cc-row"><span>You cash out to</span><span>'
+      + (c.payoutRail === 'bank' ? 'Your bank account' : 'Mobile money') + '</span></div>'
+      + '</div></div>';
+  }).join(''));
+
+  $('#securityList').html([
+    ['fa-vault', 'qa-blue', 'Cold storage by default', 'Only a day of expected outflows sits in the hot wallet. Everything else is offline behind a multi-person procedure.'],
+    ['fa-lock', 'qa-green', 'A PIN on every debit', 'Selling, swapping and both kinds of withdrawal all need your four-digit transaction PIN.'],
+    ['fa-list-check', 'qa-purple', 'Whitelisted withdrawals', 'Crypto can only leave to addresses you saved, and new destinations wait 24 hours before first use.'],
+    ['fa-user-shield', 'qa-amber', 'Verified accounts only', 'Every user is identity-checked and screened. It is slower to sign up and far safer to be a customer.'],
+    ['fa-power-off', 'qa-red', 'We stop rather than guess', 'If our rate feeds disagree or a payout provider fails, trading halts. We would rather pause than price you wrong.']
+  ].map(function (s) {
+    return '<div class="sec-item">'
+      + '<div class="qa-icon ' + s[1] + ' sm"><i class="fas ' + s[0] + '"></i></div>'
+      + '<div><h3>' + s[2] + '</h3><p>' + s[3] + '</p></div></div>';
+  }).join(''));
+
+  /* ---------------- testimonial slider ---------------- */
+
+  var QUOTES = [
+    ['I used to lose an hour a day chasing vendors for a rate. Now I check the app, sell, and the Naira is in GTBank before I finish my coffee.', 'Tunde A.', 'Lagos · trading since 2019', 'avatar-tunde2000.jpg'],
+    ['The Cedis rate is right there on the screen. I do not have to ask anyone what today\u2019s price is, and nobody quotes me a different number because I am new.', 'Akosua B.', 'Accra · Ghana', 'avatar-mercy24.jpg'],
+    ['A withdrawal stalled once when their bank partner went down. An agent called me, confirmed it by hand, and it settled the same hour. That is the whole test.', 'Kelvin I.', 'Abuja · Nigeria', 'avatar-johntrader.jpg'],
+    ['I pay my electricity from the same balance I trade from. One app, one balance, no moving money between three places first.', 'Ngozi U.', 'Enugu · Nigeria', 'avatar-blessingfx.jpg'],
+    ['Swaps settle instantly because both legs are internal. No network fee, no waiting for confirmations. That alone saved me real money.', 'Wanjiru K.', 'Nairobi · Kenya', 'avatar-c3.jpg'],
+    ['The receipt records the rate that was actually applied. When I do my books at month end, the numbers just match.', 'David M.', 'Accra · Ghana', 'avatar-b2.jpg']
+  ];
+
+  function card(q) {
+    return '<div class="col-md-4"><div class="quote-card h-100">'
+      + '<div class="qc-stars">★★★★★</div>'
+      + '<p>&ldquo;' + q[0] + '&rdquo;</p>'
+      + '<div class="qc-who"><img src="images/' + q[3] + '" class="rounded-circle" width="34" height="34" alt="">'
+      + '<span><b>' + q[1] + '</b><span>' + q[2] + '</span></span></div>'
+      + '</div></div>';
+  }
+
+  /* Three cards per slide on desktop, one on mobile — rebuilt on resize so the
+     slider never shows a half-empty row. */
+  function buildSlider() {
+    var per = window.innerWidth < 768 ? 1 : 3;
+    var slides = [];
+    for (var i = 0; i < QUOTES.length; i += per) {
+      slides.push('<div class="carousel-item' + (i === 0 ? ' active' : '') + '">'
+        + '<div class="row g-3">' + QUOTES.slice(i, i + per).map(card).join('') + '</div></div>');
+    }
+    $('#quotes').html(slides.join(''));
+    $('#quoteDots').html(slides.map(function (_, i) {
+      return '<span class="' + (i === 0 ? 'on' : '') + '" data-bs-target="#quoteCarousel" data-bs-slide-to="' + i + '"></span>';
+    }).join(''));
+    var el = document.getElementById('quoteCarousel');
+    bootstrap.Carousel.getInstance(el) && bootstrap.Carousel.getInstance(el).dispose();
+    new bootstrap.Carousel(el, { interval: 5500, ride: 'carousel' });
+    el.addEventListener('slid.bs.carousel', function (e) {
+      $('#quoteDots span').removeClass('on').eq(e.to).addClass('on');
+    });
+  }
+  buildSlider();
+
+  var lastPer = window.innerWidth < 768 ? 1 : 3;
+  $(window).on('resize', function () {
+    var per = window.innerWidth < 768 ? 1 : 3;
+    if (per !== lastPer) { lastPer = per; buildSlider(); }
+  });
+
+  /* ---------------- faces ---------------- */
+
+  var FACES = ['avatar-tunde2000.jpg', 'avatar-mercy24.jpg', 'avatar-johntrader.jpg',
+               'avatar-blessingfx.jpg', 'avatar-c3.jpg', 'avatar-b2.jpg', 'avatar-john.jpg'];
+
+  function faceRow(n, more) {
+    return '<span class="faces">'
+      + FACES.slice(0, n).map(function (f) {
+          return '<img src="images/' + f + '" width="38" height="38" alt="">';
+        }).join('')
+      + (more ? '<span class="more">' + more + '</span>' : '')
+      + '</span>';
+  }
+
+  $('#heroFaces').html(
+    faceRow(5, '38k+')
+    + '<span class="face-note"><span class="face-stars">★★★★★</span><br>'
+    + 'Joined by <b>38,400+ traders</b> across five countries</span>');
+
+  $('#quoteFaces').html(
+    faceRow(6)
+    + '<span class="face-note"><b>4.8 / 5</b> from 2,140 reviews</span>');
+
+  $('#ctaFaces').html(
+    faceRow(6, '38k+')
+    + '<span class="face-note">Real people, cashing out today.</span>');
+
+  /* ---------------- floating asset marks ---------------- */
+
+  var COINS = [
+    { s: 'BTC',  top: '9%',  left: '1.5%', sz: 50, dur: 15, dly: 0,   inner: false },
+    { s: 'ETH',  top: '62%', left: '0.5%', sz: 40, dur: 18, dly: 1.4, inner: false },
+    { s: 'USDT', top: '88%', left: '6%',   sz: 32, dur: 13, dly: 0.7, inner: true },
+    { s: 'USDC', top: '22%', left: '96%',  sz: 38, dur: 16, dly: 0.4, inner: false },
+    { s: 'BNB',  top: '74%', left: '97%',  sz: 34, dur: 17, dly: 2.1, inner: false },
+    { s: 'TRX',  top: '4%',  left: '92%',  sz: 30, dur: 14, dly: 1.1, inner: true }
+  ];
+  $('#floatLayer').html(COINS.map(function (c) {
+    var a = KP.ASSETS[c.s];
+    return '<div class="coin' + (c.inner ? ' inner' : '') + '" style="top:' + c.top + ';left:' + c.left
+      + ';background:' + a.color + ';--sz:' + c.sz + 'px;--dur:' + c.dur + 's;--dly:' + c.dly + 's">'
+      + c.s.slice(0, 3) + '</div>';
+  }).join(''));
+
+  /* ---------------- hero background chart ---------------- */
+
+  var chart = null;
+  function drawHeroChart() {
+    var el = document.getElementById('heroChart');
+    if (!el || typeof Chart === 'undefined') return;
+    var base = KP.rates.midUsd('BTC');
+    var labels = [], values = [];
+    for (var i = 0; i < 48; i++) {
+      var t = i / 47;
+      var v = base * (1
+        + Math.sin(t * 3.1 + 0.4) * 0.055
+        + Math.sin(t * 7.3 + 1.9) * 0.022
+        + Math.sin(t * 13.1 + 3.3) * 0.008
+        + t * 0.06);
+      labels.push(i);
+      values.push(v);
+    }
+
+    if (chart) { chart.data.datasets[0].data = values; chart.update('none'); return; }
+
+    var ctx = el.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 320);
+    grad.addColorStop(0, 'rgba(16,185,129,.34)');
+    grad.addColorStop(1, 'rgba(16,185,129,0)');
+
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: labels, datasets: [{
+        data: values, borderColor: '#10b981', borderWidth: 2.5,
+        backgroundColor: grad, fill: true, tension: 0.45,
+        pointRadius: 0, pointHoverRadius: 0
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } },
+        elements: { line: { capBezierPoints: true } }
+      }
+    });
+  }
+  drawHeroChart();
+  KP.rates.onTick(drawHeroChart);
+});
+</script>
+</body>
+</html>

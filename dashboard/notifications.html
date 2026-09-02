@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notifications | Kaastro Pay</title>
+<meta name="theme-color" content="#10b981">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="notifications" data-title="Notifications" data-sub="Everything we told you">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <div class="col-lg-8">
+      <div class="card p-3 p-md-4">
+        <div class="filterbar mb-3">
+          <button class="chip-btn active" data-f="all">All</button>
+          <button class="chip-btn" data-f="unread">Unread <span class="opacity-75" id="unreadCount"></span></button>
+          <button class="chip-btn" data-f="transaction">Transactions</button>
+          <button class="chip-btn" data-f="price">Price alerts</button>
+          <button class="chip-btn" data-f="security">Security</button>
+          <button class="chip-btn" data-f="account">Account</button>
+          <button class="btn btn-soft btn-sm ms-auto" id="markAll">
+            <i class="fas fa-check-double me-1"></i>Mark all read</button>
+        </div>
+        <div id="list" style="padding-left:12px"></div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card p-3">
+        <div class="section-head"><h2>What you get told about</h2></div>
+        <div id="prefs"></div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="section-head"><h2>Delivery</h2></div>
+        <div id="channels"></div>
+        <div class="k-alert k-info mt-2">
+          <i class="fas fa-shield-halved"></i>
+          <div><b>Security alerts cannot be turned off.</b>
+            A new device signing in is something you always need to know about.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var D = KP.data;
+  var filter = 'all';
+
+  function paint() {
+    var rows = D.NOTIFS.filter(function (n) {
+      if (filter === 'all') return true;
+      if (filter === 'unread') return !D.isNotifRead(n);
+      return n.cat === filter;
+    });
+
+    $('#unreadCount').text(D.unreadNotifications() || '');
+
+    if (!rows.length) {
+      $('#list').html('<div class="empty-state"><i class="fas fa-bell-slash"></i>'
+        + '<p>Nothing here. You are all caught up.</p></div>');
+      return;
+    }
+
+    // Grouped by day the way the transaction list is.
+    var groups = {};
+    rows.forEach(function (n) { (groups[n.day] = groups[n.day] || []).push(n); });
+
+    $('#list').html(Object.keys(groups).map(function (day) {
+      return '<div class="day-label">' + day + '</div>'
+        + groups[day].map(function (n) {
+            var unread = !D.isNotifRead(n);
+            return '<div class="notif-row' + (unread ? ' unread' : '') + '" data-id="' + n.id + '">'
+              + '<div class="tx-icon tx-' + n.tone + '"><i class="fas ' + n.icon + '"></i></div>'
+              + '<div class="nr-body">'
+              + '<div class="nr-title">' + n.title
+              + (unread ? ' <span class="pill pill-success" style="font-size:.58rem">new</span>' : '') + '</div>'
+              + '<div class="nr-text">' + n.body + '</div>'
+              + (n.ref ? '<a href="transactions.html" class="small fw-bold text-primary-k">'
+                  + n.ref + ' <i class="fas fa-arrow-right ms-1"></i></a>' : '')
+              + '</div>'
+              + '<div class="nr-time">' + n.time + '</div></div>';
+          }).join('');
+    }).join(''));
+  }
+
+  $('.chip-btn').on('click', function () {
+    $('.chip-btn').removeClass('active');
+    $(this).addClass('active');
+    filter = $(this).data('f');
+    paint();
+  });
+
+  // Opening a notification marks it read, as it would in the real app.
+  $(document).on('click', '.notif-row', function () {
+    D.markNotifRead($(this).data('id'));
+    paint();
+    $('.sidebar .nav-link[href="notifications.html"] .badge, .offcanvas-sidebar .nav-link[href="notifications.html"] .badge')
+      .text(D.unreadNotifications() || '').toggle(!!D.unreadNotifications());
+  });
+
+  $('#markAll').on('click', function () {
+    D.markNotifRead(null);
+    paint();
+    KP.rails.toast('All notifications marked as read');
+    $('.sidebar .nav-link[href="notifications.html"] .badge, .top-navbar .badge').hide();
+  });
+
+  $('#prefs').html([
+    ['fa-arrow-down', 'qa-green', 'Deposits and payouts', 'Every credit and debit on your account', true, false],
+    ['fa-right-left', 'qa-purple', 'Trades and swaps', 'Confirmation with the rate that was applied', true, false],
+    ['fa-bolt', 'qa-amber', 'Bill payments', 'Airtime, data and electricity receipts', true, false],
+    ['fa-chart-line', 'qa-blue', 'Price alerts', 'When an asset you hold moves sharply', true, false],
+    ['fa-user-shield', 'qa-red', 'Security', 'New devices, PIN changes, password resets', true, true]
+  ].map(function (p) {
+    return '<div class="asset-row">'
+      + '<div class="qa-icon ' + p[1] + ' sm"><i class="fas ' + p[0] + '"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + p[2] + '</div>'
+      + '<div class="ar-sub">' + p[3] + '</div></div>'
+      + '<div class="form-check form-switch m-0">'
+      + '<input class="form-check-input" type="checkbox"' + (p[4] ? ' checked' : '')
+      + (p[5] ? ' disabled' : '') + '></div></div>';
+  }).join(''));
+
+  $('#channels').html([
+    ['fa-mobile-screen', 'qa-green', 'Push', 'On this device', true],
+    ['fa-envelope', 'qa-blue', 'Email', KP.data.ME.email, true],
+    ['fa-comment-sms', 'qa-amber', 'SMS', KP.data.ME.phone + ' · large amounts only', false]
+  ].map(function (c) {
+    return '<div class="asset-row">'
+      + '<div class="qa-icon ' + c[1] + ' sm"><i class="fas ' + c[0] + '"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + c[2] + '</div>'
+      + '<div class="ar-sub text-truncate">' + c[3] + '</div></div>'
+      + '<div class="form-check form-switch m-0">'
+      + '<input class="form-check-input" type="checkbox"' + (c[4] ? ' checked' : '') + '></div></div>';
+  }).join(''));
+
+  paint();
+});
+</script>
+</body>
+</html>
