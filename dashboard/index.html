@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard | Kaastro Pay</title>
 <meta name="theme-color" content="#10b981">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
 <script src="../js/boot.js" data-root="../"></script>
 </head>
@@ -85,6 +91,17 @@
       <div class="col-4"><a href="bills.html?s=electricity" class="biller-tile">
         <span class="qa-icon qa-amber"><i class="fas fa-bolt"></i></span><span>Electricity</span></a></div>
     </div>
+  </div>
+
+  <!-- Only shown while the app is not installed on this device. -->
+  <div class="install-cta mt-3" data-install-hide-when-installed hidden id="installRow">
+    <img src="../images/icon-maskable-192.png" width="44" height="44" alt="">
+    <div class="flex-grow-1 min-w-0">
+      <b>Put Kaastro Pay on your home screen</b>
+      <span>Opens full screen, works on a bad connection, and updates itself.</span>
+    </div>
+    <button class="btn btn-install btn-sm flex-shrink-0" data-install>
+      <i class="fas fa-download me-1"></i>Install</button>
   </div>
 
   <div class="row g-3 mt-0">
@@ -212,6 +229,13 @@ KP.ready(function () {
         + '<div class="ar-sub ' + (ch >= 0 ? 'text-up' : 'text-down') + '">'
         + (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch).toFixed(2) + '%</div></div></div>';
     }).join(''));
+  }
+
+  // The row stays hidden until we know the app is installable here.
+  if (window.KP && KP.pwa) {
+    KP.pwa.onChange(function () {
+      document.getElementById('installRow').hidden = KP.pwa.isInstalled();
+    });
   }
 
   function paintAll() { paintBalance(); paintPortfolio(); paintMarket(); }

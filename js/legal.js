@@ -1,24 +1,69 @@
-/* Shared chrome for the public content pages — nav, footer and the sticky
-   contents rail. Each page supplies only its own <section> content. */
+/* Shared chrome for the public pages — nav, the right-sliding mobile menu,
+   footer, and the sticky contents rail on the legal documents. */
 (function (global, $) {
     'use strict';
+
+    var LINKS = [
+        ['index.html#how', 'How it works', 'fa-route'],
+        ['index.html#markets', 'Markets', 'fa-earth-africa'],
+        ['index.html#security', 'Security', 'fa-shield-halved'],
+        ['index.html#app', 'Get the app', 'fa-mobile-screen'],
+        ['about.html', 'About', 'fa-users']
+    ];
+
+    var LEGAL = [
+        ['terms.html', 'Terms of service', 'fa-file-contract'],
+        ['privacy.html', 'Privacy policy', 'fa-lock'],
+        ['aml.html', 'AML compliance', 'fa-scale-balanced']
+    ];
 
     function nav(active) {
         return '<nav class="pub-nav"><div class="container d-flex align-items-center justify-content-between gap-2">'
             + '<a href="index.html" class="brand-logo">'
             + '<img src="images/logo.png" alt="Kaastro Pay" class="brand-img"></a>'
+
             + '<div class="d-none d-lg-flex align-items-center gap-1">'
-            + [['index.html#how', 'How it works'], ['index.html#markets', 'Markets'],
-               ['index.html#security', 'Security'], ['about.html', 'About']]
-                .map(function (l) {
-                    return '<a href="' + l[0] + '" class="nav-link-pub'
-                        + (l[1].toLowerCase() === active ? ' text-primary-k' : '') + '">' + l[1] + '</a>';
-                }).join('')
-            + '</div><div class="d-flex align-items-center gap-2">'
+            + LINKS.map(function (l) {
+                return '<a href="' + l[0] + '" class="nav-link-pub'
+                    + (l[1].toLowerCase() === active ? ' text-primary-k' : '') + '">' + l[1] + '</a>';
+            }).join('')
+            + '</div>'
+
+            + '<div class="d-flex align-items-center gap-2">'
             + '<button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>'
-            + '<a href="login.html" class="btn btn-soft btn-sm d-none d-sm-inline-block">Log in</a>'
-            + '<a href="register.html" class="btn btn-primary btn-sm">Get started</a>'
-            + '</div></div></nav>';
+            + '<a href="login.html" class="btn btn-soft btn-sm d-none d-lg-inline-block">Log in</a>'
+            + '<a href="register.html" class="btn btn-primary btn-sm d-none d-sm-inline-block">Get started</a>'
+            + '<button class="icon-btn pub-menu-btn" type="button" data-bs-toggle="offcanvas" '
+            + 'data-bs-target="#pubMenu" aria-label="Open menu"><i class="fas fa-bars"></i></button>'
+            + '</div></div></nav>'
+            + menu();
+    }
+
+    /* Slides in from the right — `offcanvas-end` is Bootstrap's right edge. */
+    function menu() {
+        return '<div class="offcanvas offcanvas-end offcanvas-pub" tabindex="-1" id="pubMenu" '
+            + 'aria-labelledby="pubMenuLabel">'
+            + '<div class="offcanvas-header">'
+            + '<a href="index.html" class="brand-logo ps-0" id="pubMenuLabel">'
+            + '<img src="images/logo.png" alt="Kaastro Pay" class="brand-img"></a>'
+            + '<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>'
+            + '</div>'
+            + '<div class="offcanvas-body">'
+            + LINKS.map(function (l) {
+                return '<a href="' + l[0] + '" class="pm-link"><i class="fas ' + l[2] + '"></i>' + l[1] + '</a>';
+            }).join('')
+            + '<div class="pm-section">Legal</div>'
+            + LEGAL.map(function (l) {
+                return '<a href="' + l[0] + '" class="pm-link"><i class="fas ' + l[2] + '"></i>' + l[1] + '</a>';
+            }).join('')
+            + '<div class="pm-foot">'
+            + '<button class="btn btn-primary w-100 mb-2" data-install '
+            + 'data-install-hide-when-installed><i class="fas fa-download me-2"></i>'
+            + '<span data-install-state>Install app</span></button>'
+            + '<a href="register.html" class="btn btn-soft w-100 mb-2">Create a free account</a>'
+            + '<a href="login.html" class="btn btn-soft w-100">Log in</a>'
+            + '<p class="pm-meta mb-0">Nigeria · Ghana · Kenya · Tanzania · Uganda</p>'
+            + '</div></div></div>';
     }
 
     function footer() {
@@ -26,11 +71,13 @@
             + '<div class="col-lg-4"><a href="index.html" class="brand-logo mb-3 ps-0">'
             + '<img src="images/logo.png" alt="Kaastro Pay" class="brand-img"></a>'
             + '<p style="max-width:36ch">Crypto to local currency across Africa. Built by traders, for traders.</p>'
-            + '<p class="mb-0" style="font-size:.78rem">Prototype build — no real funds move on this site.</p></div>'
+            + '<button class="btn btn-soft btn-sm" data-install data-install-hide-when-installed>'
+            + '<i class="fas fa-download me-1"></i><span data-install-state>Install app</span></button>'
+            + '<p class="mb-0 mt-3" style="font-size:.78rem">Prototype build — no real funds move on this site.</p></div>'
             + '<div class="col-6 col-lg-2"><h4>Product</h4>'
             + '<a href="register.html">Create account</a><a href="login.html">Log in</a>'
             + '<a href="index.html#how">How it works</a><a href="index.html#markets">Markets</a>'
-            + '<a href="index.html#security">Security</a></div>'
+            + '<a href="index.html#app">Get the app</a></div>'
             + '<div class="col-6 col-lg-2"><h4>Company</h4>'
             + '<a href="about.html">About us</a><a href="about.html#story">Our story</a>'
             + '<a href="about.html#contact">Contact</a><a href="aml.html">Compliance</a></div>'
@@ -67,6 +114,6 @@
     });
 
     global.KP = global.KP || {};
-    global.KP.legal = { nav: nav, footer: footer };
+    global.KP.legal = { nav: nav, footer: footer, menu: menu, LINKS: LINKS };
 
 })(window, jQuery);

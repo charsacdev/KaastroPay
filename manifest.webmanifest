@@ -1,0 +1,58 @@
+{
+  "name": "Kaastro Pay — Crypto in. Your own money out.",
+  "short_name": "Kaastro Pay",
+  "description": "Buy, sell and swap crypto and cash out to your local currency across Nigeria, Ghana, Kenya, Tanzania and Uganda.",
+  "id": "/",
+  "start_url": "./dashboard/index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
+  "background_color": "#0d1a15",
+  "theme_color": "#10b981",
+  "categories": ["finance", "business"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    { "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "images/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "images/screenshot-mobile.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Live rates and your balance on the Kaastro Pay home screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buy crypto",
+      "short_name": "Buy",
+      "url": "./dashboard/buy.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Sell crypto",
+      "short_name": "Sell",
+      "url": "./dashboard/sell.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Deposit crypto",
+      "short_name": "Deposit",
+      "url": "./dashboard/deposit-crypto.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Rates",
+      "short_name": "Rates",
+      "url": "./dashboard/rates.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

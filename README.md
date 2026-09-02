@@ -87,6 +87,42 @@ Admin → Rates take effect on the next quote.
 | Transaction PIN | Four-digit gate on every debit — sell, swap, and both withdrawal types. |
 | Manual confirmation | The provider-down fallback. Reason, notes and evidence are all mandatory; over $1,000 needs a second approver. Every action is attributed permanently and surfaces in Admin → Agents. |
 
+## Installable web app
+
+Kaastro Pay is a PWA. There is no app store build and no native wrapper — the
+site itself installs.
+
+```
+manifest.webmanifest    name, icons, standalone display, four app shortcuts
+sw.js                   service worker: precached shell, offline fallback
+offline.html            shown when a navigation fails with no cache
+js/pwa.js               registration, install button, iOS instructions
+images/icon-*.png       192/512 standard and maskable, generated from the logo
+```
+
+**Install buttons** sit in the desktop nav, in the mobile menu, in the "Get the
+app" section on the landing page, on the user dashboard and in Profile. They
+hide themselves once the app is installed.
+
+**Chrome and Edge** get the native prompt — we capture `beforeinstallprompt`
+so it fires from our own button rather than Chrome's infobar. **iOS Safari has
+no install API at all**, so the same button opens a sheet with the Share → Add
+to Home Screen steps, and warns you if you are not in Safari. If the native
+prompt throws or is dismissed, it falls back to those instructions rather than
+doing nothing.
+
+**Offline:** the app shell is precached, so pages open from the device. A
+banner appears when the connection drops, and a real offline page is served if
+a navigation fails with nothing cached. An update banner offers a reload when a
+new service worker is waiting.
+
+## Mobile menu
+
+The public pages have an offcanvas menu that **slides in from the right**
+(`offcanvas-end`) — main links, legal links, install button, and sign-in
+actions. The hamburger shows under `lg` and hides above it. The portal sidebar
+keeps its own left-hand offcanvas, which is the convention for a sidebar.
+
 ## Photography
 
 The landing page is built around people, not just UI shots. The hero layers a

@@ -620,3 +620,83 @@
     .photo-badge.tl { left: 10px; top: 10px; }
     .photo-badge.br { right: 10px; top: 10px; }
 }
+
+/* ==========================================================================
+   Public mobile menu — an offcanvas that slides in from the right.
+   ========================================================================== */
+
+.pub-menu-btn { display: none; }
+@media (max-width: 991.98px) { .pub-menu-btn { display: grid; } }
+
+.offcanvas-pub {
+    width: 300px !important;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border-color);
+}
+.offcanvas-pub .offcanvas-header { padding: 1rem 1.1rem 0.5rem; }
+.offcanvas-pub .offcanvas-body { padding: 0.5rem 1.1rem 1.5rem; display: flex; flex-direction: column; }
+.offcanvas-pub .pm-link {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.7rem 0.5rem;
+    color: var(--text-main); font-size: 0.94rem; font-weight: 700;
+    border-bottom: 1px solid var(--border-color);
+    transition: var(--transition);
+}
+.offcanvas-pub .pm-link i { width: 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+.offcanvas-pub .pm-link:hover { color: var(--primary-dark); }
+.offcanvas-pub .pm-link:hover i { color: var(--primary-dark); }
+[data-bs-theme="dark"] .offcanvas-pub .pm-link:hover,
+[data-bs-theme="dark"] .offcanvas-pub .pm-link:hover i { color: var(--primary-color); }
+.offcanvas-pub .pm-section {
+    font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.12em;
+    font-weight: 800; color: var(--text-muted); margin: 1.1rem 0 0.3rem; padding: 0 0.5rem;
+}
+.offcanvas-pub .pm-foot { margin-top: auto; padding-top: 1.2rem; }
+.offcanvas-pub .pm-meta {
+    font-size: 0.74rem; color: var(--text-muted); text-align: center; margin-top: 0.85rem;
+}
+
+/* Download-app section on the landing page */
+.app-band {
+    background: var(--hero-bg);
+    border: 1px solid var(--hero-edge);
+    border-radius: var(--radius-lg);
+    color: var(--hero-text);
+    padding: 2rem 1.75rem;
+    position: relative; overflow: hidden;
+}
+.app-band::after {
+    content: ""; position: absolute; top: -140px; right: -60px;
+    width: 460px; height: 380px;
+    background: radial-gradient(closest-side, rgba(16, 185, 129, .3), transparent);
+    pointer-events: none;
+}
+.app-band > * { position: relative; z-index: 1; }
+.app-band h2 { font-size: clamp(1.35rem, 3.6vw, 1.85rem); font-weight: 800; letter-spacing: -0.03em; margin: 0; }
+.app-band p { color: var(--hero-dim); max-width: 62ch; margin: 0.6rem 0 0; }
+.app-band .ab-points { display: grid; gap: 0.5rem; margin-top: 1.2rem; }
+.app-band .ab-points-2 { grid-template-columns: 1fr; }
+@media (min-width: 768px) {
+    .app-band .ab-points-2 { grid-template-columns: 1fr 1fr; gap: 0.55rem 2rem; }
+}
+.app-band .ab-points span {
+    display: flex; align-items: flex-start; gap: 0.55rem;
+    font-size: 0.85rem; color: var(--hero-dim); line-height: 1.5;
+}
+.app-band .ab-points i { color: #34d399; margin-top: 3px; }
+.app-icon-tile {
+    width: 76px; height: 76px; border-radius: 22px;
+    box-shadow: 0 16px 34px -14px rgba(0, 0, 0, .7);
+    flex: none;
+}
+
+.btn-install {
+    background: var(--primary-color); border-color: var(--primary-color); color: #04140e;
+    font-weight: 800;
+}
+.btn-install:hover, .btn-install:focus { background: #34d399; border-color: #34d399; color: #04140e; }
+.btn-ghost {
+    background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .22);
+    color: var(--hero-text); font-weight: 700;
+}
+.btn-ghost:hover { background: rgba(255, 255, 255, .16); color: var(--hero-text); }

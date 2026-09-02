@@ -42,6 +42,7 @@
     js(root + 'js/receipt.js');
     js(root + 'js/review.js');
     js(root + 'js/shell.js');
+    js(root + 'js/pwa.js');
 
     window.KP = window.KP || {};
     window.KP.ready = function (fn) {

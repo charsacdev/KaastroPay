@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profile & Security | Kaastro Pay</title>
 <meta name="theme-color" content="#10b981">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
 <script src="../js/boot.js" data-root="../"></script>
 </head>
@@ -56,6 +62,13 @@
           <div class="flex-grow-1 min-w-0"><div class="ar-name">Country &amp; currency</div>
             <div class="ar-sub" id="ctryLine"></div></div>
           <span class="pill pill-neutral" id="ctryPill"></span>
+        </div>
+        <div class="asset-row">
+          <div class="qa-icon qa-green sm"><i class="fas fa-mobile-screen"></i></div>
+          <div class="flex-grow-1 min-w-0"><div class="ar-name">Install the app</div>
+            <div class="ar-sub" id="installSub">Add Kaastro Pay to your home screen</div></div>
+          <button class="btn btn-soft btn-sm" data-install>
+            <span data-install-state>Install app</span></button>
         </div>
         <div class="asset-row">
           <div class="qa-icon qa-slate sm"><i class="fas fa-bell"></i></div>
@@ -161,6 +174,14 @@ KP.ready(function () {
   $('#pTier').addClass('tier-' + me.tier).text('Tier ' + me.tier);
   $('#ctryLine').text(C.name + ' · ' + C.currency);
   $('#ctryPill').text(C.flag + ' ' + C.code);
+  if (window.KP && KP.pwa) {
+    KP.pwa.onChange(function () {
+      $('#installSub').text(KP.pwa.isInstalled()
+        ? 'Already installed on this device'
+        : 'Add Kaastro Pay to your home screen');
+    });
+  }
+
   $('#themeSwitch').prop('checked', KP.rails.theme.current() === 'dark')
     .on('change', function () {
       KP.rails.theme.apply($(this).is(':checked') ? 'dark' : 'light');
