@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Home | Kaastro Pay</title>
-<meta name="theme-color" content="#10b981">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,7 +18,6 @@
 
 <main class="main-content">
   <p class="greet" id="greet"></p>
-  <div id="tierBanner"></div>
 
   <div class="row g-3">
     <div class="col-lg-5">
@@ -135,14 +134,6 @@ KP.ready(function () {
   } else {
     $('#vaLine').html('<i class="fas fa-mobile-screen me-1"></i>' + C.fundingLabel + ' · ' + C.banks[0]);
     $('#vaCopy').hide();
-  }
-
-  if (me.tier < 3) {
-    $('#tierBanner').html('<div class="tier-banner">'
-      + '<span class="qa-icon qa-green sm"><i class="fas fa-shield-halved"></i></span>'
-      + '<span class="flex-grow-1 min-w-0"><b>Tier ' + me.tier + ' account</b>'
-      + '<span>Upgrade to increase your transaction limit</span></span>'
-      + '<a href="verification.html" class="btn btn-primary btn-sm flex-shrink-0">Upgrade</a></div>');
   }
 
   /* ---------------- promo slider ---------------- */

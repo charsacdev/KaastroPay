@@ -64,6 +64,151 @@
        from one implementation. */
     var qSeq = 0;
 
+    /* ===================== Stat bar with a date range =====================
+       Every operational queue gets the same header: a from/to range with a few
+       presets, and stat cards computed over exactly the rows that range selects.
+       The cards and the table below therefore always agree — a stat that counts
+       rows the table is not showing is worse than no stat at all.
+
+       Rows carry `daysAgo` relative to KP.data.REF, which is the mock's idea of
+       today, so the range is resolved against that rather than the wall clock. */
+
+    function refToday() {
+        var d = new Date((KP.data.REF || new Date()).getTime());
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+    function dayOf(r) {
+        var d = new Date(refToday().getTime());
+        d.setDate(d.getDate() - (r.daysAgo || 0));
+        return d;
+    }
+    function iso(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+            + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function parseISO(s) {
+        var p = String(s || '').split('-');
+        if (p.length !== 3) return null;
+        var d = new Date(+p[0], +p[1] - 1, +p[2]);
+        d.setHours(0, 0, 0, 0);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    var PRESETS = [
+        { id: '7',   label: '7 days',  days: 6 },
+        { id: '30',  label: '30 days', days: 29 },
+        { id: '90',  label: '90 days', days: 89 },
+        { id: 'all', label: 'All time', days: null }
+    ];
+
+    /* opts: { el, source(), stats: [{label, icon, tone, value(rows), sub(rows)}],
+               preset, onChange() } */
+    function statBar(opts) {
+        var $el = opts.el;
+        var today = refToday();
+        var state = { preset: opts.preset || '30', from: null, to: null };
+
+        function applyPreset(id) {
+            var p = PRESETS.filter(function (x) { return x.id === id; })[0];
+            state.preset = id;
+            if (!p || p.days == null) { state.from = null; state.to = null; return; }
+            var from = new Date(today.getTime());
+            from.setDate(from.getDate() - p.days);
+            state.from = from;
+            state.to = new Date(today.getTime());
+        }
+        applyPreset(state.preset);
+
+        function inRange(r) {
+            if (!state.from && !state.to) return true;
+            var d = dayOf(r);
+            if (state.from && d < state.from) return false;
+            if (state.to && d > state.to) return false;
+            return true;
+        }
+
+        /* What every consumer calls to get the rows the range selects. */
+        function filter(rows) { return (rows || []).filter(inRange); }
+
+        function rangeLabel() {
+            if (!state.from && !state.to) return 'All time';
+            var f = state.from ? state.from.toDateString().slice(4) : '…';
+            var t = state.to ? state.to.toDateString().slice(4) : '…';
+            return f + ' – ' + t;
+        }
+
+        function paint() {
+            var rows = filter(opts.source());
+            $el.html(
+                '<div class="card p-3 p-md-4 mb-3">'
+                + '<div class="section-head"><h2>' + (opts.title || 'Overview') + '</h2>'
+                + '<span class="small text-muted">' + rangeLabel() + ' &middot; '
+                + rows.length + ' record' + (rows.length === 1 ? '' : 's') + '</span></div>'
+
+                + '<div class="daterange mb-3">'
+                + '<div class="dr-presets">'
+                + PRESETS.map(function (p) {
+                    return '<button class="chip-btn' + (p.id === state.preset ? ' active' : '')
+                        + '" data-preset="' + p.id + '">' + p.label + '</button>';
+                }).join('')
+                + '</div>'
+                + '<div class="dr-fields">'
+                + '<label class="dr-lab">From</label>'
+                + '<input type="date" class="form-control form-control-sm" id="' + uid + 'From" '
+                + 'value="' + (state.from ? iso(state.from) : '') + '" max="' + iso(today) + '">'
+                + '<label class="dr-lab">To</label>'
+                + '<input type="date" class="form-control form-control-sm" id="' + uid + 'To" '
+                + 'value="' + (state.to ? iso(state.to) : '') + '" max="' + iso(today) + '">'
+                + '<button class="btn btn-sm btn-soft" data-range-clear>'
+                + '<i class="fas fa-rotate-left"></i></button>'
+                + '</div></div>'
+
+                + '<div class="row g-2">'
+                + opts.stats.map(function (s) {
+                    return '<div class="col-6 col-lg' + (opts.stats.length > 3 ? '-3' : '-4') + '">'
+                        + '<div class="card figure-tile h-100">'
+                        + '<span class="qa-icon ' + (s.tone || 'qa-green') + ' sm">'
+                        + '<i class="fas ' + s.icon + '"></i></span>'
+                        + '<span class="ft-label">' + s.label + '</span>'
+                        + '<b class="ft-value">' + s.value(rows) + '</b>'
+                        + (s.sub ? '<span class="ft-sub">' + s.sub(rows) + '</span>' : '')
+                        + '</div></div>';
+                }).join('')
+                + '</div></div>'
+            );
+        }
+
+        var uid = 'sb' + (++qSeq);
+
+        $el.on('click', '[data-preset]', function () {
+            applyPreset($(this).data('preset') + '');
+            paint();
+            opts.onChange && opts.onChange();
+        });
+
+        $el.on('change', 'input[type="date"]', function () {
+            var f = parseISO($('#' + uid + 'From').val());
+            var t = parseISO($('#' + uid + 'To').val());
+            /* A backwards range returns nothing and looks like a bug, so swap
+               rather than silently showing an empty table. */
+            if (f && t && f > t) { var s = f; f = t; t = s; }
+            state.from = f; state.to = t; state.preset = 'custom';
+            paint();
+            opts.onChange && opts.onChange();
+        });
+
+        $el.on('click', '[data-range-clear]', function () {
+            applyPreset('30');
+            paint();
+            opts.onChange && opts.onChange();
+        });
+
+        paint();
+
+        return { filter: filter, repaint: paint, range: function () { return state; } };
+    }
+
     function queue(opts) {
         var $el = opts.el;
         var id = 'dt' + (++qSeq);
@@ -148,23 +293,65 @@
         };
     }
 
-    /* Approve / reject / manual buttons, gated by role and shift. */
+    /* Approve / reject / manual / escalate, gated by role and shift.
+       Escalate is offered to agents only: it is how an agent says "I am not
+       confident enough to credit this" and hands the decision to an admin,
+       who already has the authority to just do it. */
     function actions(r, role) {
+        var k = r.ref || r.id;
+
+        /* A block outranks everything else on the row — it is the reason the
+           other buttons must not be reachable. */
+        var blocked = KP.rails.txblock.get(k);
+        if (blocked) {
+            return '<div class="d-flex gap-1 justify-content-end align-items-center" data-ref="' + k + '">'
+                + '<span class="pill pill-danger" title="' + blocked.reason + '">'
+                + '<i class="fas fa-ban"></i>Blocked</span>'
+                + (role === 'admin'
+                    ? '<button class="btn btn-sm btn-soft kp-unblock" title="Lift the block">'
+                      + '<i class="fas fa-lock-open"></i></button>' : '')
+                + '</div>';
+        }
+
         var terminal = ['successful', 'approved', 'rejected', 'failed'].indexOf(r.status) !== -1;
         if (terminal) return '<span class="text-muted" style="font-size:.75rem">—</span>';
-        var k = r.ref || r.id;
+
+        var escalated = (r.escalation || '') !== '';
+        if (escalated) {
+            return '<div class="d-flex gap-1 justify-content-end align-items-center" data-ref="' + k + '">'
+                + '<span class="pill pill-manual"><i class="fas fa-arrow-up-right-dots"></i>'
+                + 'With admin</span></div>';
+        }
         return '<div class="d-flex gap-1 justify-content-end" data-ref="' + k + '">'
             + '<button class="btn btn-sm btn-primary kp-approve" title="Approve"><i class="fas fa-check"></i></button>'
             + '<button class="btn btn-sm btn-soft text-danger kp-reject" title="Reject"><i class="fas fa-xmark"></i></button>'
             + '<button class="btn btn-sm btn-soft kp-manual" title="Confirm manually"><i class="fas fa-hand"></i></button>'
+            + (role === 'agent'
+                ? '<button class="btn btn-sm btn-soft kp-escalate" title="Escalate to an admin">'
+                  + '<i class="fas fa-arrow-up-right-dots"></i></button>' : '')
+            + (role === 'admin'
+                ? '<button class="btn btn-sm btn-soft text-danger kp-block" title="Block this transaction">'
+                  + '<i class="fas fa-ban"></i></button>' : '')
             + '</div>';
     }
 
     /* Wire up the three action buttons for a queue. */
     function wireActions($el, q, role, describe) {
+        /* Nothing settles while a block stands. The row buttons are hidden for
+           a blocked transaction, but a stale DOM or a reused queue could still
+           deliver the click, and a blocked payment slipping through is exactly
+           the failure the block exists to prevent. */
+        function blockedGuard(r) {
+            var b = KP.rails.txblock.get(r.ref || r.id);
+            if (!b) return false;
+            KP.rails.toast('Blocked: ' + b.reason + '. An admin must lift it first.', 'danger');
+            return true;
+        }
+
         $el.on('click', '.kp-approve', function () {
             var r = q.rowOf(this);
             if (!r) return;
+            if (blockedGuard(r)) return;
             r.status = 'successful';
             KP.rails.toast('Approved ' + r.ref + ' — released to the automated rail.');
             q.repaint();
@@ -173,6 +360,7 @@
         $el.on('click', '.kp-reject', function () {
             var r = q.rowOf(this);
             if (!r) return;
+            if (blockedGuard(r)) return;
             r.status = 'rejected';
             KP.rails.toast('Rejected ' + r.ref + '. The user has been notified.', 'warning');
             q.repaint();
@@ -181,6 +369,7 @@
         $el.on('click', '.kp-manual', function () {
             var r = q.rowOf(this);
             if (!r) return;
+            if (blockedGuard(r)) return;
             var d = describe(r);
             KP.rails.manualConfirm({
                 ref: r.ref, who: r.user.name, what: d.what, amount: d.amount, usd: d.usd,
@@ -188,6 +377,41 @@
             }).then(function (entry) {
                 r.status = 'successful';
                 r.manual = true;
+                q.repaint();
+            });
+        });
+
+        /* Escalation parks the row rather than deciding it. The status is left
+           alone so the queue still shows it as outstanding — it is, just not by
+           this agent any more. */
+        /* Blocking and lifting are admin-only, and the row buttons only render
+           for admins — but guard here too, since a queue could be reused. */
+        $el.on('click', '.kp-block', function () {
+            var r = q.rowOf(this);
+            if (!r || role !== 'admin') return;
+            var d = describe(r);
+            KP.rails.blockTransaction({
+                ref: r.ref, who: r.user.name, what: d.what, amount: d.amount,
+                actor: 'Admin User'
+            }).then(function () { q.repaint(); });
+        });
+
+        $el.on('click', '.kp-unblock', function () {
+            var r = q.rowOf(this);
+            if (!r || role !== 'admin') return;
+            KP.rails.unblockTransaction(r.ref, 'Admin User').then(function () { q.repaint(); });
+        });
+
+        $el.on('click', '.kp-escalate', function () {
+            var r = q.rowOf(this);
+            if (!r) return;
+            var d = describe(r);
+            KP.rails.escalate({
+                ref: r.ref, who: r.user.name, what: d.what, amount: d.amount, usd: d.usd,
+                kind: d.kind || 'manual',
+                actor: KP.rails.myAgent() ? KP.rails.myAgent().name : 'James Bond'
+            }).then(function (entry) {
+                r.escalation = entry.id;
                 q.repaint();
             });
         });
@@ -300,7 +524,7 @@
     global.KP.bo = {
         pill: pill, userCell: userCell, assetCell: assetCell, trunc: trunc,
         statTile: statTile, stripDots: stripDots,
-        queue: queue, actions: actions, wireActions: wireActions,
+        queue: queue, statBar: statBar, actions: actions, wireActions: wireActions,
         barChart: barChart, donut: donut
     };
 

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contacts | Kaastro Pay</title>
+<meta name="theme-color" content="#0A0A0A">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="contacts" data-title="Contacts" data-sub="People you have paid, and anyone you add">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <div class="col-lg-7">
+      <div class="card p-3 p-md-4">
+        <div class="kp-search mb-3">
+          <i class="fas fa-magnifying-glass"></i>
+          <input class="form-control" id="q" placeholder="Search name, handle, bank or account" autocomplete="off">
+        </div>
+
+        <div class="filterbar mb-3">
+          <button class="chip-btn active" data-f="all">All</button>
+          <button class="chip-btn" data-f="kaastro">Kaastro Pay</button>
+          <button class="chip-btn" data-f="bank">Bank Accounts</button>
+          <button class="chip-btn" data-f="fav">Favourites</button>
+          <button class="chip-btn" data-f="manual">Added by me</button>
+        </div>
+
+        <div id="favWrap">
+          <div class="section-head"><h2>Favourites</h2></div>
+          <div class="fav-rail mb-2" id="favRail"></div>
+        </div>
+
+        <div class="section-head mt-3"><h2 id="listHead">Recent Recipients</h2>
+          <span class="small text-muted" id="listCount"></span></div>
+        <div id="list"></div>
+
+        <button class="btn btn-primary w-100 mt-3" id="addContact">
+          <i class="fas fa-user-plus me-1"></i>Add Contact</button>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card p-3">
+        <div class="section-head"><h2>Where these come from</h2></div>
+        <div class="k-alert k-info">
+          <i class="fas fa-address-book"></i>
+          <div><b class="hd">Nothing is read from your phone.</b>
+            A contact appears here for one of two reasons: you sent money to them,
+            so we kept them for next time, or you added them yourself. Kaastro Pay
+            never imports your device's address book.</div>
+        </div>
+        <div class="summary-rows mt-3">
+          <div class="sr"><span>From a payment</span><span id="cFromPaid">0</span></div>
+          <div class="sr"><span>Added by you</span><span id="cFromManual">0</span></div>
+          <div class="sr total"><span>Total saved</span><span id="cTotal">0</span></div>
+        </div>
+      </div>
+
+      <div class="card p-3 mt-3">
+        <div class="section-head"><h2>Saved Bank Accounts</h2>
+          <span class="small text-muted" id="bankCount"></span></div>
+        <div id="banks"></div>
+        <div class="k-alert k-ok mt-3">
+          <i class="fas fa-shield-halved"></i>
+          <div>Every bank account is <b>name-verified</b> with the bank before it can be
+            saved. Confirm the recipient before you send &mdash; a transfer cannot be
+            reversed once the receiving bank accepts it.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var D = KP.data;
+  var filter = 'all', term = '';
+
+  /* One avatar renderer for the rail and the list, so a contact looks the same
+     everywhere. Bank beneficiaries have no photo and fall back to initials. */
+  function avatar(c, size) {
+    var cls = 'kp-avatar' + (size ? ' ' + size : '') + (c.kind === 'kaastro' ? ' ring' : '');
+    var inner = c.avatar
+      ? '<img src="../images/' + c.avatar + '" alt="">'
+      : (c.bank || c.name).slice(0, 2).toUpperCase();
+    return '<span class="' + cls + '">' + inner
+      + (c.verified ? '<span class="av-check"><i class="fas fa-check"></i></span>' : '')
+      + '</span>';
+  }
+
+  function subtitle(c) {
+    var who = c.kind === 'kaastro'
+      ? 'Kaastro Pay &nbsp;&bull;&nbsp; ' + c.handle
+      : c.bank + ' &nbsp;&bull;&nbsp; &bull;&bull;&bull;&bull; ' + c.number.slice(-4);
+    /* Say how the contact got here — it is the thing this screen is about. */
+    var how = c.source === 'manual'
+      ? 'Added by you'
+      : c.times > 1 ? 'Paid ' + c.times + ' times' : 'Paid once';
+    return who + '<span class="cr-how">' + how + '</span>';
+  }
+
+  function matches(c) {
+    if (!term) return true;
+    var hay = [c.name, c.handle, c.phone, c.bank, c.number, c.nickname]
+      .filter(Boolean).join(' ').toLowerCase();
+    return hay.indexOf(term) > -1;
+  }
+
+  function rows() {
+    return D.CONTACTS.filter(function (c) {
+      if (!matches(c)) return false;
+      if (filter === 'all') return true;
+      if (filter === 'fav') return c.favourite;
+      if (filter === 'manual') return c.source === 'manual';
+      return c.kind === filter;
+    }).sort(function (a, b) { return a.lastAgo - b.lastAgo; });
+  }
+
+  function paintCounts() {
+    var all = D.CONTACTS;
+    $('#cFromPaid').text(all.filter(function (c) { return c.source === 'paid'; }).length);
+    $('#cFromManual').text(all.filter(function (c) { return c.source === 'manual'; }).length);
+    $('#cTotal').text(all.length);
+    var banks = D.contacts('bank');
+    $('#bankCount').text(banks.length + (banks.length === 1 ? ' account' : ' accounts'));
+    $('#banks').html(banks.map(function (c) {
+      return '<div class="asset-row">' + avatar(c, 'sm')
+        + '<div class="flex-grow-1 min-w-0"><div class="ar-name text-truncate">' + c.bank + '</div>'
+        + '<div class="ar-sub">&bull;&bull;&bull;&bull; ' + c.number.slice(-4) + ' &middot; ' + c.name + '</div></div>'
+        + '<i class="fas fa-chevron-right text-muted"></i></div>';
+    }).join(''));
+  }
+
+  function paint() {
+    var favs = D.favourites().filter(matches);
+
+    /* The rail is a shortcut, not a filter result. Once the user is searching
+       or has narrowed the list it would only repeat what is underneath it. */
+    var showRail = filter === 'all' && !term && favs.length;
+    $('#favWrap').toggle(!!showRail);
+    if (showRail) {
+      $('#favRail').html(favs.map(function (c) {
+        return '<a href="transfer.html?to=' + c.id + '" class="fav" data-id="' + c.id + '">'
+          + avatar(c, 'lg')
+          + '<span class="fav-name">' + c.name.split(' ')[0] + '</span></a>';
+      }).join('')
+        + '<button class="fav fav-add" id="addFav"><span class="kp-avatar lg">'
+        + '<i class="fas fa-plus"></i></span><span class="fav-name">Add</span></button>');
+    }
+
+    var list = rows();
+    $('#listHead').text(
+      filter === 'manual' ? 'Added by you'
+        : filter === 'all' && !term ? 'Recent Recipients' : 'Contacts');
+    $('#listCount').text(list.length ? list.length + (list.length === 1 ? ' contact' : ' contacts') : '');
+
+    if (!list.length) {
+      $('#list').html('<div class="empty-state"><i class="fas fa-user-slash"></i>'
+        + '<p>' + (term ? 'No contact matches that search.'
+                        : 'Nothing here yet. Pay someone, or add them yourself.') + '</p></div>');
+      return;
+    }
+
+    $('#list').html(list.map(function (c) {
+      return '<div class="contact-row" data-id="' + c.id + '">'
+        + avatar(c)
+        + '<a href="transfer.html?to=' + c.id + '" class="flex-grow-1 min-w-0 stretched-none">'
+        + '<span class="cr-name d-block text-truncate">' + c.name + '</span>'
+        + '<span class="cr-sub d-block text-truncate">' + subtitle(c) + '</span></a>'
+        + '<button class="cr-fav" data-fav="' + c.id + '" '
+        + 'title="' + (c.favourite ? 'Remove from favourites' : 'Add to favourites') + '">'
+        + '<i class="' + (c.favourite ? 'fas' : 'far') + ' fa-star cr-star"></i></button>'
+        + '<button class="cr-fav" data-del="' + c.id + '" title="Remove contact">'
+        + '<i class="fas fa-trash-can text-muted"></i></button>'
+        + '</div>';
+    }).join(''));
+  }
+
+  function repaint() { paint(); paintCounts(); }
+
+  $('.chip-btn').on('click', function () {
+    $('.chip-btn').removeClass('active');
+    $(this).addClass('active');
+    filter = $(this).data('f');
+    paint();
+  });
+
+  $('#q').on('input', function () {
+    term = $(this).val().trim().toLowerCase();
+    paint();
+  });
+
+  $(document).on('click', '[data-fav]', function (e) {
+    e.preventDefault();
+    D.toggleFavourite($(this).data('fav'));
+    repaint();
+  });
+
+  $(document).on('click', '[data-del]', function (e) {
+    e.preventDefault();
+    var c = D.findContact($(this).data('del'));
+    if (!c) return;
+    KP.rails.sheet('Remove ' + c.name + '?',
+      '<p class="text-muted" style="font-size:.83rem">They come off your contact list. '
+      + 'Past payments and receipts are unaffected, and you can add them again later.</p>'
+      + '<div class="d-grid gap-2">'
+      + '<button class="btn btn-danger" data-delyes="' + c.id + '">Remove contact</button>'
+      + '<button class="btn btn-soft" data-bs-dismiss="modal">Keep contact</button></div>');
+  });
+
+  $(document).on('click', '[data-delyes]', function () {
+    D.removeContact($(this).data('delyes'));
+    KP.rails.closeSheet();
+    KP.rails.toast('Contact removed.');
+    repaint();
+  });
+
+  /* --- manual add --- */
+
+  function addSheet(kind) {
+    var isK = kind === 'kaastro';
+    KP.rails.sheet(isK ? 'Add a Kaastro Pay user' : 'Add a bank account',
+      (isK
+        ? '<p class="text-muted" style="font-size:.83rem">Look someone up by their '
+          + 'Kaastro handle or phone number.</p>'
+          + '<label class="form-label">Full name</label>'
+          + '<input class="form-control mb-2" id="acName" placeholder="e.g. Ngozi Eze">'
+          + '<label class="form-label">Handle or phone</label>'
+          + '<input class="form-control mb-3" id="acHandle" placeholder="@ngozi or 0803 000 0000">'
+        : '<p class="text-muted" style="font-size:.83rem">We check the account name '
+          + 'with the bank before it is saved.</p>'
+          + '<label class="form-label">Bank</label>'
+          + '<select class="form-select mb-2" id="acBank">'
+          + ['GTBank', 'Access Bank', 'Zenith Bank', 'Kuda Microfinance Bank',
+             'Opay', 'First Bank', 'UBA', 'Providus Bank'].map(function (b) {
+              return '<option>' + b + '</option>'; }).join('') + '</select>'
+          + '<label class="form-label">Account number</label>'
+          + '<input class="form-control mb-2" id="acNumber" inputmode="numeric" '
+          + 'maxlength="10" placeholder="10 digits">'
+          + '<label class="form-label">Account name</label>'
+          + '<input class="form-control mb-2" id="acName" placeholder="As it appears at the bank">'
+          + '<label class="form-label">Nickname <span class="text-muted">(optional)</span></label>'
+          + '<input class="form-control mb-3" id="acNick" placeholder="e.g. Rent account">')
+      + '<div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="acFav">'
+      + '<label class="form-check-label" for="acFav" style="font-size:.83rem">'
+      + 'Add to favourites</label></div>'
+      + '<button class="btn btn-primary w-100" data-save="' + kind + '">Save contact</button>');
+  }
+
+  $(document).on('click', '#addContact, #addFav', function (e) {
+    e.preventDefault();
+    KP.rails.sheet('Add a contact',
+      '<p class="text-muted" style="font-size:.83rem">Choose what you are saving. '
+      + 'A Kaastro handle pays instantly; a bank account is verified with the bank first.</p>'
+      + '<div class="d-grid gap-2">'
+      + '<button class="btn btn-soft text-start" data-add="kaastro">'
+      + '<i class="fas fa-at me-2 text-primary-k"></i>Kaastro Pay user</button>'
+      + '<button class="btn btn-soft text-start" data-add="bank">'
+      + '<i class="fas fa-building-columns me-2 text-primary-k"></i>Bank account</button>'
+      + '</div>');
+  });
+
+  $(document).on('click', '[data-add]', function () {
+    var kind = $(this).data('add');
+    KP.rails.closeSheet();
+    setTimeout(function () { addSheet(kind); }, 260);
+  });
+
+  $(document).on('click', '[data-save]', function () {
+    var kind = $(this).data('save');
+    var name = ($('#acName').val() || '').trim();
+    if (!name) { KP.rails.toast('Enter the name.', 'danger'); return; }
+
+    if (kind === 'kaastro') {
+      var h = ($('#acHandle').val() || '').trim();
+      if (!h) { KP.rails.toast('Enter a handle or phone number.', 'danger'); return; }
+      D.addContact({ kind: 'kaastro', name: name, handle: h, favourite: $('#acFav').is(':checked') });
+    } else {
+      var num = ($('#acNumber').val() || '').trim();
+      if (num.length !== 10) { KP.rails.toast('An account number is 10 digits.', 'danger'); return; }
+      D.addContact({
+        kind: 'bank', name: name, bank: $('#acBank').val(), number: num,
+        nickname: ($('#acNick').val() || '').trim(), favourite: $('#acFav').is(':checked')
+      });
+    }
+
+    KP.rails.closeSheet();
+    KP.rails.toast(name + ' added to your contacts.');
+    repaint();
+  });
+
+  repaint();
+});
+</script>
+</body>
+</html>

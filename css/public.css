@@ -694,3 +694,443 @@
     color: var(--hero-text); font-weight: 700;
 }
 .btn-ghost:hover { background: rgba(255, 255, 255, .16); color: var(--hero-text); }
+
+/* ==========================================================================
+   Home page
+   Its own design system, namespaced .hp- so the legal and auth pages keep the
+   older .sec/.doc styles. Three ideas hold it together:
+
+     1. One display face (Sora) at a large, tightly-tracked size, against body
+        copy that stays small. The contrast is the whole hierarchy.
+     2. A spacing scale rather than ad-hoc margins, so the rhythm survives
+        section reordering.
+     3. Cream and near-black alternate, and each dark block is a full bleed —
+        the page reads as a stack of chapters, not a stack of cards.
+   ========================================================================== */
+
+.hp {
+    --hp-cream: #F4F1E9;
+    --hp-cream-2: #EDE9DF;
+    --hp-ink: #12130E;
+    --hp-dim: #5D6157;
+    --hp-line: #DFDACE;
+    --hp-green: #0E7A3C;
+    --hp-green-lt: #1FA355;
+    --hp-dark: #08090A;
+    --hp-dark-2: #101214;
+
+    /* spacing scale */
+    --s-1: 0.5rem;  --s-2: 0.85rem; --s-3: 1.35rem;
+    --s-4: 2.1rem;  --s-5: 3.4rem;  --s-6: 5.2rem;
+
+    background: var(--hp-cream);
+    color: var(--hp-ink);
+    /* clip, not hidden: hidden on an ancestor silently kills position:sticky,
+       which is what holds the nav up. clip contains the decorative glows
+       without creating a scroll container. */
+    overflow-x: clip;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.hp .display { font-family: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif; }
+
+/* A whisper of grain stops the large flat fields reading as flat colour. */
+.hp::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: .55; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+}
+.hp > * { position: relative; z-index: 1; }
+
+.hp section { position: relative; }
+.hp .wrap { max-width: 1220px; margin: 0 auto; padding-inline: clamp(1.15rem, 5vw, 2.5rem); }
+.hp .bleed-dark { background: var(--hp-dark); color: #fff; }
+
+/* --- reveal on scroll ---
+   The hidden state is applied only once JS has confirmed it can un-hide things
+   (body gets .rise-on). Without scripting, or if this block never runs, every
+   section is simply visible — a decorative animation must never be able to
+   leave content blank. */
+.hp.rise-on [data-rise] {
+    opacity: 0; transform: translateY(18px);
+    transition: opacity .7s ease, transform .7s cubic-bezier(.22,1,.36,1);
+}
+.hp.rise-on [data-rise].seen { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+    .hp.rise-on [data-rise] { opacity: 1; transform: none; transition: none; }
+}
+
+/* ============================== nav ============================== */
+.hp-nav {
+    position: sticky; top: 0; z-index: 60;
+    background: rgba(244, 241, 233, .8);
+    backdrop-filter: saturate(160%) blur(14px);
+    border-bottom: 1px solid transparent;
+    transition: border-color .25s, background .25s;
+}
+.hp-nav.stuck { border-bottom-color: var(--hp-line); background: rgba(244, 241, 233, .94); }
+.hp-nav .wrap { display: flex; align-items: center; gap: var(--s-2); height: 66px; }
+/* The logo file already carries the wordmark, so nothing is set beside it.
+   The asset is cropped to its ink, which is why a 34px height reads as 34px
+   of artwork rather than half a box of transparent padding. */
+.hp-logo { display: flex; align-items: center; text-decoration: none; }
+.hp-logo img { height: 34px; width: auto; display: block; }
+.hp-nav .hp-spacer { flex: 1; }
+.hp-nav .hp-links { display: none; gap: 1.6rem; }
+.hp-nav .hp-links a { color: var(--hp-dim); font-size: .84rem; font-weight: 600; text-decoration: none; }
+.hp-nav .hp-links a:hover { color: var(--hp-ink); }
+.hp-nav a.hp-login { color: var(--hp-ink); font-size: .84rem; font-weight: 700; text-decoration: none; }
+
+/* --- buttons --- */
+.btn-lime, .btn-outline-ink, .btn-ink {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    border-radius: 999px; font-weight: 700; font-size: .86rem;
+    padding: .68rem 1.4rem; text-decoration: none;
+    transition: transform .18s cubic-bezier(.22,1,.36,1), box-shadow .18s, background .18s;
+    white-space: nowrap;
+}
+.btn-lime { background: var(--lemon); color: var(--lemon-ink); border: 1px solid var(--lemon); box-shadow: 0 10px 22px -12px rgba(178,251,12,.9); }
+.btn-lime:hover { background: var(--lemon-hover); border-color: var(--lemon-hover); color: var(--lemon-ink); transform: translateY(-2px); box-shadow: 0 16px 30px -14px rgba(178,251,12,1); }
+.btn-outline-ink { background: transparent; color: var(--hp-ink); border: 1px solid rgba(18,19,14,.25); }
+.btn-outline-ink:hover { background: var(--hp-ink); color: var(--hp-cream); border-color: var(--hp-ink); transform: translateY(-2px); }
+.btn-ink { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.22); }
+.btn-ink:hover { background: rgba(255,255,255,.18); color: #fff; transform: translateY(-2px); }
+.btn-lg { padding: .85rem 1.9rem; font-size: .92rem; }
+
+/* --- type --- */
+.hp-eyebrow {
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-size: .66rem; font-weight: 800; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--hp-green);
+}
+.hp-eyebrow::before { content: ''; width: 22px; height: 1px; background: currentColor; opacity: .55; }
+.hp-h1 {
+    font-size: clamp(2.4rem, 6.2vw, 3.9rem);
+    font-weight: 700; letter-spacing: -.045em; line-height: 1;
+    text-wrap: balance;
+    margin: var(--s-3) 0 0;
+}
+.hp-h2 {
+    font-size: clamp(1.9rem, 4.4vw, 2.85rem);
+    font-weight: 700; letter-spacing: -.04em; line-height: 1.05;
+    text-wrap: balance;
+    margin: 0 0 var(--s-3);
+}
+.hp-h3 { font-size: 1.02rem; font-weight: 800; letter-spacing: -.015em; margin: 0 0 .2rem; }
+.hp-lede { color: var(--hp-dim); font-size: 1rem; line-height: 1.6; max-width: 38ch; margin: var(--s-2) 0 0; }
+.hp-link { color: var(--hp-ink); font-weight: 700; font-size: .88rem; text-decoration: none; display: inline-flex; align-items: center; gap: .45rem; }
+.hp-link i { transition: transform .22s; }
+.hp-link:hover { color: var(--hp-green); }
+.hp-link:hover i { transform: translateX(4px); }
+
+/* ============================== hero ============================== */
+.hp-hero { padding: var(--s-5) 0 var(--s-6); overflow: hidden; }
+/* A soft green bloom behind the copy, so the cream is not dead flat. */
+.hp-hero::after {
+    content: ''; position: absolute; z-index: 0;
+    width: 70vw; height: 70vw; max-width: 720px; max-height: 720px;
+    left: -22%; top: -28%;
+    background: radial-gradient(circle, rgba(31,163,85,.16), transparent 62%);
+    pointer-events: none;
+}
+.hp-hero .wrap { position: relative; z-index: 1; }
+.hp-hero-cta { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-4); }
+
+.hp-shot { position: relative; margin-top: var(--s-5); }
+.hp-shot-frame {
+    position: relative; border-radius: 26px; overflow: hidden;
+    box-shadow: 0 40px 80px -40px rgba(8,9,10,.55);
+}
+.hp-shot-frame img { width: 100%; height: 100%; display: block; object-fit: cover; aspect-ratio: 5 / 4; }
+/* A dark scrim at the foot of the photo so the toast always has contrast,
+   whatever the image behind it happens to be doing. */
+.hp-shot-frame::after {
+    content: ''; position: absolute; inset: auto 0 0 0; height: 46%;
+    background: linear-gradient(to top, rgba(8,9,10,.78), transparent);
+}
+.hp-toast {
+    position: absolute; z-index: 2; left: var(--s-3); right: var(--s-3); bottom: var(--s-3);
+    background: rgba(12,14,12,.86);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 16px; padding: .75rem .85rem;
+    display: flex; align-items: center; gap: .7rem;
+    color: #fff;
+}
+.hp-toast .ht-k {
+    width: 36px; height: 36px; border-radius: 11px; flex: none;
+    background: var(--lemon); color: var(--lemon-ink);
+    display: grid; place-items: center; font-weight: 900; font-size: 1.05rem;
+}
+.hp-toast .ht-1 { font-size: .74rem; font-weight: 600; color: rgba(255,255,255,.7); }
+.hp-toast .ht-2 { font-size: .95rem; font-weight: 800; letter-spacing: -.02em; }
+.hp-toast .ht-now { font-size: .64rem; color: rgba(255,255,255,.5); margin-left: auto; }
+.hp-toast .ht-ok { color: #4ADE80; font-size: 1.05rem; }
+
+/* ============================ stats band ============================ */
+.hp-stats { padding: var(--s-5) 0; }
+.hp-tag {
+    display: flex; align-items: center; justify-content: center; gap: .6rem;
+    font-size: .6rem; font-weight: 800; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--lemon); margin-bottom: var(--s-4);
+}
+.hp-tag::before, .hp-tag::after { content: ''; height: 1px; width: clamp(20px, 8vw, 70px); background: currentColor; opacity: .35; }
+.hp-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+.hp-stat { text-align: center; padding: 0 .5rem; position: relative; }
+.hp-stat + .hp-stat::before {
+    content: ''; position: absolute; left: 0; top: 12%; bottom: 12%;
+    width: 1px; background: rgba(255,255,255,.12);
+}
+.hp-stat b {
+    display: block; font-size: clamp(1.35rem, 5vw, 2.3rem); font-weight: 700;
+    letter-spacing: -.04em; font-variant-numeric: tabular-nums; line-height: 1;
+}
+.hp-stat span { display: block; font-size: .7rem; color: rgba(255,255,255,.48); margin-top: .55rem; line-height: 1.3; }
+.hp-stats .hp-note { text-align: center; font-size: .7rem; color: rgba(255,255,255,.32); margin: var(--s-4) 0 0; }
+
+/* ============================== steps ============================== */
+.hp-steps { padding: var(--s-6) 0; }
+.hp-step-list { margin-top: var(--s-3); }
+.hp-step { display: flex; gap: var(--s-3); padding: var(--s-2) 0; position: relative; }
+/* A rail joining the numbers, so four items read as one sequence. */
+.hp-step:not(:last-child)::before {
+    content: ''; position: absolute; left: 19px; top: 44px; bottom: -4px;
+    width: 1px; background: linear-gradient(var(--hp-line), transparent);
+}
+.hp-step .n {
+    width: 39px; height: 39px; border-radius: 50%; flex: none; z-index: 1;
+    background: var(--hp-cream); border: 1.5px solid var(--hp-green);
+    color: var(--hp-green); display: grid; place-items: center;
+    font-size: .88rem; font-weight: 800; font-family: 'Sora', sans-serif;
+}
+.hp-step p { margin: 0; font-size: 1.02rem; font-weight: 600; line-height: 1.4; padding-top: .45rem; max-width: 24ch; }
+
+.hp-green-card {
+    position: relative; overflow: hidden;
+    background: linear-gradient(155deg, #17864A 0%, #0C5730 55%, #06331B 100%);
+    color: #fff; border-radius: 28px;
+    padding: var(--s-4) var(--s-3) var(--s-3);
+    box-shadow: 0 40px 70px -38px rgba(6,51,27,.9);
+}
+.hp-green-card::after {
+    content: ''; position: absolute; width: 320px; height: 320px; right: -110px; top: -130px;
+    background: radial-gradient(circle, rgba(178,251,12,.2), transparent 65%);
+    pointer-events: none;
+}
+.hp-green-card > * { position: relative; }
+.hp-green-card h3 { font-size: 1.18rem; font-weight: 800; margin: 0 0 var(--s-3); display: flex; align-items: center; gap: .6rem; letter-spacing: -.02em; }
+.hp-green-card h3 i { color: var(--lemon); }
+.hp-check { display: flex; align-items: center; gap: .65rem; padding: .42rem 0; font-size: .93rem; font-weight: 600; }
+.hp-check i { color: var(--lemon); font-size: .95rem; }
+.hp-hr { border: 0; border-top: 1px solid rgba(255,255,255,.18); margin: var(--s-3) 0 var(--s-2); }
+.hp-req-title { font-size: .95rem; font-weight: 800; margin-bottom: .45rem; }
+.hp-req { display: flex; align-items: center; gap: .65rem; padding: .34rem 0; font-size: .88rem; color: rgba(255,255,255,.75); }
+.hp-req i { font-size: .82rem; color: rgba(255,255,255,.4); }
+.hp-secure { text-align: center; font-size: .84rem; font-weight: 600; color: var(--hp-dim); margin-top: var(--s-4); }
+.hp-secure i { color: var(--hp-green); margin-right: .4rem; }
+
+/* ============================= services ============================= */
+.hp-services { padding: var(--s-6) 0; }
+.hp-svc-grid { display: grid; gap: var(--s-2); margin-top: var(--s-4); }
+.hp-svc {
+    display: flex; gap: var(--s-3); align-items: flex-start;
+    padding: var(--s-3);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0));
+    transition: transform .22s cubic-bezier(.22,1,.36,1), border-color .22s, background .22s;
+}
+.hp-svc:hover { transform: translateY(-3px); border-color: rgba(178,251,12,.35); background: rgba(255,255,255,.05); }
+.hp-svc .ico {
+    width: 52px; height: 52px; border-radius: 50%; flex: none;
+    border: 1.5px solid rgba(178,251,12,.45);
+    display: grid; place-items: center; color: var(--lemon); font-size: 1.1rem;
+}
+.hp-svc p { margin: 0; font-size: .87rem; color: rgba(255,255,255,.58); line-height: 1.5; }
+.hp-services .hp-note {
+    font-size: .82rem; color: rgba(255,255,255,.6); display: flex; gap: .6rem;
+    align-items: flex-start; margin: var(--s-4) 0 var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
+    background: rgba(255,255,255,.03);
+}
+.hp-services .hp-note i { color: var(--lemon); margin-top: 3px; }
+.hp-cover { font-size: .62rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.36); margin: var(--s-4) 0 var(--s-2); }
+.hp-flags { display: flex; flex-wrap: wrap; gap: .5rem; }
+.hp-chip {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .42rem .8rem; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.05);
+    font-size: .78rem; font-weight: 700; color: rgba(255,255,255,.8);
+}
+.hp-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lemon); }
+
+/* ============================== install ============================== */
+.hp-install { padding: var(--s-6) 0 var(--s-5); }
+
+/* QR beside the two buttons. On a narrow column the QR drops above them
+   rather than squeezing the buttons to nothing. */
+.hp-get { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-4); flex-wrap: wrap; }
+.hp-qr {
+    background: #fff; border: 1px solid var(--hp-line); border-radius: 16px;
+    padding: .65rem; display: inline-grid; place-items: center; flex: none;
+    box-shadow: 0 14px 30px -20px rgba(8,9,10,.5);
+}
+.hp-get-btns { display: grid; gap: .55rem; flex: 1 1 200px; min-width: 0; }
+.hp-get-btns > * { width: 100%; }
+
+/* The two install routes. Cards, not bare icon-plus-text rows: the shape
+   survives a narrow column, where the old flex row let the icon and its two
+   lines of copy collide. */
+/* auto-fit, not a fixed pair: these sit in a column that is narrow at some
+   desktop widths and full-bleed on a phone, so they have to answer to the
+   space they are actually in rather than to the viewport. Below ~240px of
+   card width they drop to one per row on their own. */
+.hp-platforms { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .7rem; margin-top: var(--s-3); }
+.hp-plat {
+    display: flex; gap: .75rem; align-items: flex-start; min-width: 0;
+    padding: .85rem .9rem;
+    border: 1px solid var(--hp-line); border-radius: 16px;
+    background: rgba(255,255,255,.45);
+    transition: border-color .2s, background .2s, transform .2s cubic-bezier(.22,1,.36,1);
+}
+.hp-plat:hover { border-color: rgba(14,122,60,.4); background: rgba(255,255,255,.75); transform: translateY(-2px); }
+.hp-plat .pl-ico {
+    width: 34px; height: 34px; border-radius: 10px; flex: none;
+    display: grid; place-items: center; font-size: 1.05rem;
+    background: var(--hp-ink); color: var(--hp-cream);
+}
+.hp-plat .pl-body { min-width: 0; }
+.hp-plat b { display: block; font-size: .84rem; font-weight: 800; margin-bottom: .1rem; }
+.hp-plat .pl-body > span { display: block; font-size: .76rem; color: var(--hp-dim); line-height: 1.45; }
+.hp-plat em { font-style: normal; font-weight: 700; color: var(--hp-ink); }
+
+.hp-usp { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); margin-top: var(--s-4); }
+.hp-usp > div { text-align: center; padding: var(--s-3) var(--s-2); border: 1px solid var(--hp-line); border-radius: 18px; background: rgba(255,255,255,.4); }
+.hp-usp i { font-size: 1.2rem; color: var(--hp-green); }
+.hp-usp b { display: block; font-size: .82rem; font-weight: 800; margin-top: .6rem; }
+.hp-usp span { display: block; font-size: .72rem; color: var(--hp-dim); line-height: 1.4; margin-top: .25rem; }
+
+/* The device frame holds a real capture of the dashboard rather than a
+   re-drawing of it, so what the page promises is what the app looks like.
+   The image sets the height from its own aspect ratio; the frame just adds
+   the bezel and the notch. */
+.hp-phone-stage { display: flex; justify-content: center; position: relative; }
+.hp-phone-stage::before {
+    content: ''; position: absolute; inset: 8% -2% 2% -2%;
+    background: radial-gradient(ellipse at center, rgba(31,163,85,.2), transparent 68%);
+    pointer-events: none;
+}
+.hp-phone {
+    position: relative; width: min(280px, 78vw);
+    background: #08090A; border: 8px solid #17191B; border-radius: 40px;
+    box-shadow: 0 44px 80px -34px rgba(8,9,10,.6), 0 0 0 1px rgba(255,255,255,.06) inset;
+    overflow: hidden; flex: none;
+}
+.hp-phone .notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 104px; height: 20px; background: #17191B; border-radius: 0 0 12px 12px; z-index: 3;
+}
+.hp-phone img { display: block; width: 100%; height: auto; }
+/* ============================ closing CTA ============================ */
+.hp-cta-wrap { padding: 0 0 var(--s-5); }
+.hp-cta {
+    position: relative; overflow: hidden;
+    background: linear-gradient(155deg, #17864A 0%, #0C5730 55%, #06331B 100%);
+    color: #fff; text-align: center;
+    padding: var(--s-6) var(--s-3);
+    border-radius: 30px;
+    box-shadow: 0 44px 80px -44px rgba(6,51,27,.95);
+}
+.hp-cta::after {
+    content: ''; position: absolute; width: 460px; height: 460px; left: 50%; top: -60%;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(178,251,12,.16), transparent 62%);
+    pointer-events: none;
+}
+.hp-cta > * { position: relative; }
+.hp-cta h2 { font-size: clamp(1.65rem, 5vw, 2.7rem); font-weight: 700; letter-spacing: -.035em; margin: 0 0 var(--s-3); line-height: 1.08; }
+.hp-cta p { color: rgba(255,255,255,.7); font-size: .92rem; margin: 0 auto var(--s-4); max-width: 40ch; }
+.hp-cta .row-btn { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; }
+
+/* ============================== footer ============================== */
+.hp-footer { background: var(--hp-dark); color: rgba(255,255,255,.6); padding: var(--s-5) 0 var(--s-3); }
+.hp-fcols { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4) var(--s-2); }
+.hp-fcols h4 { font-size: .6rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--lemon); margin: 0 0 .7rem; }
+.hp-fcols a { display: block; color: rgba(255,255,255,.55); font-size: .8rem; text-decoration: none; padding: .22rem 0; transition: color .18s; }
+.hp-fcols a:hover { color: #fff; }
+.hp-legal {
+    display: flex; justify-content: space-between; gap: .6rem; flex-wrap: wrap;
+    border-top: 1px solid rgba(255,255,255,.1); margin-top: var(--s-4);
+    padding-top: var(--s-3); font-size: .72rem; color: rgba(255,255,255,.35);
+}
+
+/* ============================== layout ============================== */
+@media (min-width: 860px) {
+    .hp-nav .hp-links { display: flex; }
+    .hp-hero { padding: var(--s-6) 0; }
+    .hp-hero .wrap { display: grid; grid-template-columns: 1.15fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
+    .hp-shot { margin-top: 0; }
+    .hp-shot-frame img { aspect-ratio: 4 / 5; }
+
+    .hp-steps .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
+    .hp-secure { text-align: left; grid-column: 1 / 2; margin-top: var(--s-3); }
+
+    .hp-svc-grid { grid-template-columns: repeat(3, 1fr); }
+    .hp-svc { flex-direction: column; }
+    .hp-services .hp-head-row { display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(2rem, 5vw, 4rem); align-items: end; }
+    .hp-services .hp-note { margin-top: 0; }
+
+    .hp-install .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
+    .hp-usp { grid-column: 1 / -1; }
+    .hp-cta { padding-inline: var(--s-6); }
+}
+@media (min-width: 620px) {
+    .hp-fcols { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* On a small phone the logo, Log in and the CTA together exceed the row and
+   the button hangs off the right edge. Everything shrinks rather than anything
+   being dropped — a returning user still needs Log in to be there. */
+@media (max-width: 539.98px) {
+    .hp-nav .wrap { gap: .5rem; height: 60px; }
+    .hp-logo img { height: 27px; }
+    .hp-nav a.hp-login { font-size: .8rem; }
+    .hp-nav .btn-lime { padding: .5rem .85rem; font-size: .78rem; }
+}
+@media (max-width: 359.98px) {
+    .hp-logo img { height: 24px; }
+}
+
+/* Four stats across is too tight below ~420px: the numbers stop fitting their
+   column. Two-up keeps them legible, and the divider moves with them. */
+@media (max-width: 419.98px) {
+    .hp-stat-grid { grid-template-columns: repeat(2, 1fr); row-gap: var(--s-3); }
+    .hp-stat:nth-child(odd)::before { display: none; }
+    .hp-stat:nth-child(3)::before,
+    .hp-stat:nth-child(4)::before { top: 0; }
+}
+
+/* --------------------- install section, narrow screens ---------------------
+   Two platform cards side by side stop working well below ~560px: the icon
+   and two lines of instruction fight for a ~160px column. One per row keeps
+   both readable, and the phone shrinks with the viewport rather than fixed. */
+@media (max-width: 559.98px) {
+    .hp-get { gap: var(--s-2); }
+    .hp-get-btns { flex-basis: 100%; }
+}
+@media (max-width: 479.98px) {
+    /* Three tiles across is too narrow to hold a sentence. One per row, laid
+       out as icon beside a stacked label and line. The icon, label and line
+       are siblings with no wrapper, so a two-column grid with the icon
+       spanning both rows is what stacks them correctly. */
+    .hp-usp { grid-template-columns: 1fr; }
+    .hp-usp > div {
+        display: grid; grid-template-columns: auto minmax(0, 1fr);
+        column-gap: .85rem; align-items: center;
+        text-align: left; padding: .8rem .95rem;
+    }
+    .hp-usp i { grid-row: 1 / span 2; font-size: 1.15rem; }
+    .hp-usp b { grid-column: 2; align-self: end; margin-top: 0; }
+    .hp-usp span { grid-column: 2; align-self: start; margin-top: .1rem; }
+}

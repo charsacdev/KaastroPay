@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escalations | Kaastro Pay</title>
+<meta name="theme-color" content="#0A0A0A">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="admin" data-page="escalations" data-title="Escalations" data-sub="Decisions agents handed up">
+
+<main class="main-content">
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card p-3 p-md-4" id="mount"></div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card p-3 p-md-4">
+        <div class="section-head"><h2>Why this queue exists</h2></div>
+        <div class="k-alert k-info">
+          <i class="fas fa-arrow-up-right-dots"></i>
+          <div><b class="hd">An unsure agent should hand up, not guess.</b>
+            The alternative to escalation is an agent crediting a balance on thin
+            evidence. This queue makes the cautious choice the easy one, and puts
+            the decision with someone who has the authority for it.</div>
+        </div>
+        <div class="k-alert k-warn mt-2">
+          <i class="fas fa-scale-balanced"></i>
+          <div>Approving here is <b>you</b> performing the manual confirmation.
+            It is logged against your name, not the agent's.</div>
+        </div>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>Manual action log</h2></div>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/backoffice.js"></script>
+<script src="../js/admin-pages.js"></script>
+<script>
+KP.ready(function () {
+  KP.adminPages.escalations(jQuery('#mount'));
+
+  var log = KP.rails.manual.log();
+  jQuery('#log').html(log.length
+    ? log.slice(0, 8).map(function (e) {
+        return '<div class="asset-row">'
+          + '<div class="qa-icon qa-amber qa-warn sm"><i class="fas fa-hand"></i></div>'
+          + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + e.what + ' · ' + e.amount + '</div>'
+          + '<div class="ar-sub">' + e.ref + ' · ' + e.actor + ' · ' + e.at + '</div></div></div>';
+      }).join('')
+    : '<div class="empty-state"><i class="fas fa-hand"></i>'
+      + '<p>No manual confirmations recorded yet.</p></div>');
+});
+</script>
+</body>
+</html>

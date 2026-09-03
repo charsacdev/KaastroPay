@@ -131,14 +131,125 @@
         return midUsd(sym) * fxRate(currency);
     }
 
+    /* ===================== Rate mode =====================
+       Two ways to price. In 'auto' the deposit and withdrawal rates are derived
+       from the live mid price and the configured margins — the feed moves, the
+       rates move. In 'manual' the platform publishes its own numbers and the
+       feed is ignored entirely: an admin types the rate they want and it is the
+       rate, however far it sits from mid.
+
+       Manual is deliberately unconstrained. It exists for the days the feed is
+       wrong, a corridor is illiquid, or a promotion needs a rate no formula
+       would produce. The admin screen shows the gap to mid so the cost of that
+       freedom stays visible. */
+
+    var RATE_MODE_KEY = 'kaastro-rate-mode';
+    var MANUAL_KEY = 'kaastro-manual-rates';
+
+    var RATE_MODE = 'auto';
+    /* { "NGN": { "USDT": { deposit: 1500, withdrawal: 1470 } } } */
+    var MANUAL_RATES = {};
+
+    (function loadRateMode() {
+        try {
+            RATE_MODE = localStorage.getItem(RATE_MODE_KEY) || 'auto';
+            MANUAL_RATES = JSON.parse(localStorage.getItem(MANUAL_KEY) || '{}') || {};
+        } catch (e) { RATE_MODE = 'auto'; MANUAL_RATES = {}; }
+    })();
+
+    function rateMode() { return RATE_MODE; }
+    function isManual() { return RATE_MODE === 'manual'; }
+
+    function setRateMode(mode) {
+        RATE_MODE = mode === 'manual' ? 'manual' : 'auto';
+        try { localStorage.setItem(RATE_MODE_KEY, RATE_MODE); } catch (e) { }
+        return RATE_MODE;
+    }
+
+    function persistManual() {
+        try { localStorage.setItem(MANUAL_KEY, JSON.stringify(MANUAL_RATES)); } catch (e) { }
+    }
+
+    /* What the admin has typed for this pair, or null if they have not. */
+    function manualRate(sym, currency) {
+        var c = MANUAL_RATES[currency];
+        return (c && c[sym]) ? c[sym] : null;
+    }
+
+    /* Seed a pair from the current automatic rates, so switching to manual
+       starts from today's numbers rather than an empty box. */
+    function seedManual(sym, currency) {
+        if (manualRate(sym, currency)) return manualRate(sym, currency);
+        var m = MANUAL_RATES[currency] || (MANUAL_RATES[currency] = {});
+        m[sym] = { deposit: autoDeposit(sym, currency), withdrawal: autoWithdrawal(sym, currency) };
+        persistManual();
+        return m[sym];
+    }
+
+    function setManualRate(sym, currency, vals) {
+        var m = MANUAL_RATES[currency] || (MANUAL_RATES[currency] = {});
+        var cur = m[sym] || seedManual(sym, currency);
+        if (vals.deposit != null) cur.deposit = Number(vals.deposit) || 0;
+        if (vals.withdrawal != null) cur.withdrawal = Number(vals.withdrawal) || 0;
+        m[sym] = cur;
+        persistManual();
+        return cur;
+    }
+
+    /* Nudge one side by an absolute amount. No clamp and no ceiling — the whole
+       point of manual is that the admin decides. */
+    function adjustManualRate(sym, currency, side, delta) {
+        var cur = seedManual(sym, currency);
+        cur[side] = Math.max(0, (cur[side] || 0) + Number(delta || 0));
+        persistManual();
+        return cur;
+    }
+
+    function clearManual(sym, currency) {
+        if (!sym) { MANUAL_RATES = {}; persistManual(); return; }
+        var c = MANUAL_RATES[currency];
+        if (c) { delete c[sym]; persistManual(); }
+    }
+
+    /* How far a manual rate sits from where the feed would have put it, in
+       basis points. This is the number that tells an admin what they are
+       actually doing. */
+    function manualDrift(sym, currency, side) {
+        var man = manualRate(sym, currency);
+        if (!man) return 0;
+        var auto = side === 'deposit' ? autoDeposit(sym, currency) : autoWithdrawal(sym, currency);
+        if (!auto) return 0;
+        return ((man[side] - auto) / auto) * 10000;
+    }
+
     /* The two rates the whole product runs on.
        depositRate — Naira credited per unit of crypto received.
-       withdrawalRate — Naira charged per unit of crypto sent out. */
-    function depositRate(sym, currency) {
+       withdrawalRate — Naira charged per unit of crypto sent out.
+
+       In auto mode these come off the live mid price and the margins. In
+       manual mode the platform's own published number wins outright, and the
+       feed is not consulted at all. Everything downstream — the wallet, the
+       payment link, the receipts — reads these two functions, so flipping the
+       mode changes the whole product with one switch. */
+    function autoDeposit(sym, currency) {
         return midFiat(sym, currency) * (1 - effective(currency).deposit / 10000);
     }
-    function withdrawalRate(sym, currency) {
+    function autoWithdrawal(sym, currency) {
         return midFiat(sym, currency) * (1 + effective(currency).withdrawal / 10000);
+    }
+    function depositRate(sym, currency) {
+        if (isManual()) {
+            var m = manualRate(sym, currency);
+            if (m && m.deposit > 0) return m.deposit;
+        }
+        return autoDeposit(sym, currency);
+    }
+    function withdrawalRate(sym, currency) {
+        if (isManual()) {
+            var m = manualRate(sym, currency);
+            if (m && m.withdrawal > 0) return m.withdrawal;
+        }
+        return autoWithdrawal(sym, currency);
     }
 
     /* Cross-border: how much of `to` a unit of `from` buys, after our cut. */
@@ -219,6 +330,10 @@
         setCountryMargins: setCountryMargins,
         countryMargins: countryMargins,
         effective: effective,
+        rateMode: rateMode, isManual: isManual, setRateMode: setRateMode,
+        manualRate: manualRate, seedManual: seedManual, setManualRate: setManualRate,
+        adjustManualRate: adjustManualRate, clearManual: clearManual, manualDrift: manualDrift,
+        autoDeposit: autoDeposit, autoWithdrawal: autoWithdrawal,
         setFxRate: setFxRate,
         fxRate: fxRate,
         isFxOverridden: isFxOverridden,

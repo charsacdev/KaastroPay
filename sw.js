@@ -44,6 +44,10 @@ const PRECACHE = [
   './dashboard/insights.html',
   './dashboard/verification.html',
   './images/logo.png',
+  './images/logo-onDark.png',
+  './images/logo-onLight.png',
+  './images/mark.png',
+  './images/phone-home.png',
   './images/icon-192.png',
   './images/icon-512.png'
 ];

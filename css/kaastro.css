@@ -56,24 +56,29 @@
 }
 
 [data-bs-theme="dark"] {
-    --primary-color: #04D03B;
-    --primary-dark: #2BE85C;
-    --primary-light: rgba(0, 190, 58, 0.20);
-    --primary-soft: rgba(0, 190, 58, 0.14);
-    --lemon-soft: rgba(178, 251, 12, 0.16);
-    --bg-body: #050807;
-    --bg-card: #101512;
-    --bg-sunk: #0a0f0d;
-    --text-main: #e6ede9;
-    --text-muted: #8a9a93;
-    --border-color: #1e2a25;
-    --hero-bg: #0a1310;
-    --hero-edge: rgba(16, 185, 129, 0.34);
+    /* The mockups sit on a neutral near-black, not a green-tinted one. The
+       green reads as brand only when the ground it sits on is colourless. */
+    --primary-color: #22C55E;
+    --primary-dark: #4ADE80;
+    --primary-light: rgba(34, 197, 94, 0.18);
+    --primary-soft: rgba(34, 197, 94, 0.12);
+    --lemon-soft: rgba(178, 251, 12, 0.14);
+    --lemon-edge: rgba(178, 251, 12, 0.38);
+    --bg-body: #0A0A0A;
+    --bg-card: #141414;
+    --bg-sunk: #1C1C1C;
+    --text-main: #F5F5F5;
+    --text-muted: #8E8E8E;
+    --border-color: #242424;
+    /* The balance card is the one surface allowed to carry the green glow. */
+    --hero-bg: #101A13;
+    --hero-edge: rgba(34, 197, 94, 0.30);
+    --hero-text: #FFFFFF;
+    --hero-dim: rgba(255, 255, 255, 0.62);
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.6), 0 2px 4px -2px rgb(0 0 0 / 0.5);
     --shadow-lg: 0 10px 30px -12px rgb(0 0 0 / 0.9);
 }
-
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 
@@ -373,9 +378,18 @@ a { text-decoration: none; }
 .qa-slate  { background: var(--bg-sunk);        color: var(--text-muted); }
 [data-bs-theme="dark"] .qa-green  { color: var(--primary-color); }
 [data-bs-theme="dark"] .qa-red    { color: #f87171; }
-[data-bs-theme="dark"] .qa-blue   { color: #38bdf8; }
-[data-bs-theme="dark"] .qa-purple { color: #a78bfa; }
-[data-bs-theme="dark"] .qa-amber  { color: #fbbf24; }
+
+/* In dark the mockups drop the blue/purple/amber accents entirely: every
+   neutral action icon is one green on one sunk tile. Colour is reserved for
+   meaning — red for failure, amber for a warning you must read. The classes
+   stay so light mode and the back-office keep their existing variety. */
+[data-bs-theme="dark"] .qa-blue,
+[data-bs-theme="dark"] .qa-purple,
+[data-bs-theme="dark"] .qa-amber {
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+[data-bs-theme="dark"] .qa-amber.qa-warn { background: rgba(245,158,11,0.14); color: #fbbf24; }
 
 /* ============================ Cards ============================ */
 
@@ -483,6 +497,8 @@ a { text-decoration: none; }
 .pill-processing { background: rgba(99,102,241,0.12); color: #4338ca; border-color: rgba(99,102,241,0.3); }
 .pill-failed,
 .pill-rejected   { background: rgba(239,68,68,0.12);  color: #b91c1c; border-color: rgba(239,68,68,0.3); }
+.pill-danger     { background: rgba(239,68,68,0.12);  color: #b91c1c; border-color: rgba(239,68,68,0.3); }
+.pill-warn       { background: rgba(245,158,11,0.13); color: #b45309; border-color: rgba(245,158,11,0.32); }
 .pill-manual     { background: rgba(139,92,246,0.13); color: #6d28d9; border-color: rgba(139,92,246,0.3); }
 .pill-neutral    { background: var(--bg-sunk);        color: var(--text-muted); border-color: var(--border-color); }
 [data-bs-theme="dark"] .pill-success    { color: #34d399; }
@@ -492,6 +508,8 @@ a { text-decoration: none; }
 [data-bs-theme="dark"] .pill-failed,
 [data-bs-theme="dark"] .pill-rejected   { color: #f87171; }
 [data-bs-theme="dark"] .pill-manual     { color: #c4b5fd; }
+[data-bs-theme="dark"] .pill-danger     { color: #f87171; }
+[data-bs-theme="dark"] .pill-warn       { color: #fbbf24; }
 
 .tier-badge {
     display: inline-block; font-size: 0.61rem; font-weight: 800;
@@ -641,7 +659,11 @@ a { text-decoration: none; }
     font-size: 0.79rem; line-height: 1.45; border: 1px solid transparent;
 }
 .k-alert i { margin-top: 2px; flex: none; }
-.k-alert b { display: block; font-weight: 800; margin-bottom: 2px; }
+/* <b> stays inline, because it is an inline element and mid-sentence emphasis
+   ("send only <b>USDT</b> on <b>TRC20</b>") has to read as one sentence. An
+   alert that opens with a heading marks it explicitly with .hd. */
+.k-alert b { font-weight: 800; }
+.k-alert b.hd { display: block; margin-bottom: 2px; }
 .k-warn   { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.35); color: #92400e; }
 .k-info   { background: rgba(14,165,233,0.09); border-color: rgba(14,165,233,0.3);  color: #075985; }
 .k-danger { background: rgba(239,68,68,0.09);  border-color: rgba(239,68,68,0.3);   color: #991b1b; }
@@ -700,13 +722,28 @@ table.dataTable.dt-nowrap > tbody > tr.child > td { white-space: normal; }
     outline: none; border-color: var(--primary-color) !important;
     box-shadow: 0 0 0 3px var(--primary-soft);
 }
-/* --- pagination --- */
+/* --- pagination ---
+   DataTables' Bootstrap 5 integration renders
+     <li class="paginate_button page-item"><a class="page-link">1</a></li>
+   so .paginate_button is the LI, not the button. Styling both it and the
+   .page-link inside drew one button inside another. The box belongs to the
+   anchor; the li is stripped back to a plain list item. Legacy DataTables
+   markup, where .paginate_button is itself the anchor, still gets the box. */
 .dataTables_wrapper .dataTables_paginate {
     padding-top: 0.85rem !important;
     display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; align-items: center;
 }
 .dataTables_wrapper .dataTables_paginate .pagination { gap: 4px; margin: 0; flex-wrap: wrap; }
-.dataTables_wrapper .dataTables_paginate .paginate_button,
+.dataTables_wrapper .dataTables_paginate li.paginate_button {
+    background: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    min-width: 0;
+    height: auto;
+}
+.dataTables_wrapper .dataTables_paginate a.paginate_button,
 .dataTables_wrapper .dataTables_paginate .page-item .page-link {
     min-width: 34px; height: 34px;
     display: inline-flex; align-items: center; justify-content: center;
@@ -721,26 +758,26 @@ table.dataTable.dt-nowrap > tbody > tr.child > td { white-space: normal; }
     transition: var(--transition);
     box-shadow: none !important;
 }
-.dataTables_wrapper .dataTables_paginate .paginate_button:hover,
+.dataTables_wrapper .dataTables_paginate a.paginate_button:hover,
 .dataTables_wrapper .dataTables_paginate .page-item:not(.disabled):not(.active) .page-link:hover {
     background: var(--primary-soft) !important;
     border-color: var(--primary-color) !important;
     color: var(--primary-dark) !important;
 }
-[data-bs-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button:hover,
+[data-bs-theme="dark"] .dataTables_wrapper .dataTables_paginate a.paginate_button:hover,
 [data-bs-theme="dark"] .dataTables_wrapper .dataTables_paginate .page-item:not(.disabled):not(.active) .page-link:hover {
     color: var(--primary-color) !important;
 }
-.dataTables_wrapper .dataTables_paginate .paginate_button.current,
-.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover,
+.dataTables_wrapper .dataTables_paginate a.paginate_button.current,
+.dataTables_wrapper .dataTables_paginate a.paginate_button.current:hover,
 .dataTables_wrapper .dataTables_paginate .page-item.active .page-link {
     background: var(--primary-color) !important;
     border-color: var(--primary-color) !important;
-    color: #fff !important;
+    color: #04140a !important;
     box-shadow: 0 4px 10px -5px rgba(16,185,129,.9) !important;
 }
-.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
-.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover,
+.dataTables_wrapper .dataTables_paginate a.paginate_button.disabled,
+.dataTables_wrapper .dataTables_paginate a.paginate_button.disabled:hover,
 .dataTables_wrapper .dataTables_paginate .page-item.disabled .page-link {
     background: var(--bg-sunk) !important;
     border-color: var(--border-color) !important;
@@ -904,14 +941,17 @@ hr { border-color: var(--border-color); opacity: 1; }
    ========================================================================== */
 
 .brand-logo { gap: 0.5rem; flex-wrap: wrap; }
-.brand-img { height: 38px; width: auto; max-width: 100%; display: block; }
-/* The wordmark's "PAY" is near-white. On light grounds it needs an outline or
-   it simply disappears; stacked hairline shadows are the cheapest way to get one. */
-:root:not([data-bs-theme="dark"]) .brand-img {
-    filter: drop-shadow(0 0 0.5px rgba(20, 34, 28, .85))
-            drop-shadow(0 0 0.5px rgba(20, 34, 28, .55))
-            drop-shadow(0 1px 1px rgba(20, 34, 28, .18));
-}
+/* The sidebar flips between light and dark, and the wordmark's "PAY" is
+   near-white — legible on one, invisible on the other. Both variants ship and
+   CSS picks the right one, which replaces an earlier drop-shadow outline that
+   only ever made the white text look fuzzy. */
+.brand-img { height: 38px; display: block; max-width: 100%; }
+.brand-img > img { height: 100%; width: auto; max-width: 100%; display: block; }
+.brand-img > .bi-dark { display: none; }
+[data-bs-theme="dark"] .brand-img > .bi-light { display: none; }
+[data-bs-theme="dark"] .brand-img > .bi-dark { display: block; }
+/* Pages that still use a bare <img class="brand-img"> keep sizing correctly. */
+img.brand-img { height: 38px; width: auto; }
 .brand-tag {
     font-size: 0.58rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--text-muted); border-left: 1px solid var(--border-color);
@@ -1329,10 +1369,62 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
 [data-bs-theme="dark"] .fav-av i { color: var(--primary-color); }
 
 /* Three-across figure row */
-.flow-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
-.flow-3 > div { min-width: 0; }
-.flow-3 span { display: block; font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-.flow-3 b { display: block; font-size: clamp(0.95rem, 3.4vw, 1.18rem); font-weight: 800; letter-spacing: -0.03em; margin-top: 0.2rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* A three-up figure row (Money In / Out / Net, Crypto Deposited / Received /
+   Rate). The labels are different lengths, so a one-line label next to a
+   two-line one used to push its value down and break the row. Each cell is a
+   column that pins the value to the bottom, which lines every value up on one
+   baseline however the labels wrap. */
+/* A three-up figure row (Money In / Out / Net, Crypto Deposited / Received /
+   Rate). Labels and values are different lengths, so a wrapping label or a
+   wrapping figure used to shove one column out of line with the other two.
+
+   The wrapper divs are display:contents, which drops them out of the layout
+   and lets the labels share one grid row and the values another. Every value
+   then starts on the same line however anything above it wraps — which no
+   amount of per-cell alignment can guarantee. */
+.flow-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: auto;
+    column-gap: 0.75rem;
+    row-gap: 0;
+}
+.flow-3 > div { display: contents; }
+.flow-3 span {
+    grid-row: 1;
+    display: block;
+    font-size: 0.66rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    line-height: 1.3;
+    align-self: end;
+}
+.flow-3 b {
+    grid-row: 2;
+    display: block;
+    font-size: clamp(0.84rem, 2.8vw, 1rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+    padding-top: 0.2rem;
+    align-self: start;
+    /* break-word, not anywhere: "anywhere" happily splits "+₦2,591,060.00"
+       after the sign. This only breaks when the figure genuinely cannot fit. */
+    overflow-wrap: break-word;
+}
+/* The divider runs down both rows, so it reads as one continuous rule rather
+   than two stubs — which is why row-gap is 0 and the spacing is padding. */
+.flow-3 > div + div > span,
+.flow-3 > div + div > b {
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--border-color);
+}
+@media (max-width: 340px) {
+    .flow-3 { grid-template-columns: 1fr 1fr; }
+}
 
 /* QR scanner */
 .scanner { position: relative; border-radius: var(--radius-lg); overflow: hidden; background: #0b0f0d; aspect-ratio: 1 / 1; display: grid; place-items: center; }
@@ -1353,14 +1445,6 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
    ========================================================================== */
 
 .greet { font-size: 1rem; color: var(--text-muted); font-weight: 600; margin: 0 0 0.85rem; }
-
-.tier-banner {
-    display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
-    background: var(--bg-card); border: 1px solid var(--primary-color);
-    border-radius: var(--radius-lg); padding: 0.75rem 0.9rem; margin-bottom: 0.9rem;
-}
-.tier-banner b { display: block; font-size: 0.88rem; font-weight: 800; line-height: 1.25; }
-.tier-banner span span { display: block; font-size: 0.76rem; color: var(--text-muted); }
 
 /* Four actions get a caption line under the label */
 .action-tile small {
@@ -1395,16 +1479,438 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
 .rate-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
 .rate-box {
     background: var(--bg-sunk); border: 1px solid var(--border-color);
-    border-radius: var(--radius-md); padding: 0.85rem 0.9rem; min-width: 0;
+    border-radius: var(--radius-md); padding: 0.8rem 0.85rem; min-width: 0;
 }
-.rate-box .rb-ico { width: 34px; height: 34px; border-radius: 11px; font-size: 0.8rem; margin-bottom: 0.5rem; }
+.rate-box .rb-ico { width: 30px; height: 30px; border-radius: 10px; font-size: 0.72rem; margin-bottom: 0.45rem; }
 .rate-box .rb-label {
-    display: block; font-size: 0.72rem; color: var(--text-muted);
-    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    display: block; font-size: 0.66rem; color: var(--text-muted);
+    font-weight: 700; text-transform: uppercase; letter-spacing: .05em; line-height: 1.3;
 }
+/* Sized to hold a six-figure Naira rate on a 360px screen without wrapping. */
 .rate-box b {
-    display: block; font-size: clamp(1.15rem, 4.4vw, 1.45rem); font-weight: 800;
-    letter-spacing: -0.03em; margin-top: 0.15rem; font-variant-numeric: tabular-nums;
+    display: block; font-size: clamp(0.95rem, 3.5vw, 1.15rem); font-weight: 800;
+    letter-spacing: -0.02em; margin-top: 0.15rem; font-variant-numeric: tabular-nums;
+    line-height: 1.2; overflow-wrap: anywhere;
+}
+.rate-box .ar-sub { font-size: 0.68rem; line-height: 1.35; }
+@media (max-width: 380px) { .rate-pair { grid-template-columns: 1fr; } }
+
+/* ======================= Contacts & beneficiaries =======================
+   The mockups lead with a rail of favourite faces, then fall back to a
+   list. Both share one avatar treatment: a green ring, and a check badge
+   for a name the bank or the platform has already verified. */
+
+.kp-avatar {
+    position: relative;
+    flex: 0 0 auto;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    overflow: visible;
+    font-weight: 800; font-size: 0.9rem;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+[data-bs-theme="dark"] .kp-avatar { color: var(--primary-color); }
+.kp-avatar img {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.kp-avatar.ring { box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--primary-color); }
+.kp-avatar.lg { width: 60px; height: 60px; font-size: 1.1rem; }
+.kp-avatar.sm { width: 34px; height: 34px; font-size: 0.75rem; }
+.kp-avatar .av-check {
+    position: absolute; right: -2px; bottom: -2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--primary-color); color: #04140a;
+    display: grid; place-items: center;
+    font-size: 0.5rem;
+    border: 2px solid var(--bg-card);
+}
+.kp-avatar.lg .av-check { width: 19px; height: 19px; font-size: 0.58rem; }
+
+/* Horizontal rail of favourites. Scrolls rather than wraps, so the row
+   height never changes as favourites are added. */
+.fav-rail {
+    display: flex; gap: 0.9rem;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+    scrollbar-width: none;
+}
+.fav-rail::-webkit-scrollbar { display: none; }
+.fav-rail .fav {
+    flex: 0 0 auto;
+    width: 68px;
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    background: none; border: none; padding: 0;
+    color: var(--text-main);
+    text-decoration: none;
+}
+.fav-rail .fav .fav-name {
+    font-size: 0.72rem; font-weight: 600;
+    max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fav-rail .fav-add .kp-avatar {
+    background: var(--bg-sunk);
+    color: var(--text-muted);
+    border: 1px dashed var(--border-color);
+}
+
+/* A contact line that is tappable in full — the whole row is the target,
+   not just the name. */
+.contact-row {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border-color);
+    background: none; border-left: 0; border-right: 0; border-top: 0;
+    width: 100%; text-align: left;
+    color: var(--text-main); text-decoration: none;
+}
+.contact-row:last-child { border-bottom: none; }
+.contact-row:hover { color: var(--text-main); }
+.contact-row:hover .cr-name { color: var(--primary-dark); }
+[data-bs-theme="dark"] .contact-row:hover .cr-name { color: var(--primary-color); }
+.contact-row .cr-name { font-weight: 700; font-size: 0.86rem; line-height: 1.25; }
+.contact-row .cr-sub { font-size: 0.73rem; color: var(--text-muted); line-height: 1.3; }
+.contact-row .cr-star { color: var(--lemon); font-size: 0.8rem; }
+
+/* Search field with a leading icon, used above every contact list. */
+.kp-search { position: relative; }
+.kp-search i {
+    position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 0.85rem;
+}
+.kp-search input { padding-left: 2.4rem; }
+
+@media (max-width: 575.98px) {
+    .fav-rail .fav { width: 62px; }
+    .kp-avatar { width: 40px; height: 40px; }
+}
+
+/* Sheet — a modal that behaves like a bottom sheet on a phone, which is how
+   every "pick one of these" moment is drawn in the mockups. */
+.kp-sheet .modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+.kp-sheet .modal-header { border-bottom: 1px solid var(--border-color); padding: 0.9rem 1.1rem; }
+.kp-sheet .modal-title { font-size: 0.95rem; font-weight: 800; }
+.kp-sheet .modal-body { padding: 1.1rem; }
+
+@media (max-width: 575.98px) {
+    .kp-sheet .modal-dialog {
+        margin: 0;
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        max-width: none;
+    }
+    .kp-sheet .modal-content {
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        border-bottom: none;
+    }
+    /* A grab handle, so the sheet reads as draggable even though the dismiss
+       is the close button and the backdrop. */
+    .kp-sheet .modal-header::before {
+        content: '';
+        position: absolute; top: 0.45rem; left: 50%; transform: translateX(-50%);
+        width: 36px; height: 4px; border-radius: 2px;
+        background: var(--border-color);
+    }
+    .kp-sheet .modal-header { padding-top: 1.2rem; }
+}
+
+/* ==================== Result screens & progress tracks ====================
+   Every flow in the mockups ends on the same shape: a haloed icon, the amount
+   in full, a status pill, then the detail rows. Making it one component keeps
+   a successful deposit, a sent transfer and a paid bill visually identical,
+   which is what makes the app feel like one product. */
+
+.result-hero { text-align: center; padding: 0.5rem 0 0.25rem; }
+.result-hero .rh-ico {
+    width: 84px; height: 84px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 2rem;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    box-shadow: 0 0 0 10px var(--primary-soft);
+}
+[data-bs-theme="dark"] .result-hero .rh-ico { color: var(--primary-color); }
+.result-hero.is-wait .rh-ico {
+    background: rgba(245,158,11,0.14); color: #b45309;
+    box-shadow: 0 0 0 10px rgba(245,158,11,0.07);
+}
+[data-bs-theme="dark"] .result-hero.is-wait .rh-ico { color: #fbbf24; }
+.result-hero.is-fail .rh-ico {
+    background: rgba(239,68,68,0.13); color: #dc2626;
+    box-shadow: 0 0 0 10px rgba(239,68,68,0.07);
+}
+[data-bs-theme="dark"] .result-hero.is-fail .rh-ico { color: #f87171; }
+.result-hero .rh-amt {
+    font-size: 1.85rem; font-weight: 800; line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    word-break: break-word;
+}
+.result-hero .rh-sub { font-size: 0.83rem; color: var(--text-muted); margin-top: 0.35rem; }
+
+/* A vertical track. Each step is done / active / pending, and the connecting
+   line fills only as far as the flow has actually got — a half-filled line is
+   the clearest way to say "still working". */
+.track { position: relative; margin: 0.25rem 0; }
+.track .tk {
+    position: relative;
+    display: flex; gap: 0.7rem;
+    padding: 0 0 1.05rem 0;
+}
+.track .tk:last-child { padding-bottom: 0; }
+.track .tk .tk-dot {
+    flex: 0 0 auto;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 0.5rem;
+    background: var(--bg-sunk);
+    border: 2px solid var(--border-color);
+    color: transparent;
+    z-index: 1;
+}
+/* The line lives on the dot, not the row, so it always starts dead centre. */
+.track .tk:not(:last-child) .tk-dot::after {
+    content: '';
+    position: absolute;
+    top: 18px; bottom: -2px; left: 8px;
+    width: 2px;
+    background: var(--border-color);
+}
+.track .tk.done .tk-dot {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #04140a;
+}
+.track .tk.done:not(:last-child) .tk-dot::after { background: var(--primary-color); }
+.track .tk.on .tk-dot {
+    background: transparent;
+    border-color: var(--lemon);
+    box-shadow: 0 0 0 4px var(--lemon-soft);
+}
+.track .tk-body { padding-top: 0; min-width: 0; }
+.track .tk-title { font-size: 0.82rem; font-weight: 700; line-height: 1.3; }
+.track .tk.pending .tk-title { color: var(--text-muted); font-weight: 600; }
+.track .tk-sub { font-size: 0.72rem; color: var(--text-muted); line-height: 1.35; }
+.track .tk.on .tk-sub { color: var(--lemon-dark); font-weight: 600; }
+[data-bs-theme="dark"] .track .tk.on .tk-sub { color: var(--lemon); }
+
+/* Countdown — the alternative-transfer window and the rate-quote timer. */
+.countdown {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.7rem;
+    border-radius: var(--radius-md);
+    background: rgba(245,158,11,0.10);
+    border: 1px solid rgba(245,158,11,0.32);
+    font-variant-numeric: tabular-nums;
+    font-weight: 800; font-size: 1.15rem;
+    color: #b45309;
+}
+[data-bs-theme="dark"] .countdown { color: #fbbf24; }
+.countdown.is-out { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.32); color: #dc2626; }
+[data-bs-theme="dark"] .countdown.is-out { color: #f87171; }
+.countdown i { font-size: 0.9rem; }
+
+/* Confirmation counter for a crypto deposit in flight. */
+.conf-meter { margin-top: 0.75rem; }
+.conf-meter .cm-top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 0.78rem; margin-bottom: 0.4rem;
+}
+.conf-meter .cm-n { font-weight: 800; font-variant-numeric: tabular-nums; }
+.conf-meter .cm-bar { height: 6px; border-radius: 3px; background: var(--bg-sunk); overflow: hidden; }
+.conf-meter .cm-fill {
+    height: 100%; border-radius: 3px;
+    background: var(--lemon);
+    transition: width 0.5s ease;
+}
+
+/* A small labelled figure with an icon — the "Fees Paid / Transactions" pair.
+   Grid rather than flex so the label and the value sit on the same two rows in
+   every tile, which keeps the values on one baseline across the pair. */
+.figure-tile {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 0.7rem;
+    row-gap: 0.1rem;
+    padding: 0.85rem 0.95rem;
+    height: 100%;
+}
+.figure-tile .qa-icon { grid-row: 1 / span 2; }
+.figure-tile .ft-label {
+    grid-column: 2;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    line-height: 1.3;
+    align-self: end;
+}
+.figure-tile .ft-value {
+    grid-column: 2;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+    align-self: start;
     overflow-wrap: anywhere;
 }
-@media (max-width: 380px) { .rate-pair { grid-template-columns: 1fr; } }
+@media (max-width: 400px) {
+    .figure-tile { column-gap: 0.55rem; padding: 0.75rem 0.8rem; }
+    .figure-tile .ft-value { font-size: 0.92rem; }
+}
+
+/* Contact row extras: how the contact got here, and the two row actions. */
+.contact-row .cr-how {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 5px;
+    background: var(--bg-sunk);
+    border: 1px solid var(--border-color);
+    font-size: 0.64rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.contact-row a { color: inherit; text-decoration: none; min-width: 0; }
+.contact-row .cr-fav {
+    background: none; border: 0; padding: 0.25rem 0.35rem;
+    line-height: 1; flex: none; border-radius: 7px;
+}
+.contact-row .cr-fav:hover { background: var(--bg-sunk); }
+.contact-row .cr-fav .fa-star { color: var(--lemon); font-size: 0.82rem; }
+.contact-row .cr-fav .far.fa-star { color: var(--text-muted); }
+
+/* ========================== Attachments ==========================
+   The evidence field shared by every support surface and the escalation
+   dialog. A dashed target that reads as droppable, then a compact list of
+   what has been attached. */
+
+.kp-attach-drop {
+    display: flex; align-items: center; gap: 0.7rem;
+    width: 100%; text-align: left;
+    padding: 0.75rem 0.9rem;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-sunk);
+    color: var(--text-main);
+    transition: var(--transition);
+}
+.kp-attach-drop:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-soft);
+}
+.kp-attach-drop > i { font-size: 1rem; color: var(--primary-dark); flex: none; }
+[data-bs-theme="dark"] .kp-attach-drop > i { color: var(--primary-color); }
+.kp-attach-drop b { display: block; font-size: 0.83rem; font-weight: 700; }
+.kp-attach-drop small { display: block; font-size: 0.71rem; color: var(--text-muted); line-height: 1.35; }
+
+.kp-attach-list:not(:empty) { margin-top: 0.5rem; display: grid; gap: 0.4rem; }
+.kp-attach-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+.kp-attach-item .ai-name { font-size: 0.79rem; font-weight: 600; }
+.kp-attach-item .ai-size { font-size: 0.69rem; color: var(--text-muted); }
+.kp-attach-item .ai-x {
+    margin-left: auto; flex: none;
+    background: none; border: 0; padding: 0.2rem 0.35rem;
+    border-radius: 6px; color: var(--text-muted); line-height: 1;
+}
+.kp-attach-item .ai-x:hover { background: rgba(239,68,68,0.12); color: #dc2626; }
+[data-bs-theme="dark"] .kp-attach-item .ai-x:hover { color: #f87171; }
+
+/* A number with a minus and a plus either side — the manual rate editor. */
+.rate-step { display: flex; align-items: center; gap: 0.25rem; }
+.rate-step .form-control { text-align: center; min-width: 96px; font-variant-numeric: tabular-nums; font-weight: 700; }
+.rate-step .btn { flex: none; width: 30px; padding: 0; }
+
+/* Stepper on a narrow screen. The labels are nowrap, so three long ones used
+   to eat the whole row and collapse the connecting line to its 8px minimum —
+   the line visibly jumping about between steps. Below 380px only the current
+   step keeps its label; the others are just their numbered dot, which leaves
+   the line room to stay even. */
+@media (max-width: 379.98px) {
+    .stepper .stp:not(.on) { font-size: 0; gap: 0; }
+    .stepper .stp:not(.on) .n { font-size: 0.66rem; }
+    .stepper .line { min-width: 14px; }
+}
+
+/* Stacked variant of the figure row. Three money figures reading down the
+   card, each label sitting directly above its value — which is how you read
+   a statement, and it gives the numbers room to be large without competing
+   for column width. */
+.flow-stack { display: grid; gap: 0; }
+.flow-stack > div {
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.flow-stack > div:first-child { padding-top: 0; }
+.flow-stack > div:last-child { border-bottom: none; padding-bottom: 0; }
+.flow-stack span {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    line-height: 1.3;
+}
+.flow-stack b {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: clamp(1.05rem, 4.4vw, 1.35rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: break-word;
+}
+
+/* Date range control above an operational queue. Presets on one line, the two
+   date fields on the next, so it never crowds a phone. */
+.daterange { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between; }
+.daterange .dr-presets { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.daterange .dr-fields { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.daterange .dr-lab {
+    font-size: 0.68rem; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .05em; margin: 0;
+}
+.daterange input[type="date"] {
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    color: var(--text-main); border-radius: var(--radius-sm);
+    font-size: 0.78rem; width: auto; min-width: 132px;
+}
+/* The native picker glyph is black-on-black in dark mode. */
+[data-bs-theme="dark"] .daterange input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(.6);
+}
+.figure-tile .ft-sub {
+    grid-column: 2;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+/* With a subtitle the tile needs a third row, and the icon spans all of it. */
+.figure-tile:has(.ft-sub) { grid-template-rows: auto auto auto; }
+.figure-tile:has(.ft-sub) .qa-icon { grid-row: 1 / span 3; }
+@media (max-width: 575.98px) {
+    .daterange { flex-direction: column; align-items: stretch; }
+    .daterange .dr-fields { justify-content: space-between; }
+}

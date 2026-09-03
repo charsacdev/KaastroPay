@@ -2,22 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verification | Kaastro Pay</title>
-<meta name="theme-color" content="#10b981">
-<link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
-<meta name="mobile-web-app-capable" content="yes">
-<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
-<script src="../js/boot.js" data-root="../"></script>
+<meta name="theme-color" content="#0A0A0A">
+<!-- Verification moved onto the profile page, where the rest of the account
+     settings live. Kept as a redirect so an old bookmark still lands on it. -->
+<meta http-equiv="refresh" content="0; url=profile.html#verification">
+<link rel="canonical" href="profile.html">
+<script>location.replace('profile.html#verification');</script>
 </head>
-<body data-portal="user" data-page="verification" data-title="Verification" data-sub="Your tier and limits">
-<main class="main-content"><div id="mount"></div></main>
-
-<script src="../js/backoffice.js"></script>
-<script>KP.ready(function(){ KP.flows2.verification(jQuery("#mount")); });</script>
-</body>
+<body><p>Redirecting to <a href="profile.html#verification">Profile &amp; verification</a>&hellip;</p></body>
 </html>

@@ -31,7 +31,7 @@
         if (!rec) {
             $el.html('<div class="card p-4"><div class="empty-state"><i class="fas fa-id-card"></i>'
                 + '<p>That submission no longer exists.</p>'
-                + '<a href="verification.html" class="btn btn-primary btn-sm mt-3">Back to the queue</a></div></div>');
+                + '<a href="kyc.html" class="btn btn-primary btn-sm mt-3">Back to the queue</a></div></div>');
             return;
         }
 
@@ -40,7 +40,7 @@
         var isLocked = locked(role, 'kyc');
 
         $el.html(
-            '<a href="verification.html" class="btn btn-soft btn-sm mb-3"><i class="fas fa-arrow-left me-1"></i>Back to queue</a>'
+            '<a href="kyc.html" class="btn btn-soft btn-sm mb-3"><i class="fas fa-arrow-left me-1"></i>Back to queue</a>'
             + '<div id="kGuard"></div>'
             + '<div class="row g-3">'
 
@@ -51,7 +51,7 @@
             + '<span class="small text-muted">click to enlarge</span></div>'
             + '<div class="row g-3" id="docs"></div>'
             + '<div class="k-alert k-warn mt-3"><i class="fas fa-magnifying-glass"></i><div>'
-            + '<b>Check all four before deciding.</b>The name on the document must match the '
+            + '<b class="hd">Check all four before deciding.</b>The name on the document must match the '
             + 'account, the face must match the selfie, the number must match what was typed, '
             + 'and the document must not be expired.</div></div>'
             + '</div>'
@@ -81,7 +81,7 @@
 
             + (rec.rejectReason
                 ? '<div class="k-alert k-danger mt-3"><i class="fas fa-circle-xmark"></i><div>'
-                  + '<b>Previously rejected</b>' + rec.rejectReason + '</div></div>' : '')
+                  + '<b class="hd">Previously rejected</b>' + rec.rejectReason + '</div></div>' : '')
 
             + '<hr class="my-3">'
             + '<label class="form-label">Decision note</label>'
@@ -178,11 +178,11 @@
             if (done) {
                 $('#actions').html('<div class="k-alert ' + (rec.status === 'approved' ? 'k-ok' : 'k-danger') + '">'
                     + '<i class="fas fa-' + (rec.status === 'approved' ? 'circle-check' : 'circle-xmark') + '"></i>'
-                    + '<div><b>Already ' + rec.status + '.</b>'
+                    + '<div><b class="hd">Already ' + rec.status + '.</b>'
                     + (rec.status === 'approved'
                         ? u.name + ' is now Tier ' + u.tier + '.'
                         : 'The user can resubmit at any time.') + '</div></div>'
-                    + '<a href="verification.html" class="btn btn-soft w-100 mt-2">Back to the queue</a>');
+                    + '<a href="kyc.html" class="btn btn-soft w-100 mt-2">Back to the queue</a>');
                 return;
             }
             if (isLocked) {
@@ -438,7 +438,7 @@
                   + '</div>'
                   + (kyc.rejectReason
                     ? '<div class="k-alert k-danger mt-2"><i class="fas fa-circle-xmark"></i><div>'
-                      + '<b>Rejection reason</b>' + kyc.rejectReason + '</div></div>' : '')
+                      + '<b class="hd">Rejection reason</b>' + kyc.rejectReason + '</div></div>' : '')
                 : '<div class="empty-state"><i class="fas fa-id-card"></i>'
                   + '<p>No submission on file. This user is on Tier ' + u.tier + '.</p></div>')
             + '<hr class="my-3"><div class="rv-group"><div class="rv-title">Limits at this tier</div>'
@@ -463,14 +463,14 @@
             $('#accessBox').html(
                 '<div class="k-alert ' + (b ? 'k-danger' : 'k-ok') + ' mb-3">'
                 + '<i class="fas fa-' + (b ? 'ban' : 'circle-check') + '"></i><div>'
-                + '<b>' + (b ? 'This account is blocked.' : 'This account is active.') + '</b>'
+                + '<b class="hd">' + (b ? 'This account is blocked.' : 'This account is active.') + '</b>'
                 + (b ? 'The user cannot log in, trade or withdraw. Balances are untouched.'
                      : 'The user has full access at Tier ' + u.tier + '.') + '</div></div>'
                 + (b
                     ? (role === 'admin'
                         ? '<button class="btn btn-primary w-100" id="unblockBtn2"><i class="fas fa-unlock me-1"></i>Restore access</button>'
                         : '<div class="k-alert k-warn"><i class="fas fa-lock"></i><div>'
-                          + '<b>Only an admin can lift a block.</b>An agent cannot quietly undo '
+                          + '<b class="hd">Only an admin can lift a block.</b>An agent cannot quietly undo '
                           + 'their own restriction — that asymmetry is the control.</div></div>')
                     : '<button class="btn btn-soft w-100 text-danger" id="blockBtn2">'
                       + '<i class="fas fa-ban me-1"></i>Block this account</button>')

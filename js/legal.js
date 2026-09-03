@@ -20,7 +20,7 @@
     function nav(active) {
         return '<nav class="pub-nav"><div class="container d-flex align-items-center justify-content-between gap-2">'
             + '<a href="index.html" class="brand-logo">'
-            + '<img src="images/logo.png" alt="Kaastro Pay" class="brand-img"></a>'
+            + '<img src="images/logo-onLight.png" alt="Kaastro Pay" class="brand-img"></a>'
 
             + '<div class="d-none d-lg-flex align-items-center gap-1">'
             + LINKS.map(function (l) {
@@ -45,7 +45,7 @@
             + 'aria-labelledby="pubMenuLabel">'
             + '<div class="offcanvas-header">'
             + '<a href="index.html" class="brand-logo ps-0" id="pubMenuLabel">'
-            + '<img src="images/logo.png" alt="Kaastro Pay" class="brand-img"></a>'
+            + '<img src="images/logo-onLight.png" alt="Kaastro Pay" class="brand-img"></a>'
             + '<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>'
             + '</div>'
             + '<div class="offcanvas-body">'
@@ -69,7 +69,7 @@
     function footer() {
         return '<footer class="pub-footer"><div class="container"><div class="row g-4">'
             + '<div class="col-lg-4"><a href="index.html" class="brand-logo mb-3 ps-0">'
-            + '<img src="images/logo.png" alt="Kaastro Pay" class="brand-img"></a>'
+            + '<img src="images/logo-onLight.png" alt="Kaastro Pay" class="brand-img"></a>'
             + '<p style="max-width:36ch">Crypto to local currency across Africa. Built by traders, for traders.</p>'
             + '<button class="btn btn-soft btn-sm" data-install data-install-hide-when-installed>'
             + '<i class="fas fa-download me-1"></i><span data-install-state>Install app</span></button>'

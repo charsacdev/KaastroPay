@@ -1,15 +1,15 @@
 {
-  "name": "Kaastro Pay — Crypto in. Your own money out.",
+  "name": "Kaastro Pay — Receive crypto. Spend in Naira.",
   "short_name": "Kaastro Pay",
-  "description": "Buy, sell and swap crypto and cash out to your local currency across Nigeria, Ghana, Kenya, Tanzania and Uganda.",
+  "description": "Receive supported crypto, converted to Naira automatically after confirmation, and withdraw straight to your bank.",
   "id": "/",
   "start_url": "./dashboard/index.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait",
-  "background_color": "#0d1a15",
-  "theme_color": "#10b981",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
   "categories": ["finance", "business"],
   "lang": "en",
   "dir": "ltr",
@@ -25,33 +25,33 @@
       "sizes": "1080x1920",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Live rates and your balance on the Kaastro Pay home screen"
+      "label": "Your Naira balance and recent activity on the Kaastro Pay home screen"
     }
   ],
   "shortcuts": [
     {
-      "name": "Buy crypto",
-      "short_name": "Buy",
-      "url": "./dashboard/buy.html",
-      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Sell crypto",
-      "short_name": "Sell",
-      "url": "./dashboard/sell.html",
-      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Deposit crypto",
+      "name": "Deposit",
       "short_name": "Deposit",
-      "url": "./dashboard/deposit-crypto.html",
-      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+      "url": "./dashboard/deposit.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
-      "name": "Rates",
+      "name": "Withdraw",
+      "short_name": "Withdraw",
+      "url": "./dashboard/withdraw.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Scan & Pay",
+      "short_name": "Scan",
+      "url": "./dashboard/scan.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Today's Rates",
       "short_name": "Rates",
       "url": "./dashboard/rates.html",
-      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "prefer_related_applications": false

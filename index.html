@@ -1,707 +1,344 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme-default="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kaastro Pay — Crypto in. Your own money out.</title>
-<meta name="description" content="Built by traders, for traders. Buy, sell and swap crypto and cash out to your local currency in minutes across Nigeria, Ghana, Kenya, Tanzania and Uganda.">
-<meta name="theme-color" content="#10b981">
+<title>Kaastro Pay — Receive crypto. Spend in Naira.</title>
+<meta name="description" content="Receive supported crypto, converted to Naira automatically after confirmation, and withdraw straight to your bank.">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Kaastro Pay">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
 <script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||'light');}catch(e){}})();</script>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <link rel="stylesheet" href="css/kaastro.css">
 <link rel="stylesheet" href="css/public.css">
 </head>
-<body>
+<body class="hp">
 
-<nav class="pub-nav">
-  <div class="container d-flex align-items-center justify-content-between gap-2">
-    <a href="index.html" class="brand-logo">
-      <img src="images/logo.png" alt="Kaastro Pay" class="brand-img">
+<!-- ============================== nav ============================== -->
+<nav class="hp-nav" id="nav">
+  <div class="wrap">
+    <a class="hp-logo" href="index.html" aria-label="Kaastro Pay — home">
+      <img src="images/logo-onLight.png" width="623" height="173" alt="Kaastro Pay">
     </a>
-    <div class="d-none d-lg-flex align-items-center gap-1">
-      <a href="#how" class="nav-link-pub">How it works</a>
-      <a href="#markets" class="nav-link-pub">Markets</a>
-      <a href="#security" class="nav-link-pub">Security</a>
-      <a href="#app" class="nav-link-pub">Get the app</a>
-      <a href="about.html" class="nav-link-pub">About</a>
+    <span class="hp-spacer"></span>
+    <div class="hp-links">
+      <a href="#how">How it works</a>
+      <a href="#services">Services</a>
+      <a href="#install">Get the app</a>
     </div>
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-soft btn-sm d-none d-lg-inline-flex align-items-center" data-install
-              data-install-hide-when-installed>
-        <i class="fas fa-download me-1"></i><span data-install-state>Install app</span></button>
-      <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
-      <a href="login.html" class="btn btn-soft btn-sm d-none d-lg-inline-block">Log in</a>
-      <a href="register.html" class="btn btn-primary btn-sm d-none d-sm-inline-block">Get started</a>
-      <button class="icon-btn pub-menu-btn" type="button" data-bs-toggle="offcanvas"
-              data-bs-target="#pubMenu" aria-label="Open menu"><i class="fas fa-bars"></i></button>
-    </div>
+    <span class="hp-spacer"></span>
+    <a class="hp-login" href="login.html">Log in</a>
+    <a class="btn-lime" href="register.html">Create account</a>
   </div>
 </nav>
 
-<!-- Mobile menu. Slides in from the right. -->
-<div class="offcanvas offcanvas-end offcanvas-pub" tabindex="-1" id="pubMenu" aria-labelledby="pubMenuLabel">
-  <div class="offcanvas-header">
-    <a href="index.html" class="brand-logo ps-0" id="pubMenuLabel">
-      <img src="images/logo.png" alt="Kaastro Pay" class="brand-img">
-    </a>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-  </div>
-  <div class="offcanvas-body">
-    <a href="#how" class="pm-link" data-bs-dismiss="offcanvas"><i class="fas fa-route"></i>How it works</a>
-    <a href="#markets" class="pm-link" data-bs-dismiss="offcanvas"><i class="fas fa-earth-africa"></i>Markets</a>
-    <a href="#security" class="pm-link" data-bs-dismiss="offcanvas"><i class="fas fa-shield-halved"></i>Security</a>
-    <a href="#app" class="pm-link" data-bs-dismiss="offcanvas"><i class="fas fa-mobile-screen"></i>Get the app</a>
-    <a href="about.html" class="pm-link"><i class="fas fa-users"></i>About us</a>
-
-    <div class="pm-section">Legal</div>
-    <a href="terms.html" class="pm-link"><i class="fas fa-file-contract"></i>Terms of service</a>
-    <a href="privacy.html" class="pm-link"><i class="fas fa-lock"></i>Privacy policy</a>
-    <a href="aml.html" class="pm-link"><i class="fas fa-scale-balanced"></i>AML compliance</a>
-
-    <div class="pm-foot">
-      <button class="btn btn-primary w-100 mb-2" data-install data-install-hide-when-installed>
-        <i class="fas fa-download me-2"></i><span data-install-state>Install app</span></button>
-      <a href="register.html" class="btn btn-soft w-100 mb-2">Create a free account</a>
-      <a href="login.html" class="btn btn-soft w-100">Log in</a>
-      <p class="pm-meta mb-0">Nigeria · Ghana · Kenya · Tanzania · Uganda</p>
-    </div>
-  </div>
-</div>
-
-<!-- ============================== Hero ============================== -->
-<header class="hero">
-  <div class="hero-glow"></div>
-  <canvas id="heroChart" aria-hidden="true"></canvas>
-  <div class="float-layer" id="floatLayer" aria-hidden="true"></div>
-  <div class="container position-relative">
-    <div class="row align-items-center g-4 g-lg-5">
-
-      <div class="col-lg-6">
-        <span class="eyebrow-pill"><i class="fas fa-bolt"></i>Built by traders, for traders</span>
-        <h1 class="mt-3">Crypto in. Your own money out.</h1>
-        <p class="lede mt-3">
-          Send crypto to your Kaastro wallet or fund with cash from your bank. Buy, sell and
-          swap at rates you can see, then withdraw in Naira, Cedis or Shillings — whatever
-          your country actually uses.
-        </p>
-        <div class="d-flex flex-wrap gap-2 mt-4">
-          <a href="register.html" class="btn btn-primary btn-lg">Create a free account</a>
-          <a href="#how" class="btn btn-soft btn-lg">See how it works</a>
-        </div>
-        <div class="hero-points mt-4">
-          <span><i class="fas fa-shield-halved"></i>Verified accounts only</span>
-          <span><i class="fas fa-clock"></i>Payouts in minutes</span>
-          <span><i class="fas fa-eye"></i>No hidden spread</span>
-        </div>
-
-        <div class="face-stack mt-4" id="heroFaces"></div>
+<!-- ============================== hero ============================== -->
+<section class="hp-hero">
+  <div class="wrap">
+    <div data-rise>
+      <span class="hp-eyebrow">Crypto to Naira, made simple</span>
+      <h1 class="hp-h1 display">Receive crypto.<br>Spend in Naira.</h1>
+      <p class="hp-lede">Receive supported crypto, convert automatically after
+        confirmation, and withdraw directly to your bank.</p>
+      <div class="hp-hero-cta">
+        <a class="btn-lime btn-lg" href="register.html">Create free account</a>
+        <a class="hp-link" href="#how">See how it works <i class="fas fa-arrow-right"></i></a>
       </div>
-
-      <!-- Rates live inside the app, on a phone. Pick a country and the
-           screen re-renders in that country's currency. -->
-      <div class="col-lg-6">
-        <div class="hero-visual">
-
-          <!-- A real person using the thing, so the page opens on a face
-               rather than on a spec sheet. -->
-          <div class="hero-photo">
-            <img src="images/hero-trader.png" width="1024" height="1024"
-                 alt="A trader checking her Kaastro Pay balance on her phone">
-          </div>
-
-          <div class="payout-chip">
-            <span class="pc-ico"><i class="fas fa-check"></i></span>
-            <span><b>₦150,000 paid out</b><span>GTBank · settled in 52s</span></span>
-          </div>
-
-          <div class="phone">
-            <div class="phone-notch"></div>
-            <div class="phone-screen">
-
-              <div class="phone-status">
-                <span>9:41</span>
-                <span class="ps-icons">
-                  <i class="fas fa-signal"></i><i class="fas fa-wifi"></i><i class="fas fa-battery-full"></i>
-                </span>
-              </div>
-
-              <div class="ph-head">
-                <div>
-                  <div class="ph-title">Today's rates</div>
-                  <div class="ph-sub" id="phSub">Live mid-market</div>
-                </div>
-                <div class="ph-country" id="phCountry"></div>
-              </div>
-
-              <div class="ph-flags mb-2" id="phFlags"></div>
-
-              <div id="phRates"></div>
-
-              <button class="ph-cta" onclick="location.href='register.html'">Start trading</button>
-
-              <div class="ph-foot">
-                <span><i class="fas fa-circle text-up" style="font-size:.4rem"></i> Live</span>
-                <span id="phTick"></span>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
 
-    <!-- Trusted by traders -->
-    <div class="trust-bar mt-5">
-      <div class="trust-item"><b>38,400+</b><span>Traders on the platform</span></div>
-      <div class="trust-item"><b>$2.4M</b><span>Settled every month</span></div>
-      <div class="trust-item"><b>1 min</b><span>Average payout time</span></div>
-      <div class="trust-item"><b>5</b><span>Countries live</span></div>
-    </div>
-  </div>
-</header>
-
-<!-- ========================= Built by traders ========================= -->
-<section class="sec sec-alt">
-  <div class="container">
-    <div class="row g-4 align-items-center">
-      <div class="col-lg-5">
-        <div class="photo-card tall position-relative">
-          <img src="images/team-collaboration.png" width="740" height="493"
-               alt="The Kaastro Pay team celebrating together in the office">
-          <div class="photo-cap">
-            <b>We are our own first customers</b>
-            <span>Everyone here trades on the platform with their own money.</span>
-          </div>
-        </div>
+    <div class="hp-shot" data-rise>
+      <div class="hp-shot-frame">
+        <img src="images/hero-trader.png" alt="Checking a Naira payout on a phone" width="1024" height="1024">
       </div>
-      <div class="col-lg-7">
-        <div class="sec-eyebrow">Why we built this</div>
-        <h2 class="sec-title">Built by traders, for traders</h2>
-        <p class="sec-lede">
-          We spent years cashing out through group chats, vendors who went quiet at
-          midnight, and rates nobody would explain. Kaastro Pay is the platform we
-          wanted then: one rate, published; one balance; and money that arrives when
-          it says it will.
-        </p>
-        <div class="row g-3 mt-2" id="traderPoints"></div>
-        <a href="about.html" class="btn btn-soft mt-3">Read our story</a>
+      <div class="hp-toast">
+        <span class="ht-k">K</span>
+        <span>
+          <span class="ht-1 d-block">100 USDT received</span>
+          <span class="ht-2 d-block">&#8358;150,000 credited</span>
+        </span>
+        <span class="ht-now">now</span>
+        <i class="fas fa-circle-check ht-ok"></i>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ========================= No more waiting ========================= -->
-<section class="sec">
-  <div class="container">
-    <div class="row g-4 g-lg-5 align-items-center">
-      <div class="col-lg-6">
-        <div class="sec-eyebrow">Speed</div>
-        <h2 class="sec-title">No more waiting games</h2>
-        <p class="sec-lede">
-          Every step has a number attached to it, and we publish them. If something is
-          going to be slow, you find out before you commit — not afterwards.
-        </p>
-        <div class="row g-3 mt-2" id="waitPoints"></div>
-      </div>
-      <div class="col-lg-6">
-        <div class="photo-card wide position-relative">
-          <img src="images/payout-success.png" width="740" height="493"
-               alt="A customer celebrating a cash payout from Kaastro Pay">
-          <div class="photo-badge tl">
-            <b>1 min</b><span>average payout</span>
-          </div>
-          <div class="photo-badge br">
-            <b>99.7%</b><span>settle first time</span>
-          </div>
-          <div class="photo-cap">
-            <b>Cashed out before the kettle boiled</b>
-            <span>Sell, confirm, and the money is in your bank account.</span>
-          </div>
-        </div>
-      </div>
+<!-- ============================ stats band ============================ -->
+<section class="hp-stats bleed-dark">
+  <div class="wrap">
+    <div class="hp-stat-grid" data-rise>
+      <div class="hp-stat"><b class="display">38,400+</b><span>Users</span></div>
+      <div class="hp-stat"><b class="display">$2.4M</b><span>Monthly volume</span></div>
+      <div class="hp-stat"><b class="display">1 min</b><span>Average payout</span></div>
+      <div class="hp-stat"><b class="display">5</b><span>Countries</span></div>
     </div>
   </div>
 </section>
 
-<!-- ====================== Everything in one balance ====================== -->
-<section class="sec sec-alt">
-  <div class="container">
-    <div class="sec-eyebrow">The product</div>
-    <h2 class="sec-title">Everything, in one balance</h2>
-    <p class="sec-lede">One account holds your cash and your crypto. Moving between them takes one tap.</p>
-    <div class="row g-3 mt-2" id="features"></div>
-  </div>
-</section>
+<!-- ============================== steps ============================== -->
+<section class="hp-steps" id="how">
+  <div class="wrap">
+    <div data-rise>
+      <h2 class="hp-h2 display">From crypto to your bank&mdash;in four steps.</h2>
+      <div class="hp-step-list">
+        <div class="hp-step"><span class="n">1</span><p>Create your Kaastro account</p></div>
+        <div class="hp-step"><span class="n">2</span><p>Get a crypto deposit address</p></div>
+        <div class="hp-step"><span class="n">3</span><p>Send supported crypto</p></div>
+        <div class="hp-step"><span class="n">4</span><p>Receive Naira and withdraw to your bank</p></div>
+      </div>
+      <p class="hp-secure"><i class="fas fa-shield-halved"></i>Secure. Simple. Built for you.</p>
+    </div>
 
-<!-- ============================== How it works ============================== -->
-<section class="sec" id="how">
-  <div class="container">
-    <div class="sec-eyebrow">Getting started</div>
-    <h2 class="sec-title">Four steps, about five minutes</h2>
-    <p class="sec-lede">Account, then verification, then you are trading. You only verify once.</p>
-    <div class="row g-3 mt-2" id="steps"></div>
-    <div class="k-alert k-info mt-4">
-      <i class="fas fa-circle-info"></i>
-      <div><b>Verification is what unlocks the account.</b>
-        Until your national ID is confirmed we cannot issue your deposit details or hold
-        money for you. That is a rule from the regulator in every market we operate in,
-        not a policy of ours.</div>
+    <div class="hp-green-card" data-rise>
+      <h3><i class="fas fa-lock-open"></i>Start without verification</h3>
+      <div class="hp-check"><i class="fas fa-circle-check"></i>Deposit supported crypto</div>
+      <div class="hp-check"><i class="fas fa-circle-check"></i>Withdraw Naira to your bank</div>
+      <hr class="hp-hr">
+      <div class="hp-req-title">Verification is required for</div>
+      <div class="hp-req"><i class="far fa-circle"></i>Naira deposits by bank transfer</div>
+      <div class="hp-req"><i class="far fa-circle"></i>Crypto withdrawals &mdash; Tier 3</div>
+      <a class="btn-lime w-100 btn-lg mt-4" href="register.html">Open an account</a>
     </div>
   </div>
 </section>
 
-<!-- ============================== Markets ============================== -->
-<section class="sec sec-alt" id="markets">
-  <div class="container">
-    <div class="sec-eyebrow">Where we operate</div>
-    <h2 class="sec-title">Your country, your currency, your rails</h2>
-    <p class="sec-lede">
-      A dedicated bank account is a Nigerian thing. Mobile money is how Ghana and Kenya
-      actually move money. We use whichever one your country really uses — same app,
-      the right plumbing.
-    </p>
-    <div class="row g-3 mt-2" id="countryCards"></div>
-  </div>
-</section>
-
-<!-- ============================== Security ============================== -->
-<section class="sec" id="security">
-  <div class="container">
-    <div class="row g-4">
-      <div class="col-lg-5">
-        <div class="sec-eyebrow">Security &amp; speed</div>
-        <h2 class="sec-title">Fast is only good if it is also safe</h2>
-        <p class="sec-lede">
-          Speed comes from automation, not from skipping checks. Here is what sits
-          between your money and a bad day.
-        </p>
-        <a href="aml.html" class="btn btn-soft mt-3">Our AML policy</a>
-      </div>
-      <div class="col-lg-7">
-        <div class="card p-3 p-md-4">
-          <div id="securityList"></div>
-        </div>
-      </div>
+<!-- ============================= services ============================= -->
+<section class="hp-services bleed-dark" id="services">
+  <div class="wrap">
+    <div class="hp-head-row" data-rise>
+      <h2 class="hp-h2 display">More than cashing out.</h2>
+      <p class="hp-note"><i class="fas fa-shield-halved"></i>
+        Naira bank deposits are available after identity verification.</p>
     </div>
-  </div>
-</section>
 
-<!-- ============================== Trust ============================== -->
-<section class="sec sec-alt">
-  <div class="container">
-    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
-      <div>
-        <div class="sec-eyebrow">Trusted by traders</div>
-        <h2 class="sec-title">What people actually say</h2>
-      </div>
-      <div class="face-stack" id="quoteFaces"></div>
-    </div>
-    <div class="quote-slider mt-3">
-      <div id="quoteCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5500">
-        <div class="carousel-inner" id="quotes"></div>
-      </div>
-      <div class="quote-nav">
-        <button type="button" data-bs-target="#quoteCarousel" data-bs-slide="prev" aria-label="Previous">
-          <i class="fas fa-chevron-left"></i></button>
-        <div class="quote-dots" id="quoteDots"></div>
-        <button type="button" data-bs-target="#quoteCarousel" data-bs-slide="next" aria-label="Next">
-          <i class="fas fa-chevron-right"></i></button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================== Get the app ============================== -->
-<section class="sec sec-alt" id="app">
-  <div class="container">
-    <div class="app-band">
-      <div class="d-flex align-items-center gap-3 mb-3">
-        <img src="images/icon-maskable-192.png" class="app-icon-tile" width="76" height="76"
-             alt="The Kaastro Pay app icon">
+    <div class="hp-svc-grid" data-rise>
+      <div class="hp-svc">
+        <span class="ico"><i class="fas fa-paper-plane"></i></span>
         <div>
-          <div class="sec-eyebrow" style="color:#34d399">Web app</div>
-          <h2>Put Kaastro Pay on your home screen</h2>
+          <h3 class="hp-h3">Move money</h3>
+          <p>Transfer to Kaastro users, request money, scan to pay.</p>
         </div>
       </div>
-      <p>
-        No app store, no 80&nbsp;MB download, no waiting for an update to be approved.
-        Install it straight from this page and it opens full screen with its own icon,
-        exactly like a native app.
-      </p>
-      <div class="ab-points ab-points-2">
-        <span><i class="fas fa-bolt"></i>Installs in seconds and takes almost no storage.</span>
-        <span><i class="fas fa-wifi"></i>Opens and shows your last balances even on a bad connection.</span>
-        <span><i class="fas fa-arrows-rotate"></i>Updates itself — you are always on the current version.</span>
-        <span><i class="fas fa-hand-point-up"></i>Jump straight to Buy, Sell or Deposit by long-pressing the icon.</span>
+      <div class="hp-svc">
+        <span class="ico"><i class="fas fa-wallet"></i></span>
+        <div>
+          <h3 class="hp-h3">Pay everyday bills</h3>
+          <p>Airtime, data, electricity, TV and internet.</p>
+        </div>
       </div>
-      <div class="d-flex flex-wrap gap-2 mt-4">
-        <button class="btn btn-install btn-lg" data-install data-install-hide-when-installed>
-          <i class="fas fa-download me-2"></i><span data-install-state>Install app</span></button>
-        <button class="btn btn-ghost btn-lg" data-install>
-          <i class="fas fa-circle-question me-2"></i>How do I install it?</button>
+      <div class="hp-svc">
+        <span class="ico"><i class="fas fa-globe"></i></span>
+        <div>
+          <h3 class="hp-h3">Send beyond borders</h3>
+          <p>Send money abroad in supported local currencies.</p>
+        </div>
       </div>
-      <p class="mt-3 mb-0" style="font-size:.78rem;color:var(--hero-dim)" id="installHint"></p>
+    </div>
+
+    <div data-rise>
+      <div class="hp-cover">Available in</div>
+      <div class="hp-flags">
+        <span class="hp-chip"><i class="dot"></i>Nigeria</span>
+        <span class="hp-chip"><i class="dot"></i>Ghana</span>
+        <span class="hp-chip"><i class="dot"></i>Kenya</span>
+        <span class="hp-chip"><i class="dot"></i>Tanzania</span>
+        <span class="hp-chip"><i class="dot"></i>Uganda</span>
+      </div>
+      <a class="btn-lime btn-lg mt-4" href="register.html">Explore all services</a>
     </div>
   </div>
 </section>
 
-<!-- ============================== CTA ============================== -->
-<section class="sec">
-  <div class="container">
-    <div class="cta-band">
-      <h2>Ready to stop waiting on vendors?</h2>
-      <p>Create an account, verify once, and cash out at a rate you can see.</p>
-      <div class="d-flex flex-wrap gap-2 justify-content-center">
-        <a href="register.html" class="btn btn-primary btn-lg">Create a free account</a>
-        <a href="login.html" class="btn btn-soft btn-lg">I already have one</a>
+<!-- ============================== install ============================== -->
+<section class="hp-install" id="install">
+  <div class="wrap">
+    <div data-rise>
+      <h2 class="hp-h2 display">Kaastro Pay,<br>one tap away.</h2>
+      <p class="hp-lede">Install the secure web app on your phone&mdash;no app store required.</p>
+
+      <div class="hp-get">
+        <div class="hp-qr" id="qr"></div>
+        <div class="hp-get-btns">
+          <button class="btn-lime" type="button" data-install>Install Kaastro Pay</button>
+          <button class="btn-outline-ink" type="button" data-install-guide>Installation guide</button>
+        </div>
       </div>
-      <div class="face-stack justify-content-center mt-4" id="ctaFaces"></div>
+
+      <!-- Two platforms, two routes. As cards they hold their shape when the
+           column narrows, instead of the icon and its two lines of text
+           collapsing into each other. -->
+      <div class="hp-platforms">
+        <div class="hp-plat">
+          <span class="pl-ico"><i class="fab fa-android"></i></span>
+          <span class="pl-body">
+            <b>Android</b>
+            <span>Tap <em>Install</em>, or <em>Add to Home Screen</em> from the browser menu.</span>
+          </span>
+        </div>
+        <div class="hp-plat">
+          <span class="pl-ico"><i class="fab fa-apple"></i></span>
+          <span class="pl-body">
+            <b>iPhone</b>
+            <span>Open <em>Share</em> in Safari, then <em>Add to Home Screen</em>.</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- The real dashboard, not an illustration of it. -->
+    <div class="hp-phone-stage" data-rise>
+      <div class="hp-phone">
+        <span class="notch"></span>
+        <img src="images/phone-home.png" width="960" height="1651"
+             alt="The Kaastro Pay home screen showing a Naira balance and quick actions"
+             loading="lazy" decoding="async">
+      </div>
+    </div>
+
+    <div class="hp-usp" data-rise>
+      <div><i class="fas fa-shield-halved"></i><b>Transaction PIN</b>
+        <span>Extra security on every payment.</span></div>
+      <div><i class="fas fa-location-crosshairs"></i><b>Live tracking</b>
+        <span>Follow every payment in real time.</span></div>
+      <div><i class="fas fa-headset"></i><b>Human support</b>
+        <span>Real people, ready to help.</span></div>
     </div>
   </div>
 </section>
 
-<!-- ============================== Footer ============================== -->
-<footer class="pub-footer">
-  <div class="container">
-    <div class="row g-4">
-      <div class="col-lg-4">
-        <a href="index.html" class="brand-logo mb-3 ps-0">
-          <img src="images/logo.png" alt="Kaastro Pay" class="brand-img">
-        </a>
-        <p style="max-width:36ch">
-          Crypto to local currency across Africa. Built by traders, for traders.</p>
-        <p class="mb-0" style="font-size:.78rem">
-          Prototype build — no real funds move on this site.</p>
+<!-- ============================ closing CTA ============================ -->
+<section class="hp-cta-wrap">
+  <div class="wrap">
+    <div class="hp-cta" data-rise>
+      <h2 class="display">Ready to receive<br>your next payment?</h2>
+      <p>Open an account in minutes. Start receiving crypto and spending Naira today.</p>
+      <div class="row-btn">
+        <a class="btn-lime btn-lg" href="register.html">Create free account</a>
+        <a class="btn-ink btn-lg" href="login.html">Log in</a>
       </div>
-      <div class="col-6 col-lg-2">
+    </div>
+  </div>
+</section>
+
+<!-- ============================== footer ============================== -->
+<footer class="hp-footer">
+  <div class="wrap">
+    <div class="hp-fcols">
+      <div>
         <h4>Product</h4>
-        <a href="register.html">Create account</a>
-        <a href="login.html">Log in</a>
-        <a href="#how">How it works</a>
-        <a href="#markets">Markets</a>
-        <a href="#security">Security</a>
+        <a href="dashboard/index.html">Services</a>
+        <a href="dashboard/rates.html">Rates</a>
+        <a href="dashboard/profile.html">Security</a>
       </div>
-      <div class="col-6 col-lg-2">
+      <div>
         <h4>Company</h4>
-        <a href="about.html">About us</a>
-        <a href="about.html#story">Our story</a>
+        <a href="about.html">About</a>
         <a href="about.html#contact">Contact</a>
+        <a href="about.html">Careers</a>
       </div>
-      <div class="col-6 col-lg-2">
+      <div>
         <h4>Legal</h4>
-        <a href="terms.html">Terms of service</a>
-        <a href="privacy.html">Privacy policy</a>
-        <a href="aml.html">AML compliance</a>
-        <a href="aml.html#kyc">KYC policy</a>
+        <a href="terms.html">Terms</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="aml.html">AML/KYC</a>
       </div>
-      <div class="col-6 col-lg-2">
+      <div>
         <h4>Support</h4>
-        <a href="about.html#contact">Contact us</a>
-        <a href="login.html">Help centre</a>
-        <a href="aml.html#report">Report an issue</a>
+        <a href="dashboard/support.html">Help Centre</a>
+        <a href="dashboard/support.html">Report an issue</a>
       </div>
     </div>
-    <hr class="my-4">
-    <div class="d-flex flex-wrap justify-content-between gap-2">
-      <span>© 2026 Kaastro Pay. All rights reserved.</span>
-      <span>Nigeria · Ghana · Kenya · Tanzania · Uganda</span>
+    <div class="hp-legal">
+      <span>Operated by Wins Begin Limited</span>
+      <span>&copy; 2026 Kaastro Pay</span>
     </div>
   </div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="js/config.js"></script>
-<script src="js/rates-engine.js"></script>
-<script src="js/mock-data.js"></script>
-<script src="js/rails.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="js/pwa.js"></script>
 <script>
-$(function () {
-  var F = KP.fmt;
-  var cc = KP.currentCountry().code;
-
-  $('#themeBtn').on('click', function () {
-    KP.rails.theme.apply(KP.rails.theme.current() === 'dark' ? 'light' : 'dark');
-  });
-
-  /* ---------------- phone screen ---------------- */
-
-  function paintPhone() {
-    var C = KP.COUNTRIES[cc];
-
-    $('#phCountry').html('<span>' + C.flag + '</span><span>' + C.currency + '</span>'
-      + '<i class="fas fa-chevron-down" style="font-size:.5rem;opacity:.6"></i>');
-    $('#phSub').text('1 unit in ' + C.currency);
-
-    $('#phFlags').html(KP.COUNTRY_LIST.map(function (c) {
-      return '<button class="ph-flag' + (c.code === cc ? ' active' : '') + '" data-cc="' + c.code + '">'
-        + '<span>' + c.flag + '</span><span>' + c.currency + '</span></button>';
-    }).join(''));
-
-    $('#phRates').html(['USDT', 'BTC', 'ETH', 'BNB'].map(function (s) {
-      var a = KP.ASSETS[s], ch = KP.rates.change24h(s);
-      return '<div class="ph-rate">'
-        + '<span class="pr-ico" style="background:' + a.color + '">' + s.slice(0, 3) + '</span>'
-        + '<span><span class="pr-name">' + s + '</span><span class="pr-sub">' + a.name + '</span></span>'
-        + '<span class="pr-right"><span class="pr-px">' + F.fiat(KP.rates.midFiat(s, C.currency), C.currency) + '</span><br>'
-        + '<span class="pr-ch ' + (ch >= 0 ? 'text-up' : 'text-down') + '">'
-        + (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch).toFixed(2) + '%</span></span></div>';
-    }).join(''));
-  }
-
-  $(document).on('click', '.ph-flag, #phCountry', function () {
-    var next = $(this).data('cc');
-    if (!next) {
-      // Tapping the header chip cycles to the next market.
-      var codes = KP.COUNTRY_LIST.map(function (c) { return c.code; });
-      next = codes[(codes.indexOf(cc) + 1) % codes.length];
-    }
-    cc = next;
-    KP.setCountry(cc);
-    paintPhone();
-  });
-
-  paintPhone();
-  KP.rates.onTick(paintPhone);
-  setInterval(function () { $('#phTick').text('updates in ' + KP.rates.secondsToTick() + 's'); }, 1000);
-
-  /* ---------------- sections ---------------- */
-
-  $('#traderPoints').html([
-    ['fa-eye', 'qa-green', 'One published rate', 'The rate on the screen is the rate you get. Buy and sell prices sit either side of mid, and we show you both.'],
-    ['fa-moon', 'qa-blue', 'Open at 3am', 'No vendor to wake up. The platform settles on its own, and an agent picks up the exceptions.'],
-    ['fa-receipt', 'qa-purple', 'A receipt for everything', 'Every trade records the rate that was applied. Nothing is reconstructed after the fact.'],
-    ['fa-comments', 'qa-amber', 'Answers, not excuses', 'When something is delayed you get the reason and a reference, not a shrug.']
-  ].map(function (f) {
-    return '<div class="col-sm-6"><div class="feature">'
-      + '<div class="qa-icon ' + f[1] + '"><i class="fas ' + f[0] + '"></i></div>'
-      + '<h3>' + f[2] + '</h3><p>' + f[3] + '</p></div></div>';
-  }).join(''));
-
-  $('#waitPoints').html([
-    ['1 min', 'Average cash payout', 'From confirming a withdrawal to money in your bank or mobile money wallet.'],
-    ['30 sec', 'Rate refresh', 'Prices update on a visible timer, and your quote is locked when you confirm.'],
-    ['12', 'Confirmations on TRC20', 'Published per network, so you know the wait before you send.'],
-    ['24/7', 'Agent cover', 'Two shifts, so a stuck transaction never sits until morning.']
-  ].map(function (w) {
-    return '<div class="col-6"><div class="feature h-100">'
-      + '<div style="font-size:1.5rem;font-weight:800;letter-spacing:-.035em" class="text-primary-k">' + w[0] + '</div>'
-      + '<h3 style="margin-top:.3rem">' + w[1] + '</h3><p>' + w[2] + '</p></div></div>';
-  }).join(''));
-
-  $('#features').html([
-    ['fa-arrow-down', 'qa-green', 'Deposit crypto', 'Send USDT, USDC, BTC, ETH, BNB or TRX to an address that is yours alone, on the network you choose.'],
-    ['fa-building-columns', 'qa-blue', 'Deposit cash', 'A dedicated account number in Nigeria, mobile money elsewhere. Credits in under a minute.'],
-    ['fa-cart-shopping', 'qa-green', 'Buy crypto', 'Spend your cash balance and the coins land instantly — no blockchain wait, because they never leave custody.'],
-    ['fa-hand-holding-dollar', 'qa-amber', 'Sell crypto', 'Convert to your local currency at a rate that is pinned the moment you confirm.'],
-    ['fa-right-left', 'qa-purple', 'Swap instantly', 'BTC to USDT, ETH to BNB. Both legs internal, so no network fee and nothing to wait for.'],
-    ['fa-money-bill-transfer', 'qa-blue', 'Withdraw cash', 'Payout to your bank or mobile money in your own currency, usually within five minutes.'],
-    ['fa-paper-plane', 'qa-red', 'Send crypto out', 'Withdraw to any external wallet, with address whitelisting so a stolen session cannot invent a destination.'],
-    ['fa-chart-line', 'qa-green', 'Watch the market', 'Live prices per asset in your currency, with history and a converter built in.']
-  ].map(function (f) {
-    return '<div class="col-sm-6 col-lg-3"><div class="feature">'
-      + '<div class="qa-icon ' + f[1] + '"><i class="fas ' + f[0] + '"></i></div>'
-      + '<h3>' + f[2] + '</h3><p>' + f[3] + '</p></div></div>';
-  }).join(''));
-
-  $('#steps').html([
-    ['Create your account', 'Email, phone, and the country you are in. Your country sets your currency, so pick carefully — it stays with the account.'],
-    ['Verify your identity', 'Your national ID and a selfie. This is what unlocks your deposit details and your limits.'],
-    ['Fund your balance', 'Send crypto to your wallet address, or transfer cash to the account number we issue you.'],
-    ['Trade and cash out', 'Buy, sell or swap, then withdraw to your bank whenever you want.']
-  ].map(function (s, i) {
-    return '<div class="col-sm-6 col-lg-3"><div class="step-card">'
-      + '<div class="sc-n">' + (i + 1) + '</div><h3>' + s[0] + '</h3><p>' + s[1] + '</p></div></div>';
-  }).join(''));
-
-  $('#countryCards').html(KP.COUNTRY_LIST.map(function (c) {
-    return '<div class="col-sm-6 col-lg-4"><div class="country-card">'
-      + '<div class="cc-top"><span class="cc-flag">' + c.flag + '</span>'
-      + '<span><span class="cc-name">' + c.name + '</span>'
-      + '<span class="cc-ccy">' + c.currency + ' · ' + c.symbol + '</span></span>'
-      + '<span class="pill pill-success ms-auto"><i class="fas fa-circle"></i>Live</span></div>'
-      + '<div class="cc-row"><span>You verify with</span><span>' + c.idLabel + '</span></div>'
-      + '<div class="cc-row"><span>You fund by</span><span>' + c.fundingLabel + '</span></div>'
-      + '<div class="cc-row"><span>You cash out to</span><span>'
-      + (c.payoutRail === 'bank' ? 'Your bank account' : 'Mobile money') + '</span></div>'
-      + '</div></div>';
-  }).join(''));
-
-  $('#securityList').html([
-    ['fa-vault', 'qa-blue', 'Cold storage by default', 'Only a day of expected outflows sits in the hot wallet. Everything else is offline behind a multi-person procedure.'],
-    ['fa-lock', 'qa-green', 'A PIN on every debit', 'Selling, swapping and both kinds of withdrawal all need your four-digit transaction PIN.'],
-    ['fa-list-check', 'qa-purple', 'Whitelisted withdrawals', 'Crypto can only leave to addresses you saved, and new destinations wait 24 hours before first use.'],
-    ['fa-user-shield', 'qa-amber', 'Verified accounts only', 'Every user is identity-checked and screened. It is slower to sign up and far safer to be a customer.'],
-    ['fa-power-off', 'qa-red', 'We stop rather than guess', 'If our rate feeds disagree or a payout provider fails, trading halts. We would rather pause than price you wrong.']
-  ].map(function (s) {
-    return '<div class="sec-item">'
-      + '<div class="qa-icon ' + s[1] + ' sm"><i class="fas ' + s[0] + '"></i></div>'
-      + '<div><h3>' + s[2] + '</h3><p>' + s[3] + '</p></div></div>';
-  }).join(''));
-
-  /* ---------------- testimonial slider ---------------- */
-
-  var QUOTES = [
-    ['I used to lose an hour a day chasing vendors for a rate. Now I check the app, sell, and the Naira is in GTBank before I finish my coffee.', 'Tunde A.', 'Lagos · trading since 2019', 'avatar-tunde2000.jpg'],
-    ['The Cedis rate is right there on the screen. I do not have to ask anyone what today\u2019s price is, and nobody quotes me a different number because I am new.', 'Akosua B.', 'Accra · Ghana', 'avatar-mercy24.jpg'],
-    ['A withdrawal stalled once when their bank partner went down. An agent called me, confirmed it by hand, and it settled the same hour. That is the whole test.', 'Kelvin I.', 'Abuja · Nigeria', 'avatar-johntrader.jpg'],
-    ['I pay my electricity from the same balance I trade from. One app, one balance, no moving money between three places first.', 'Ngozi U.', 'Enugu · Nigeria', 'avatar-blessingfx.jpg'],
-    ['Swaps settle instantly because both legs are internal. No network fee, no waiting for confirmations. That alone saved me real money.', 'Wanjiru K.', 'Nairobi · Kenya', 'avatar-c3.jpg'],
-    ['The receipt records the rate that was actually applied. When I do my books at month end, the numbers just match.', 'David M.', 'Accra · Ghana', 'avatar-b2.jpg']
-  ];
-
-  function card(q) {
-    return '<div class="col-md-4"><div class="quote-card h-100">'
-      + '<div class="qc-stars">★★★★★</div>'
-      + '<p>&ldquo;' + q[0] + '&rdquo;</p>'
-      + '<div class="qc-who"><img src="images/' + q[3] + '" class="rounded-circle" width="34" height="34" alt="">'
-      + '<span><b>' + q[1] + '</b><span>' + q[2] + '</span></span></div>'
-      + '</div></div>';
-  }
-
-  /* Three cards per slide on desktop, one on mobile — rebuilt on resize so the
-     slider never shows a half-empty row. */
-  function buildSlider() {
-    var per = window.innerWidth < 768 ? 1 : 3;
-    var slides = [];
-    for (var i = 0; i < QUOTES.length; i += per) {
-      slides.push('<div class="carousel-item' + (i === 0 ? ' active' : '') + '">'
-        + '<div class="row g-3">' + QUOTES.slice(i, i + per).map(card).join('') + '</div></div>');
-    }
-    $('#quotes').html(slides.join(''));
-    $('#quoteDots').html(slides.map(function (_, i) {
-      return '<span class="' + (i === 0 ? 'on' : '') + '" data-bs-target="#quoteCarousel" data-bs-slide-to="' + i + '"></span>';
-    }).join(''));
-    var el = document.getElementById('quoteCarousel');
-    bootstrap.Carousel.getInstance(el) && bootstrap.Carousel.getInstance(el).dispose();
-    new bootstrap.Carousel(el, { interval: 5500, ride: 'carousel' });
-    el.addEventListener('slid.bs.carousel', function (e) {
-      $('#quoteDots span').removeClass('on').eq(e.to).addClass('on');
-    });
-  }
-  buildSlider();
-
-  var lastPer = window.innerWidth < 768 ? 1 : 3;
-  $(window).on('resize', function () {
-    var per = window.innerWidth < 768 ? 1 : 3;
-    if (per !== lastPer) { lastPer = per; buildSlider(); }
-  });
-
-  /* ---------------- faces ---------------- */
-
-  var FACES = ['avatar-tunde2000.jpg', 'avatar-mercy24.jpg', 'avatar-johntrader.jpg',
-               'avatar-blessingfx.jpg', 'avatar-c3.jpg', 'avatar-b2.jpg', 'avatar-john.jpg'];
-
-  function faceRow(n, more) {
-    return '<span class="faces">'
-      + FACES.slice(0, n).map(function (f) {
-          return '<img src="images/' + f + '" width="38" height="38" alt="">';
-        }).join('')
-      + (more ? '<span class="more">' + more + '</span>' : '')
-      + '</span>';
-  }
-
-  $('#heroFaces').html(
-    faceRow(5, '38k+')
-    + '<span class="face-note"><span class="face-stars">★★★★★</span><br>'
-    + 'Joined by <b>38,400+ traders</b> across five countries</span>');
-
-  $('#quoteFaces').html(
-    faceRow(6)
-    + '<span class="face-note"><b>4.8 / 5</b> from 2,140 reviews</span>');
-
-  $('#ctaFaces').html(
-    faceRow(6, '38k+')
-    + '<span class="face-note">Real people, cashing out today.</span>');
-
-  /* ---------------- install section ---------------- */
-
-  // The hint speaks to the device actually in front of the visitor.
-  if (window.KP && KP.pwa) {
-    KP.pwa.onChange(function () {
-      var hint = KP.pwa.isInstalled()
-        ? 'Kaastro Pay is already installed on this device.'
-        : KP.pwa.platform === 'ios'
-          ? 'On iPhone, open this page in Safari and use Share → Add to Home Screen.'
-          : KP.pwa.platform === 'android'
-            ? 'Tap Install and confirm — the icon appears with your other apps.'
-            : 'Installs as a desktop app in its own window. No app store needed.';
-      $('#installHint').text(hint);
+(function () {
+  /* The install QR points at the wallet on this same origin, so scanning it on
+     a phone opens the very app the section is describing. */
+  var el = document.getElementById('qr');
+  if (el && typeof QRCode === 'function') {
+    new QRCode(el, {
+      text: location.origin + location.pathname.replace(/index\.html$/, '') + 'dashboard/index.html',
+      width: 104, height: 104,
+      colorDark: '#12130E', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
     });
   }
 
-  /* ---------------- floating asset marks ---------------- */
+  /* Border only once the page has actually moved, so the nav is invisible at
+     the top and separates itself the moment content slides under it. */
+  var nav = document.getElementById('nav');
+  var onScroll = function () { nav.classList.toggle('stuck', window.scrollY > 8); };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
 
-  var COINS = [
-    { s: 'BTC',  top: '9%',  left: '1.5%', sz: 50, dur: 15, dly: 0,   inner: false },
-    { s: 'ETH',  top: '62%', left: '0.5%', sz: 40, dur: 18, dly: 1.4, inner: false },
-    { s: 'USDT', top: '88%', left: '6%',   sz: 32, dur: 13, dly: 0.7, inner: true },
-    { s: 'USDC', top: '22%', left: '96%',  sz: 38, dur: 16, dly: 0.4, inner: false },
-    { s: 'BNB',  top: '74%', left: '97%',  sz: 34, dur: 17, dly: 2.1, inner: false },
-    { s: 'TRX',  top: '4%',  left: '92%',  sz: 30, dur: 14, dly: 1.1, inner: true }
-  ];
-  $('#floatLayer').html(COINS.map(function (c) {
-    var a = KP.ASSETS[c.s];
-    return '<div class="coin' + (c.inner ? ' inner' : '') + '" style="top:' + c.top + ';left:' + c.left
-      + ';background:' + a.color + ';--sz:' + c.sz + 'px;--dur:' + c.dur + 's;--dly:' + c.dly + 's">'
-      + c.s.slice(0, 3) + '</div>';
-  }).join(''));
+  /* Reveal on entry.
 
-  /* ---------------- hero background chart ---------------- */
+     The hidden state is switched on here rather than in the stylesheet, so a
+     page with no JS — or one where this block throws — renders fully visible
+     instead of blank. An IntersectionObserver does the work; a throttled
+     scroll pass backs it up, because a fast flick can outrun the observer and
+     a section that never reveals is a section nobody can read. */
+  var items = [].slice.call(document.querySelectorAll('[data-rise]'));
+  if (!items.length) return;
 
-  var chart = null;
-  function drawHeroChart() {
-    var el = document.getElementById('heroChart');
-    if (!el || typeof Chart === 'undefined') return;
-    var base = KP.rates.midUsd('BTC');
-    var labels = [], values = [];
-    for (var i = 0; i < 48; i++) {
-      var t = i / 47;
-      var v = base * (1
-        + Math.sin(t * 3.1 + 0.4) * 0.055
-        + Math.sin(t * 7.3 + 1.9) * 0.022
-        + Math.sin(t * 13.1 + 3.3) * 0.008
-        + t * 0.06);
-      labels.push(i);
-      values.push(v);
-    }
-
-    if (chart) { chart.data.datasets[0].data = values; chart.update('none'); return; }
-
-    var ctx = el.getContext('2d');
-    var grad = ctx.createLinearGradient(0, 0, 0, 320);
-    grad.addColorStop(0, 'rgba(16,185,129,.34)');
-    grad.addColorStop(1, 'rgba(16,185,129,0)');
-
-    chart = new Chart(ctx, {
-      type: 'line',
-      data: { labels: labels, datasets: [{
-        data: values, borderColor: '#10b981', borderWidth: 2.5,
-        backgroundColor: grad, fill: true, tension: 0.45,
-        pointRadius: 0, pointHoverRadius: 0
-      }]},
-      options: {
-        responsive: true, maintainAspectRatio: false, animation: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        scales: { x: { display: false }, y: { display: false } },
-        elements: { line: { capBezierPoints: true } }
-      }
-    });
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(function (n) { n.classList.add('seen'); });
+    return;
   }
-  drawHeroChart();
-  KP.rates.onTick(drawHeroChart);
-});
+
+  document.body.classList.add('rise-on');
+
+  function show(n) { n.classList.add('seen'); }
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { show(e.target); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -5% 0px', threshold: 0 });
+  items.forEach(function (n) { io.observe(n); });
+
+  /* Backstop: anything inside the viewport is shown regardless of whether the
+     observer got round to it. Cheap, rAF-throttled, and stops once every item
+     has been revealed. */
+  var pending = items.slice();
+  var queued = false;
+  function sweep() {
+    queued = false;
+    var h = window.innerHeight;
+    pending = pending.filter(function (n) {
+      if (n.classList.contains('seen')) return false;
+      var r = n.getBoundingClientRect();
+      if (r.top < h && r.bottom > 0) { show(n); io.unobserve(n); return false; }
+      return true;
+    });
+    if (!pending.length) window.removeEventListener('scroll', onMove);
+  }
+  function onMove() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(sweep);
+  }
+  window.addEventListener('scroll', onMove, { passive: true });
+  window.addEventListener('resize', onMove, { passive: true });
+  sweep();
+})();
 </script>
 </body>
 </html>

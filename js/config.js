@@ -197,6 +197,111 @@
         return Number(amountUsd || 0) * (USD_RATE[currentCountry().currency] || 1);
     }
 
+    /* ===================== Payment statuses =====================
+       One vocabulary for a payment in flight, used by the payer's public page,
+       the recipient's app and the back office. Both sides read the same state,
+       so a payer asking "did it land?" and a recipient asking "where is it?"
+       are answered by the same word.
+
+       Six of these are the happy path, in order. The last four are terminal
+       exceptions — a payment that arrived wrong, ran out of time, or was
+       called off. `step` is its position on the track (null = off-path), and
+       `tone` decides how it is painted. */
+    var PAYMENT_STATUS = {
+        awaiting:   { key: 'awaiting',   step: 0, tone: 'wait', label: 'Awaiting payment',
+                      payer: 'Send the exact amount to the address shown.',
+                      payee: 'Waiting for your payer to send.' },
+        detected:   { key: 'detected',   step: 1, tone: 'wait', label: 'Payment detected',
+                      payer: 'We can see your transaction on the network.',
+                      payee: 'A payment has appeared on the network.' },
+        confirming: { key: 'confirming', step: 2, tone: 'wait', label: 'Confirming on blockchain',
+                      payer: 'Waiting for the network to confirm.',
+                      payee: 'Waiting for network confirmations.' },
+        confirmed:  { key: 'confirmed',  step: 3, tone: 'ok',   label: 'Payment confirmed',
+                      payer: 'The network has confirmed your payment.',
+                      payee: 'Confirmed on-chain. Converting next.' },
+        converted:  { key: 'converted',  step: 4, tone: 'ok',   label: 'Converted to Naira',
+                      payer: 'Converted at the rate shown.',
+                      payee: 'Converted and about to hit your balance.' },
+        completed:  { key: 'completed',  step: 5, tone: 'ok',   label: 'Completed',
+                      payer: 'Done. The recipient has been paid.',
+                      payee: 'Done. Your balance has been credited.' },
+
+        underpaid:  { key: 'underpaid',  step: null, tone: 'warn', label: 'Underpaid',
+                      payer: 'Less arrived than was requested. Send the difference or ask for a refund.',
+                      payee: 'Less arrived than you requested.' },
+        overpaid:   { key: 'overpaid',   step: null, tone: 'warn', label: 'Overpaid',
+                      payer: 'More arrived than was requested. The excess is refundable.',
+                      payee: 'More arrived than you requested.' },
+        expired:    { key: 'expired',    step: null, tone: 'fail', label: 'Expired',
+                      payer: 'This link timed out. Ask the recipient for a new one.',
+                      payee: 'The link timed out before anyone paid.' },
+        cancelled:  { key: 'cancelled',  step: null, tone: 'fail', label: 'Cancelled',
+                      payer: 'The recipient called this request off.',
+                      payee: 'You cancelled this request.' }
+    };
+
+    /* The happy path, in order — what the progress track renders. */
+    var PAYMENT_TRACK = ['awaiting', 'detected', 'confirming', 'confirmed', 'converted', 'completed'];
+
+    /* A Naira bank transfer has no chain to confirm on and nothing to convert:
+       the money is already in the currency the recipient is paid in. Same
+       vocabulary, two rails, so neither side is told about a blockchain that
+       was never involved. */
+    var PAYMENT_TRACK_BANK = ['awaiting', 'detected', 'confirming', 'confirmed', 'completed'];
+
+    var BANK_WORDS = {
+        confirming: { label: 'Confirming with the bank',
+                      payer: 'Waiting for the bank to confirm the transfer.',
+                      payee: 'Waiting for the bank to confirm.' },
+        confirmed:  { label: 'Payment confirmed',
+                      payer: 'The bank has confirmed your transfer.',
+                      payee: 'Confirmed by the bank. Crediting next.' }
+    };
+
+    function paymentTrack(rail) {
+        return rail === 'bank' ? PAYMENT_TRACK_BANK.slice() : PAYMENT_TRACK.slice();
+    }
+
+    /* `rail` is optional and defaults to crypto, so every existing caller keeps
+       working unchanged. `step` is recomputed against the rail's own track,
+       because the bank path is one stage shorter. */
+    function paymentStatus(key, rail) {
+        var s = PAYMENT_STATUS[key] || PAYMENT_STATUS.awaiting;
+        if (rail !== 'bank') return s;
+        var track = PAYMENT_TRACK_BANK;
+        var idx = track.indexOf(s.key);
+        var out = {
+            key: s.key, tone: s.tone, label: s.label, payer: s.payer, payee: s.payee,
+            step: idx === -1 ? null : idx
+        };
+        var o = BANK_WORDS[s.key];
+        if (o) { out.label = o.label; out.payer = o.payer; out.payee = o.payee; }
+        return out;
+    }
+
+    /* Compare what actually arrived against what was asked for. A payer who is
+       a few cents out should not be told they underpaid, so anything inside a
+       1% band counts as exact. */
+    function settlementOf(expected, received) {
+        if (!received) return 'awaiting';
+        var d = (received - expected) / expected;
+        if (d < -0.01) return 'underpaid';
+        if (d > 0.01) return 'overpaid';
+        return 'exact';
+    }
+
+    var STATUS_PILL = { ok: 'pill-success', wait: 'pill-manual', warn: 'pill-warn', fail: 'pill-danger' };
+
+    function statusPill(key, rail) {
+        var s = paymentStatus(key, rail);
+        return '<span class="pill ' + (STATUS_PILL[s.tone] || 'pill-neutral') + '">'
+            + '<i class="fas ' + (s.tone === 'ok' ? 'fa-circle-check'
+                : s.tone === 'fail' ? 'fa-circle-xmark'
+                : s.tone === 'warn' ? 'fa-triangle-exclamation' : 'fa-clock') + '"></i>'
+            + s.label + '</span>';
+    }
+
     global.KP = global.KP || {};
     global.KP.COUNTRIES = COUNTRIES;
     global.KP.COUNTRY_LIST = COUNTRY_LIST;
@@ -204,6 +309,12 @@
     global.KP.ASSET_LIST = ASSET_LIST;
     global.KP.USD_RATE = USD_RATE;
     global.KP.TIERS = TIERS;
+    global.KP.PAYMENT_STATUS = PAYMENT_STATUS;
+    global.KP.PAYMENT_TRACK = PAYMENT_TRACK;
+    global.KP.paymentTrack = paymentTrack;
+    global.KP.paymentStatus = paymentStatus;
+    global.KP.settlementOf = settlementOf;
+    global.KP.statusPill = statusPill;
     global.KP.fmt = { fiat: fiat, crypto: crypto, usd: usd, compact: compact, local: local };
     global.KP.currentCountry = currentCountry;
     global.KP.setCountry = setCountry;

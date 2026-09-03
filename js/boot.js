@@ -9,10 +9,14 @@
     var self = document.currentScript;
     var root = (self && self.getAttribute('data-root')) || '';
 
-    // Theme before first paint, so a dark-mode user never sees a white flash.
+    // Theme before first paint, so nobody sees a flash of the wrong ground.
+    // The wallet defaults to dark; a page can override with
+    // <html data-theme-default="light">. Only an explicit choice is stored.
     try {
-        document.documentElement.setAttribute('data-bs-theme',
-            localStorage.getItem('kaastro-theme') || 'light');
+        var el = document.documentElement;
+        el.setAttribute('data-bs-theme',
+            localStorage.getItem('kaastro-theme')
+            || el.getAttribute('data-theme-default') || 'dark');
     } catch (e) { }
 
     function css(href) {

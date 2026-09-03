@@ -32,15 +32,35 @@
         var F = KP.fmt, BO = KP.bo, D = KP.data;
         var ccy = KP.currentCountry().currency;
 
+        /* ---------- rate source: the feed, or our own number ---------- */
+
+        var RATE_SOURCE_PANE =
+            '<div class="tab-pane fade show active" id="rSource">'
+            + '<div class="row g-3"><div class="col-lg-5">'
+            + '<div class="card p-3 p-md-4">'
+            + '<div class="section-head"><h2>Where rates come from</h2></div>'
+            + '<p class="text-muted" style="font-size:.82rem">'
+            + 'Automatic prices every asset off the live feed and your spreads. '
+            + 'Kaastro rate ignores the feed and publishes the numbers you type.</p>'
+            + '<div class="d-grid gap-2" id="modePick"></div>'
+            + '<div id="modeNote" class="mt-3"></div>'
+            + '</div></div>'
+            + '<div class="col-lg-7"><div class="card p-3 p-md-4">'
+            + '<div class="section-head"><h2>Published rates</h2>'
+            + '<select class="form-select form-select-sm" id="srcCcy" style="width:auto"></select></div>'
+            + '<div id="srcBody"></div></div></div></div></div>';
+
         $el.html(
             '<ul class="nav nav-tabs mb-3">'
-            + '<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#rMarkets">Per market</button></li>'
+            + '<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#rSource">Rate source</button></li>'
+            + '<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rMarkets">Per market</button></li>'
             + '<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rGlobal">Global default</button></li>'
             + '<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rLive">Live board</button></li>'
             + '</ul><div class="tab-content">'
 
             /* --- per market --- */
-            + '<div class="tab-pane fade show active" id="rMarkets">'
+            + RATE_SOURCE_PANE
+            + '<div class="tab-pane fade" id="rMarkets">'
             + '<div class="card p-3 p-md-4">'
             + '<div class="section-head"><h2>Rates by country</h2>'
             + '<span class="small text-muted">every market can be priced on its own</span></div>'
@@ -102,6 +122,165 @@
 
             + '</div>'
         );
+
+        /* ---------- rate source wiring ---------- */
+
+        var srcCcy = ccy;
+
+        $('#srcCcy').html(KP.COUNTRY_LIST.map(function (c) {
+            return '<option value="' + c.currency + '"' + (c.currency === srcCcy ? ' selected' : '') + '>'
+                + c.flag + ' ' + c.currency + '</option>';
+        }).join(''));
+
+        function paintMode() {
+            var manual = KP.rates.isManual();
+            $('#modePick').html([
+                ['auto', 'fa-satellite-dish', 'Automatic',
+                 'Live feed price, minus your deposit spread and plus your withdrawal spread. Rates move as the market moves.'],
+                ['manual', 'fa-sliders', 'Kaastro Pay rate',
+                 'You publish the number. The feed is ignored until you switch back.']
+            ].map(function (m) {
+                var on = (m[0] === 'manual') === manual;
+                return '<button class="method-card' + (on ? ' selected' : '') + '" data-mode="' + m[0] + '">'
+                    + '<span class="qa-icon ' + (on ? 'qa-green' : 'qa-slate') + '">'
+                    + '<i class="fas ' + m[1] + '"></i></span>'
+                    + '<span class="mc-body"><span class="mc-title">' + m[2]
+                    + (on ? ' <span class="pill pill-success">Active</span>' : '') + '</span>'
+                    + '<span class="mc-desc">' + m[3] + '</span></span></button>';
+            }).join(''));
+
+            $('#modeNote').html(manual
+                ? '<div class="k-alert k-warn"><i class="fas fa-triangle-exclamation"></i><div>'
+                  + '<b class="hd">The feed is not being consulted.</b>'
+                  + 'Every quote, receipt and payment link uses the numbers on the right. '
+                  + 'Nothing stops you pricing away from the market, so check the drift column.</div></div>'
+                : '<div class="k-alert k-ok"><i class="fas fa-shield-halved"></i><div>'
+                  + 'Rates follow the feed. Spreads are set under <b>Per market</b> and '
+                  + '<b>Global default</b>.</div></div>');
+        }
+
+        function paintSource() {
+            var manual = KP.rates.isManual();
+            if (!manual) {
+                $('#srcBody').html(
+                    '<p class="text-muted" style="font-size:.82rem">Derived live from the feed. '
+                    + 'Switch to <b>Kaastro Pay rate</b> to publish your own.</p>'
+                    + '<div class="table-wrap"><table class="k-table"><thead><tr>'
+                    + '<th>Asset</th><th class="text-end">Deposit</th>'
+                    + '<th class="text-end">Withdrawal</th></tr></thead><tbody>'
+                    + KP.ASSET_LIST.map(function (a) {
+                        return '<tr><td class="t-strong">' + a.symbol + '</td>'
+                            + '<td class="text-end t-strong text-up">'
+                            + F.fiat(KP.rates.depositRate(a.symbol, srcCcy), srcCcy) + '</td>'
+                            + '<td class="text-end t-strong">'
+                            + F.fiat(KP.rates.withdrawalRate(a.symbol, srcCcy), srcCcy) + '</td></tr>';
+                    }).join('') + '</tbody></table></div>');
+                return;
+            }
+
+            $('#srcBody').html(
+                '<p class="text-muted" style="font-size:.82rem">'
+                + 'Type any value. Drift shows how far you are from where the feed would price it.</p>'
+                + '<div class="table-wrap"><table class="k-table" style="min-width:640px"><thead><tr>'
+                + '<th>Asset</th><th>Deposit rate</th><th>Withdrawal rate</th>'
+                + '<th class="text-end">Drift vs mid</th></tr></thead><tbody>'
+                + KP.ASSET_LIST.map(function (a) {
+                    var m = KP.rates.seedManual(a.symbol, srcCcy);
+                    return '<tr data-sym="' + a.symbol + '">'
+                        + '<td><div class="d-flex align-items-center gap-2">'
+                        + '<span class="asset-icon sm" style="background:' + a.color + '">'
+                        + a.symbol.slice(0, 3) + '</span><span class="t-strong">' + a.symbol + '</span></div></td>'
+                        + ['deposit', 'withdrawal'].map(function (side) {
+                            return '<td><div class="rate-step">'
+                                + '<button class="btn btn-sm btn-soft rs-dn" data-side="' + side + '">'
+                                + '<i class="fas fa-minus"></i></button>'
+                                + '<input class="form-control form-control-sm rs-in" data-side="' + side + '" '
+                                + 'inputmode="decimal" value="' + (m[side] || 0).toFixed(2) + '">'
+                                + '<button class="btn btn-sm btn-soft rs-up" data-side="' + side + '">'
+                                + '<i class="fas fa-plus"></i></button></div></td>';
+                        }).join('')
+                        + '<td class="text-end t-mono rs-drift">' + driftText(a.symbol) + '</td></tr>';
+                }).join('') + '</tbody></table></div>'
+                + '<div class="d-flex gap-2 mt-3">'
+                + '<button class="btn btn-soft flex-grow-1" id="srcReseed">'
+                + '<i class="fas fa-rotate me-1"></i>Reset to feed prices</button>'
+                + '<button class="btn btn-primary flex-grow-1" id="srcSave">'
+                + '<i class="fas fa-floppy-disk me-1"></i>Publish rates</button></div>');
+        }
+
+        function driftText(sym) {
+            var d = KP.rates.manualDrift(sym, srcCcy, 'deposit');
+            var w = KP.rates.manualDrift(sym, srcCcy, 'withdrawal');
+            function one(v) {
+                var cls = Math.abs(v) < 25 ? 'text-muted' : v > 0 ? 'text-up' : 'text-down';
+                return '<span class="' + cls + '">' + (v > 0 ? '+' : '') + Math.round(v) + '</span>';
+            }
+            return one(d) + ' / ' + one(w) + ' bps';
+        }
+
+        function stepFor(sym) {
+            /* A sensible nudge depends on the size of the number: one Naira on
+               USDT, a thousand on Bitcoin. */
+            var v = KP.rates.depositRate(sym, srcCcy);
+            if (v >= 1e6) return 10000;
+            if (v >= 1e4) return 100;
+            if (v >= 100) return 1;
+            return 0.5;
+        }
+
+        $el.on('click', '[data-mode]', function () {
+            KP.rates.setRateMode($(this).data('mode'));
+            paintMode(); paintSource();
+            KP.rails.toast(KP.rates.isManual()
+                ? 'Now publishing Kaastro Pay rates. The feed is ignored.'
+                : 'Back on the live feed.', KP.rates.isManual() ? 'warning' : 'success');
+        });
+
+        $el.on('change', '#srcCcy', function () { srcCcy = $(this).val(); paintSource(); });
+
+        $el.on('click', '.rs-up, .rs-dn', function () {
+            var $tr = $(this).closest('tr');
+            var sym = $tr.data('sym');
+            var side = $(this).data('side');
+            var step = stepFor(sym) * ($(this).hasClass('rs-dn') ? -1 : 1);
+            var m = KP.rates.adjustManualRate(sym, srcCcy, side, step);
+            $tr.find('.rs-in[data-side="' + side + '"]').val(m[side].toFixed(2));
+            $tr.find('.rs-drift').html(driftText(sym));
+        });
+
+        $el.on('change', '.rs-in', function () {
+            var $tr = $(this).closest('tr');
+            var sym = $tr.data('sym');
+            var side = $(this).data('side');
+            var v = parseFloat(($(this).val() || '').replace(/,/g, ''));
+            if (isNaN(v) || v < 0) { KP.rails.toast('Enter a number.', 'danger'); paintSource(); return; }
+            var m = KP.rates.setManualRate(sym, srcCcy, side === 'deposit' ? { deposit: v } : { withdrawal: v });
+            $(this).val(m[side].toFixed(2));
+            $tr.find('.rs-drift').html(driftText(sym));
+        });
+
+        $el.on('click', '#srcSave', function () {
+            KP.rails.toast('Rates published. Every new quote uses them.', 'success');
+        });
+
+        $el.on('click', '#srcReseed', function () {
+            KP.rails.sheet('Reset to feed prices?',
+                '<p class="text-muted" style="font-size:.83rem">Your typed rates for '
+                + srcCcy + ' are replaced with what the feed would price right now. '
+                + 'You stay in Kaastro Pay rate mode.</p>'
+                + '<div class="d-grid gap-2">'
+                + '<button class="btn btn-primary" id="srcReseedYes">Reset to feed prices</button>'
+                + '<button class="btn btn-soft" data-bs-dismiss="modal">Keep my rates</button></div>');
+        });
+        $(document).off('click.srcReseed').on('click.srcReseed', '#srcReseedYes', function () {
+            KP.ASSET_LIST.forEach(function (a) { KP.rates.clearManual(a.symbol, srcCcy); });
+            KP.rails.closeSheet();
+            paintSource();
+            KP.rails.toast('Reset to feed prices.');
+        });
+
+        paintMode();
+        paintSource();
 
         /* ---------- per-market editor ---------- */
 
@@ -258,7 +437,7 @@
                 + '<div class="ar-sub">' + f[2] + '</div></div>' + BO.pill(f[1]) + '</div>';
         }).join('')
             + '<div class="k-alert k-info mt-2"><i class="fas fa-circle-info"></i><div>'
-            + '<b>Median of three.</b>A single feed’s bad tick becomes a bad trade. Quoting halts '
+            + '<b class="hd">Median of three.</b>A single feed’s bad tick becomes a bad trade. Quoting halts '
             + 'automatically if the feeds disagree beyond tolerance. A market on a manual reference '
             + 'rate ignores the feed entirely.</div></div>');
 
@@ -398,7 +577,7 @@
             + '<div class="col-lg-4"><div class="card p-3 p-md-4 h-100">'
             + '<div class="section-head"><h2>Distribution</h2></div><div id="tierDist"></div>'
             + '<div class="k-alert k-info mt-3"><i class="fas fa-circle-info"></i><div>'
-            + '<b>Local caps can be lower.</b>Where a regulator sets a tighter ceiling than your '
+            + '<b class="hd">Local caps can be lower.</b>Where a regulator sets a tighter ceiling than your '
             + 'global tier, the lower of the two applies.</div></div></div></div></div>');
 
         $('#tierRows').html(KP.TIERS.map(function (t) {
@@ -612,7 +791,7 @@
                 }).join('')
                 + '</div>'
                 + '<div class="k-alert k-warn mb-3"><i class="fas fa-triangle-exclamation"></i><div>'
-                + '<b>Manual confirmation is the sensitive one.</b>It lets an agent credit a balance '
+                + '<b class="hd">Manual confirmation is the sensitive one.</b>It lets an agent credit a balance '
                 + 'without the automated rail. Grant it only to people you would trust with a cash drawer.</div></div>'
 
                 + '<label class="form-label">Daily manual-action cap</label>'
@@ -628,7 +807,7 @@
                 formHtml(a)
                 + (editing ? '' :
                     '<div class="k-alert k-info mt-3"><i class="fas fa-envelope"></i><div>'
-                    + '<b>They get an invitation by email.</b>The account stays in <b>Awaiting setup</b> '
+                    + '<b class="hd">They get an invitation by email.</b>The account stays in <b>Awaiting setup</b> '
                     + 'until they set a password and enrol two-factor. Nothing can be approved before that.</div></div>')
                 + '<div class="d-flex gap-2 mt-3">'
                 + '<button class="btn btn-soft flex-grow-1" data-bs-dismiss="modal">Cancel</button>'
@@ -720,7 +899,7 @@
             var a = agentOf(this); if (!a) return;
             KP.showModal('Remove agent',
                 '<div class="k-alert k-danger mb-3"><i class="fas fa-triangle-exclamation"></i><div>'
-                + '<b>This revokes access immediately.</b>' + a.name + ' will be signed out of every '
+                + '<b class="hd">This revokes access immediately.</b>' + a.name + ' will be signed out of every '
                 + 'session. Their past approvals and manual actions stay in the log — those records '
                 + 'are never removed.</div></div>'
                 + '<div class="summary-rows mb-3">'
@@ -1060,8 +1239,155 @@
 
     /* ============================= Settings ============================= */
 
+    /* ===================== Escalations (admin only) =====================
+       The other end of an agent's escalate button. An admin sees what was
+       raised, by whom, what evidence came with it, and decides. Approving is
+       the admin doing the manual confirmation the agent would not; declining
+       sends it back with a reason. */
+
+    A.escalations = function ($el) {
+        function tone(p) {
+            return p === 'urgent' ? 'pill-danger' : p === 'high' ? 'pill-manual' : 'pill-neutral';
+        }
+
+        function paint() {
+            var all = KP.rails.escalation.all();
+            var open = all.filter(function (e) { return e.status === 'open'; });
+            var done = all.filter(function (e) { return e.status !== 'open'; });
+
+            $el.html(
+                '<div class="section-head"><h2>Escalations from agents</h2>'
+                + '<span class="small text-muted">' + open.length + ' open</span></div>'
+                + (open.length
+                    ? open.map(function (e) {
+                        return '<div class="asset-row align-items-start" style="gap:.7rem">'
+                            + '<div class="qa-icon qa-amber qa-warn sm"><i class="fas fa-arrow-up-right-dots"></i></div>'
+                            + '<div class="flex-grow-1 min-w-0">'
+                            + '<div class="ar-name">' + e.what + ' &middot; ' + e.amount
+                                + (e.amountOriginal ? ' <span class="pill pill-warn" title="Originally ' + e.amountOriginal + '">corrected</span>' : '') + '</div>'
+                            + '<div class="ar-sub">' + e.id + ' &middot; ' + e.ref
+                            + ' &middot; ' + e.who + '</div>'
+                            + '<div class="ar-sub mt-1"><b>' + e.reason + '</b></div>'
+                            + '<div class="ar-sub">' + e.notes + '</div>'
+                            + '<div class="ar-sub mt-1">Raised by ' + e.raisedBy + ' &middot; ' + e.raisedAt
+                            + (e.evidence && e.evidence.length
+                                ? ' &middot; <i class="fas fa-paperclip"></i> ' + e.evidence.length
+                                  + ' file' + (e.evidence.length > 1 ? 's' : '')
+                                : ' &middot; no evidence attached') + '</div>'
+                            + '<div class="mt-2 d-flex gap-1 flex-wrap">'
+                            + '<button class="btn btn-sm btn-primary esc-ok" data-id="' + e.id + '">'
+                            + 'Approve &amp; credit</button>'
+                            + '<button class="btn btn-sm btn-soft text-danger esc-no" data-id="' + e.id + '">'
+                            + 'Decline</button>'
+                            /* Only deposits. A deposit amount is what actually
+                               arrived and is the thing that gets mis-recorded;
+                               a withdrawal amount is what the user asked for,
+                               and quietly changing that is a different act. */
+                            + (/deposit/.test(e.kind || '')
+                                ? '<button class="btn btn-sm btn-soft esc-amt" data-id="' + e.id + '">'
+                                  + '<i class="fas fa-pen me-1"></i>Edit amount</button>' : '')
+                            + '</div></div>'
+                            + '<span class="pill ' + tone(e.priority) + '">' + e.priority + '</span>'
+                            + '</div>';
+                    }).join('')
+                    : '<div class="empty-state"><i class="fas fa-inbox"></i>'
+                      + '<p>No escalations waiting. Agents are deciding on their own.</p></div>')
+
+                + (done.length
+                    ? '<div class="section-head mt-3"><h2>Recently decided</h2></div>'
+                      + done.slice(0, 5).map(function (e) {
+                        return '<div class="asset-row">'
+                            + '<div class="qa-icon ' + (e.status === 'approved' ? 'qa-green' : 'qa-red') + ' sm">'
+                            + '<i class="fas ' + (e.status === 'approved' ? 'fa-check' : 'fa-xmark') + '"></i></div>'
+                            + '<div class="flex-grow-1 min-w-0"><div class="ar-name">'
+                            + e.what + ' &middot; ' + e.amount + '</div>'
+                            + '<div class="ar-sub">' + e.id + ' &middot; ' + e.status + ' by '
+                            + e.decidedBy + ' &middot; ' + e.decidedAt + '</div></div></div>';
+                    }).join('')
+                    : '')
+            );
+        }
+
+        /* Correcting the recorded amount before deciding. The original is kept
+           and shown, so an approval never looks like it was for a figure the
+           agent raised when it was not. */
+        $el.off('click.escamt').on('click.escamt', '.esc-amt', function () {
+            var id = $(this).data('id');
+            var e = KP.rails.escalation.all().filter(function (x) { return x.id === id; })[0];
+            if (!e) return;
+            var p = KP.rails.escalation.amountParts(e.amount);
+            if (!p) { KP.rails.toast('That amount cannot be parsed.', 'danger'); return; }
+
+            KP.rails.sheet('Correct the deposit amount',
+                '<div class="summary-rows mb-3">'
+                + '<div class="sr"><span>Reference</span><span>' + e.ref + '</span></div>'
+                + '<div class="sr"><span>User</span><span>' + e.who + '</span></div>'
+                + '<div class="sr total"><span>' + (e.amountOriginal ? 'Originally raised as' : 'Raised as')
+                + '</span><span>' + (e.amountOriginal || e.amount) + '</span></div></div>'
+                + (e.amountOriginal
+                    ? '<div class="k-alert k-warn mb-3"><i class="fas fa-clock-rotate-left"></i><div>'
+                      + 'Already corrected to <b>' + e.amount + '</b> by ' + e.amountEditedBy
+                      + ' on ' + e.amountEditedAt + '.</div></div>' : '')
+                + '<label class="form-label">Amount that actually arrived</label>'
+                + '<div class="input-group mb-1">'
+                + (p.prefix ? '<span class="input-group-text">' + p.prefix + '</span>' : '')
+                + '<input class="form-control" id="escAmtV" inputmode="decimal" value="' + p.value + '">'
+                + (p.suffix ? '<span class="input-group-text">' + p.suffix.trim() + '</span>' : '')
+                + '</div>'
+                + '<div class="form-text mb-3">What the statement or explorer shows, not what was reported.</div>'
+                + '<label class="form-label">What are you correcting it against?</label>'
+                + '<textarea class="form-control mb-3" id="escAmtNote" rows="2" '
+                + 'placeholder="e.g. bank statement line, explorer transaction value"></textarea>'
+                + '<button class="btn btn-primary w-100" data-escamt="' + id + '">Save corrected amount</button>');
+        });
+
+        $(document).off('click.escamtsave').on('click.escamtsave', '[data-escamt]', function () {
+            var v = parseFloat(($('#escAmtV').val() || '').replace(/,/g, ''));
+            var note = ($('#escAmtNote').val() || '').trim();
+            if (isNaN(v) || v <= 0) { KP.rails.toast('Enter the amount that arrived.', 'danger'); return; }
+            if (!note) { KP.rails.toast('Say what you are correcting it against.', 'danger'); return; }
+            var e = KP.rails.escalation.setAmount($(this).data('escamt'), v, 'Admin User', note);
+            KP.rails.closeSheet();
+            KP.rails.toast('Amount corrected to ' + (e ? e.amount : v) + '.', 'success');
+            paint();
+        });
+
+        $el.off('click.esc').on('click.esc', '.esc-ok, .esc-no', function () {
+            var id = $(this).data('id');
+            var ok = $(this).hasClass('esc-ok');
+            KP.rails.sheet(ok ? 'Approve this escalation?' : 'Decline this escalation?',
+                '<p class="text-muted" style="font-size:.83rem">'
+                + (ok ? 'You are confirming the movement the agent would not. It is logged '
+                      + 'against your name, not theirs.'
+                      : 'It goes back to the agent with your reason. Nothing is credited.')
+                + '</p>'
+                + '<label class="form-label">Note to the agent</label>'
+                + '<textarea class="form-control mb-3" id="escNote" rows="2" '
+                + 'placeholder="' + (ok ? 'What convinced you.' : 'What is still missing.') + '"></textarea>'
+                + '<button class="btn ' + (ok ? 'btn-primary' : 'btn-danger') + ' w-100" '
+                + 'data-escdo="' + id + '" data-escok="' + (ok ? '1' : '') + '">'
+                + (ok ? 'Approve and credit' : 'Decline') + '</button>');
+        });
+
+        $(document).off('click.escdo').on('click.escdo', '[data-escdo]', function () {
+            var ok = $(this).data('escok') === 1 || $(this).data('escok') === '1';
+            KP.rails.escalation.resolve($(this).data('escdo'),
+                ok ? 'approved' : 'declined', 'Admin User', ($('#escNote').val() || '').trim());
+            KP.rails.closeSheet();
+            KP.rails.toast(ok ? 'Approved and credited. Logged against your name.'
+                              : 'Declined and sent back to the agent.', ok ? 'success' : 'warning');
+            paint();
+        });
+
+        paint();
+    };
+
     A.settings = function ($el, role) {
         var actor = role === 'admin' ? 'Admin User' : 'James Bond';
+        /* The signed-in agent's own record, so this page shows a real profile
+           instead of a hardcoded name. Admins have no agent record. */
+        var agent = role === 'agent' ? KP.rails.myAgent() : null;
+        if (agent) actor = agent.name;
 
         $el.html('<div class="row g-3">'
             + '<div class="col-lg-7">'
@@ -1108,14 +1434,70 @@
             + '</div>'
 
             + '<div class="col-lg-5">'
-            + '<div class="card p-3 p-md-4"><div class="section-head"><h2>Your account</h2></div>'
+
+            /* An agent has a real record behind them — permissions, a shift, a
+               manual-action count someone will audit. Show it, rather than the
+               two-line placeholder that used to be here. */
+            + '<div class="card p-3 p-md-4">'
+            + '<div class="section-head"><h2>Your profile</h2></div>'
+            + '<div class="d-flex align-items-center gap-3 mb-3">'
+            + '<span class="kp-avatar lg ring">'
+            + (agent ? '<img src="../images/' + agent.avatar + '" alt="">'
+                     : actor.slice(0, 2).toUpperCase())
+            + '<span class="av-check"><i class="fas fa-check"></i></span></span>'
+            + '<div class="min-w-0"><div class="fw-bold text-truncate" style="font-size:1rem">'
+            + (agent ? agent.name : actor) + '</div>'
+            + '<div class="text-muted text-truncate" style="font-size:.78rem">'
+            + (role === 'admin' ? 'Super admin'
+                : 'Support agent' + (agent ? ' · ' + agent.id : '')) + '</div>'
+            + (agent ? '<span class="pill ' + (agent.status === 'active' ? 'pill-success' : 'pill-danger')
+                + ' mt-1">' + agent.status + '</span>' : '') + '</div></div>'
+
             + '<div class="summary-rows mb-3">'
-            + '<div class="sr"><span>Name</span><span>' + actor + '</span></div>'
-            + '<div class="sr"><span>Role</span><span>' + (role === 'admin' ? 'Super admin' : 'Agent') + '</span></div>'
-            + (role === 'agent' ? '<div class="sr"><span>Shift</span><span>'
+            + '<div class="sr"><span>Full name</span><span>' + (agent ? agent.name : actor) + '</span></div>'
+            + (agent ? '<div class="sr"><span>Agent ID</span><span>' + agent.id + '</span></div>'
+                + '<div class="sr"><span>Email</span><span>' + agent.email + '</span></div>'
+                + '<div class="sr"><span>Phone</span><span>' + agent.phone + '</span></div>' : '')
+            + '<div class="sr"><span>Role</span><span>'
+            + (role === 'admin' ? 'Super admin' : 'Agent') + '</span></div>'
+            + (role === 'agent' ? '<div class="sr"><span>Assigned shift</span><span>'
                 + KP.rails.shift.LABELS[KP.rails.shift.ASSIGNED] + '</span></div>' : '')
-            + '<div class="sr total"><span>Two-factor</span><span>Enabled</span></div></div>'
-            + '<button class="btn btn-soft w-100">Change password</button></div>'
+            + (agent ? '<div class="sr"><span>Added</span><span>' + agent.added
+                + ' by ' + agent.addedBy + '</span></div>' : '')
+            + '<div class="sr total"><span>Two-factor</span><span class="text-up">Enabled</span></div></div>'
+
+            + (agent ? '<div class="row g-2 mb-3">'
+                + '<div class="col-4"><div class="card figure-tile">'
+                + '<span class="qa-icon qa-green sm"><i class="fas fa-circle-check"></i></span>'
+                + '<span class="ft-label">Approvals</span>'
+                + '<b class="ft-value">' + agent.approvals + '</b></div></div>'
+                + '<div class="col-4"><div class="card figure-tile">'
+                + '<span class="qa-icon qa-amber qa-warn sm"><i class="fas fa-hand"></i></span>'
+                + '<span class="ft-label">Manual</span>'
+                + '<b class="ft-value">' + agent.manualActions + '</b></div></div>'
+                + '<div class="col-4"><div class="card figure-tile">'
+                + '<span class="qa-icon qa-green sm"><i class="fas fa-gauge-high"></i></span>'
+                + '<span class="ft-label">Daily cap</span>'
+                + '<b class="ft-value">' + agent.dailyCap + '</b></div></div></div>' : '')
+
+            + '<button class="btn btn-soft w-100" id="editProfile">'
+            + '<i class="fas fa-user-pen me-1"></i>Edit contact details</button>'
+            + '<button class="btn btn-soft w-100 mt-2">Change password</button></div>'
+
+            + (agent ? '<div class="card p-3 p-md-4 mt-3">'
+                + '<div class="section-head"><h2>What you can do</h2></div>'
+                + '<p class="text-muted" style="font-size:.8rem">Permissions are set by an '
+                + 'admin. Ask one to change them.</p>'
+                + KP.data.AGENT_PERMISSIONS.map(function (p) {
+                    var on = agent.perms.indexOf(p.key) > -1;
+                    return '<div class="asset-row">'
+                        + '<div class="qa-icon ' + (on ? 'qa-green' : 'qa-slate') + ' sm">'
+                        + '<i class="fas ' + (on ? 'fa-check' : 'fa-xmark') + '"></i></div>'
+                        + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + p.label + '</div>'
+                        + '<div class="ar-sub">' + p.desc + '</div></div>'
+                        + '<span class="pill ' + (on ? 'pill-success' : 'pill-neutral') + '">'
+                        + (on ? 'Allowed' : 'Not allowed') + '</span></div>';
+                }).join('') + '</div>' : '')
 
             + '<div class="card p-3 p-md-4 mt-3"><div class="section-head"><h2>Appearance</h2></div>'
             + '<div class="asset-row"><div class="flex-grow-1 min-w-0">'
@@ -1124,6 +1506,28 @@
             + '<div class="form-check form-switch m-0">'
             + '<input class="form-check-input" type="checkbox" id="themeSwitch"></div></div></div>'
             + '</div></div>');
+
+        $('#editProfile').on('click', function () {
+            if (!agent) { KP.rails.toast('Admin contact details are managed in the directory.'); return; }
+            KP.rails.sheet('Edit contact details',
+                '<p class="text-muted" style="font-size:.83rem">Your name and permissions are '
+                + 'set by an admin. You can keep your own contact details current.</p>'
+                + '<label class="form-label">Email</label>'
+                + '<input class="form-control mb-2" id="apEmail" value="' + agent.email + '">'
+                + '<label class="form-label">Phone</label>'
+                + '<input class="form-control mb-3" id="apPhone" value="' + agent.phone + '">'
+                + '<button class="btn btn-primary w-100" id="apSave">Save details</button>');
+        });
+
+        $(document).off('click.apSave').on('click.apSave', '#apSave', function () {
+            var email = ($('#apEmail').val() || '').trim();
+            var phone = ($('#apPhone').val() || '').trim();
+            if (!email || !phone) { KP.rails.toast('Both fields are required.', 'danger'); return; }
+            KP.data.updateAgent(agent.id, { email: email, phone: phone });
+            KP.rails.closeSheet();
+            KP.rails.toast('Contact details updated.');
+            A.settings($el, role);
+        });
 
         $('#themeSwitch').prop('checked', KP.rails.theme.current() === 'dark')
             .on('change', function () {
@@ -1135,10 +1539,10 @@
             $('#panicBox').html(
                 (active
                     ? '<div class="k-alert k-danger mb-3"><i class="fas fa-triangle-exclamation"></i><div>'
-                      + '<b>Freeze is currently ON.</b>Activated by ' + KP.rails.panic.by()
+                      + '<b class="hd">Freeze is currently ON.</b>Activated by ' + KP.rails.panic.by()
                       + ' on ' + KP.rails.panic.at() + '.</div></div>'
                     : '<div class="k-alert k-ok mb-3"><i class="fas fa-circle-check"></i><div>'
-                      + '<b>Everything is running normally.</b>Users can withdraw and trade.</div></div>')
+                      + '<b class="hd">Everything is running normally.</b>Users can withdraw and trade.</div></div>')
                 + '<button class="btn ' + (active ? 'btn-soft' : 'btn-primary') + ' w-100" id="panicBtn" '
                 + 'style="' + (active ? '' : 'background:#dc2626;border-color:#dc2626') + '">'
                 + (active ? 'Lift the freeze' : 'Freeze the platform') + '</button>'

@@ -50,9 +50,31 @@
     }
     function actor(role) { return role === 'admin' ? 'Admin User' : 'James Bond'; }
 
+    /* One USD figure for any queue row. Crypto rows carry usdValue; cash rows
+       carry an amount in a local currency, which has to be converted before it
+       can be summed alongside them. */
+    function rowUsd(r) {
+        if (r.usdValue != null) return r.usdValue;
+        if (r.amount != null && r.currency) return r.amount / (KP.USD_RATE[r.currency] || 1);
+        return 0;
+    }
+
+    /* Every queue's last column. A blocked or escalated row says so here, so
+       an operator scanning the table sees it without opening each one — the
+       whole point of a block is that it is not a surprise at the last step. */
     function reviewBtn(r) {
-        return '<button class="btn btn-sm btn-soft rv-open" data-ref="' + (r.ref || r.id) + '">'
-            + '<i class="fas fa-eye me-1"></i>Review</button>';
+        var k = r.ref || r.id;
+        var flag = '';
+        if (KP.rails.txblock.isBlocked(k)) {
+            flag = '<span class="pill pill-danger me-1" title="'
+                + KP.rails.txblock.get(k).reason + '"><i class="fas fa-ban"></i>Blocked</span>';
+        } else if (r.escalation) {
+            flag = '<span class="pill pill-manual me-1" title="' + r.escalation
+                + '"><i class="fas fa-arrow-up-right-dots"></i>With admin</span>';
+        }
+        return '<div class="d-flex align-items-center justify-content-end gap-1 flex-wrap">' + flag
+            + '<button class="btn btn-sm btn-soft rv-open" data-ref="' + k + '">'
+            + '<i class="fas fa-eye me-1"></i>Review</button></div>';
     }
 
     /* ============================ Deposits ============================ */
@@ -60,7 +82,7 @@
     P.deposits = function ($el, role) {
         var BO = KP.bo, D = KP.data, f = fld();
 
-        $el.html('<div id="dGuard"></div><ul class="nav nav-tabs mb-3">'
+        $el.html('<div id="dGuard"></div><div id="dStats"></div><ul class="nav nav-tabs mb-3">'
             + '<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dCrypto">Crypto</button></li>'
             + '<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#dFiat">Cash</button></li>'
             + '</ul><div class="tab-content">'
@@ -69,10 +91,31 @@
 
         if (locked(role, 'deposits')) KP.rails.applyLock($('#dGuard'), lockTitle('deposits'), lockNote('deposits'));
 
+        var bar = BO.statBar({
+            el: $('#dStats'),
+            title: 'Deposits in this period',
+            source: function () { return D.CRYPTO_DEPOSITS.concat(D.FIAT_DEPOSITS); },
+            stats: [
+                { label: 'Deposits', icon: 'fa-arrow-down', value: function (rs) { return rs.length; },
+                  sub: function (rs) { return rs.filter(function (r) { return r.status === 'successful'; }).length + ' credited'; } },
+                { label: 'Value', icon: 'fa-sack-dollar',
+                  value: function (rs) { return F().usd(rs.reduce(function (s, r) { return s + rowUsd(r); }, 0)); },
+                  sub: function () { return 'USD equivalent'; } },
+                { label: 'Awaiting', icon: 'fa-hourglass-half', tone: 'qa-amber qa-warn',
+                  value: function (rs) { return rs.filter(function (r) { return r.status === 'pending' || r.status === 'confirming' || r.status === 'proof'; }).length; },
+                  sub: function () { return 'still open'; } },
+                { label: 'Manual', icon: 'fa-hand', tone: 'qa-amber qa-warn',
+                  value: function (rs) { return rs.filter(function (r) { return r.manual; }).length; },
+                  sub: function () { return 'settled by hand'; } }
+            ],
+            onChange: function () { qc.repaint(); qf.repaint(); }
+        });
+
+
         /* ---- crypto ---- */
         var qc = BO.queue({
             el: $('#dCrypto'),
-            rows: function () { return D.CRYPTO_DEPOSITS; },
+            rows: function () { return bar.filter(D.CRYPTO_DEPOSITS); },
             filters: [
                 { id: 'all', label: 'All' },
                 { id: 'open', label: 'Awaiting', count: D.CRYPTO_DEPOSITS.filter(function (r) { return r.status === 'pending' || r.status === 'confirming'; }).length },
@@ -106,6 +149,8 @@
             var r = qc.rowOf(this); if (!r) return;
             var a = KP.ASSETS[r.asset];
             KP.review.open({
+                role: role,
+                onBlock: function () { qc.repaint(); },
                 title: 'Crypto deposit', ref: r.ref, status: r.status, user: r.user,
                 headline: F().crypto(r.amount, r.asset),
                 headSub: F().usd(r.usdValue) + ' · ' + r.network + ' · ' + r.date,
@@ -150,14 +195,22 @@
                     KP.rails.manualConfirm({ ref: r.ref, who: r.user.name, what: 'Credit ' + r.asset + ' deposit',
                         amount: F().crypto(r.amount, r.asset), usd: r.usdValue, actor: actor(role) })
                         .then(function () { r.status = 'successful'; r.manual = true; qc.repaint(); });
-                }
+                },
+                /* Only an agent gets this. An admin can already decide,
+                   so handing it up would just move it in a circle. */
+                onEscalate: role === 'agent' ? function () {
+                    KP.rails.escalate({ ref: r.ref, who: r.user.name, what: 'Credit ' + r.asset + ' deposit',
+                        amount: F().crypto(r.amount, r.asset), usd: r.usdValue, kind: 'crypto-deposit',
+                        actor: actor(role) })
+                        .then(function (e) { r.escalation = e.id; qc.repaint(); });
+                } : null
             });
         });
 
         /* ---- cash ---- */
         var qf = BO.queue({
             el: $('#dFiat'),
-            rows: function () { return D.FIAT_DEPOSITS; },
+            rows: function () { return bar.filter(D.FIAT_DEPOSITS); },
             filters: [
                 { id: 'all', label: 'All' },
                 { id: 'pending', label: 'Awaiting', count: D.FIAT_DEPOSITS.filter(function (r) { return r.status === 'pending'; }).length },
@@ -189,6 +242,8 @@
             var r = qf.rowOf(this); if (!r) return;
             var usd = r.amount / (KP.USD_RATE[r.currency] || 1);
             KP.review.open({
+                role: role,
+                onBlock: function () { qf.repaint(); },
                 title: 'Cash deposit', ref: r.ref, status: r.status, user: r.user,
                 headline: F().fiat(r.amount, r.currency),
                 headSub: F().usd(usd) + ' · ' + r.source + ' · ' + r.date,
@@ -235,7 +290,15 @@
                     KP.rails.manualConfirm({ ref: r.ref, who: r.user.name, what: 'Credit cash deposit',
                         amount: F().fiat(r.amount, r.currency), usd: usd, actor: actor(role) })
                         .then(function () { r.status = 'successful'; r.manual = true; qf.repaint(); });
-                }
+                },
+                /* Only an agent gets this. An admin can already decide,
+                   so handing it up would just move it in a circle. */
+                onEscalate: role === 'agent' ? function () {
+                    KP.rails.escalate({ ref: r.ref, who: r.user.name, what: 'Credit cash deposit',
+                        amount: F().fiat(r.amount, r.currency), usd: usd, kind: 'cash-deposit',
+                        actor: actor(role) })
+                        .then(function (e) { r.escalation = e.id; qf.repaint(); });
+                } : null
             });
         });
 
@@ -253,7 +316,7 @@
     P.withdrawals = function ($el, role) {
         var BO = KP.bo, D = KP.data, f = fld();
 
-        $el.html('<div id="wGuard"></div><ul class="nav nav-tabs mb-3">'
+        $el.html('<div id="wGuard"></div><div id="wStats"></div><ul class="nav nav-tabs mb-3">'
             + '<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#wFiat">Cash payouts</button></li>'
             + '<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#wCrypto">Crypto sends</button></li>'
             + '</ul><div class="tab-content">'
@@ -262,14 +325,35 @@
 
         if (KP.rails.panic.isActive()) {
             $('#wGuard').html('<div class="sys-banner sys-panic"><i class="fas fa-triangle-exclamation fs-5"></i>'
-                + '<div><b>Platform freeze is on — payouts are held.</b>'
+                + '<div><b class="hd">Platform freeze is on — payouts are held.</b>'
                 + '<div class="small">Set by ' + KP.rails.panic.by() + '. Nothing here is released until it is lifted.</div></div></div>');
         }
         if (locked(role, 'withdrawals')) KP.rails.applyLock($('#wGuard'), lockTitle('withdrawals'), lockNote('withdrawals'));
 
+        var bar = BO.statBar({
+            el: $('#wStats'),
+            title: 'Withdrawals in this period',
+            source: function () { return D.FIAT_WITHDRAWALS.concat(D.CRYPTO_WITHDRAWALS); },
+            stats: [
+                { label: 'Payouts', icon: 'fa-arrow-up', value: function (rs) { return rs.length; },
+                  sub: function (rs) { return rs.filter(function (r) { return r.status === 'successful'; }).length + ' settled'; } },
+                { label: 'Value', icon: 'fa-sack-dollar',
+                  value: function (rs) { return F().usd(rs.reduce(function (s, r) { return s + rowUsd(r); }, 0)); },
+                  sub: function () { return 'USD equivalent'; } },
+                { label: 'Awaiting', icon: 'fa-hourglass-half', tone: 'qa-amber qa-warn',
+                  value: function (rs) { return rs.filter(function (r) { return r.status === 'pending' || r.status === 'processing'; }).length; },
+                  sub: function () { return 'still open'; } },
+                { label: 'Manual', icon: 'fa-hand', tone: 'qa-amber qa-warn',
+                  value: function (rs) { return rs.filter(function (r) { return r.manual; }).length; },
+                  sub: function () { return 'settled by hand'; } }
+            ],
+            onChange: function () { qf.repaint(); qc.repaint(); }
+        });
+
+
         var qf = BO.queue({
             el: $('#wFiat'),
-            rows: function () { return D.FIAT_WITHDRAWALS; },
+            rows: function () { return bar.filter(D.FIAT_WITHDRAWALS); },
             filters: [
                 { id: 'all', label: 'All' },
                 { id: 'open', label: 'Awaiting', count: D.FIAT_WITHDRAWALS.filter(function (r) { return r.status === 'pending' || r.status === 'processing'; }).length },
@@ -305,6 +389,8 @@
             var r = qf.rowOf(this); if (!r) return;
             var usd = r.amount / (KP.USD_RATE[r.currency] || 1);
             KP.review.open({
+                role: role,
+                onBlock: function () { qf.repaint(); },
                 title: 'Cash payout', ref: r.ref, status: r.status, user: r.user,
                 headline: F().fiat(r.amount - r.fee, r.currency),
                 headSub: 'from ' + F().fiat(r.amount, r.currency) + ' · fee ' + F().fiat(r.fee, r.currency),
@@ -355,13 +441,21 @@
                     KP.rails.manualConfirm({ ref: r.ref, who: r.user.name, what: 'Settle cash payout',
                         amount: F().fiat(r.amount, r.currency), usd: usd, actor: actor(role) })
                         .then(function () { r.status = 'successful'; r.manual = true; qf.repaint(); });
-                }
+                },
+                /* Only an agent gets this. An admin can already decide,
+                   so handing it up would just move it in a circle. */
+                onEscalate: role === 'agent' ? function () {
+                    KP.rails.escalate({ ref: r.ref, who: r.user.name, what: 'Settle cash payout',
+                        amount: F().fiat(r.amount, r.currency), usd: usd, kind: 'cash-withdrawal',
+                        actor: actor(role) })
+                        .then(function (e) { r.escalation = e.id; qf.repaint(); });
+                } : null
             });
         });
 
         var qc = BO.queue({
             el: $('#wCrypto'),
-            rows: function () { return D.CRYPTO_WITHDRAWALS; },
+            rows: function () { return bar.filter(D.CRYPTO_WITHDRAWALS); },
             filters: [
                 { id: 'all', label: 'All' },
                 { id: 'pending', label: 'Awaiting', count: D.CRYPTO_WITHDRAWALS.filter(function (r) { return r.status === 'pending'; }).length },
@@ -388,6 +482,8 @@
         $('#wCrypto').on('click', '.rv-open', function () {
             var r = qc.rowOf(this); if (!r) return;
             KP.review.open({
+                role: role,
+                onBlock: function () { qc.repaint(); },
                 title: 'Crypto send', ref: r.ref, status: r.status, user: r.user,
                 headline: F().crypto(r.amount - r.fee, r.asset),
                 headSub: 'from ' + F().crypto(r.amount, r.asset) + ' · network fee '
@@ -437,7 +533,15 @@
                     KP.rails.manualConfirm({ ref: r.ref, who: r.user.name, what: 'Broadcast ' + r.asset + ' send',
                         amount: F().crypto(r.amount, r.asset), usd: r.usdValue, actor: actor(role) })
                         .then(function () { r.status = 'successful'; r.manual = true; qc.repaint(); });
-                }
+                },
+                /* Only an agent gets this. An admin can already decide,
+                   so handing it up would just move it in a circle. */
+                onEscalate: role === 'agent' ? function () {
+                    KP.rails.escalate({ ref: r.ref, who: r.user.name, what: 'Broadcast ' + r.asset + ' send',
+                        amount: F().crypto(r.amount, r.asset), usd: r.usdValue, kind: 'crypto-withdrawal',
+                        actor: actor(role) })
+                        .then(function (e) { r.escalation = e.id; qc.repaint(); });
+                } : null
             });
         });
     };
@@ -573,23 +677,38 @@
 
     P.trades = function ($el, role) {
         var BO = KP.bo, D = KP.data, f = fld();
-        $el.html('<div class="stat-strip mb-3" id="tStats"></div>'
-            + '<div class="strip-dots" data-for="tStats"></div>'
-            + '<div id="tQueue" class="mt-2"></div>');
+        $el.html('<div id="tStats"></div><div id="tQueue"></div>');
 
-        var vol = D.TRADES.reduce(function (s, t) { return s + t.usdValue; }, 0);
-        var margin = D.TRADES.reduce(function (s, t) { return s + t.marginEarnedUsd; }, 0);
-        $('#tStats').html(
-            BO.statTile({ label: 'Trades', value: D.TRADES.length, icon: 'fa-right-left', tone: 'blue', note: 'in this view' })
-            + BO.statTile({ label: 'Volume', value: '$' + KP.fmt.compact(vol), icon: 'fa-chart-simple', tone: 'green', note: 'USD equivalent' })
-            + BO.statTile({ label: 'Margin earned', value: '$' + KP.fmt.compact(margin), icon: 'fa-sack-dollar', tone: 'amber', note: 'realised spread' })
-            + BO.statTile({ label: 'Take rate', value: (margin / vol * 100).toFixed(2) + '%', icon: 'fa-percent', tone: 'purple', note: 'margin over volume' })
-        );
-        BO.stripDots('#tStats');
+        /* Same ranged bar the deposit and withdrawal queues use, so "last 30
+           days" means the same thing on every operational screen. */
+        var bar = BO.statBar({
+            el: $('#tStats'),
+            title: 'Trading in this period',
+            source: function () { return D.TRADES; },
+            stats: [
+                { label: 'Trades', icon: 'fa-right-left',
+                  value: function (rs) { return rs.length; },
+                  sub: function () { return 'in this period'; } },
+                { label: 'Volume', icon: 'fa-chart-simple',
+                  value: function (rs) { return '$' + KP.fmt.compact(rs.reduce(function (s, t) { return s + t.usdValue; }, 0)); },
+                  sub: function () { return 'USD equivalent'; } },
+                { label: 'Margin earned', icon: 'fa-sack-dollar',
+                  value: function (rs) { return '$' + KP.fmt.compact(rs.reduce(function (s, t) { return s + t.marginEarnedUsd; }, 0)); },
+                  sub: function () { return 'realised spread'; } },
+                { label: 'Take rate', icon: 'fa-percent',
+                  value: function (rs) {
+                      var v = rs.reduce(function (s, t) { return s + t.usdValue; }, 0);
+                      var m = rs.reduce(function (s, t) { return s + t.marginEarnedUsd; }, 0);
+                      return v ? (m / v * 100).toFixed(2) + '%' : '—';
+                  },
+                  sub: function () { return 'margin over volume'; } }
+            ],
+            onChange: function () { q.repaint(); }
+        });
 
         var q = BO.queue({
             el: $('#tQueue'),
-            rows: function () { return D.TRADES; },
+            rows: function () { return bar.filter(D.TRADES); },
             filters: [
                 { id: 'all', label: 'All', count: D.TRADES.length },
                 { id: 'buy', label: 'Buys' },
@@ -623,6 +742,7 @@
             var r = q.rowOf(this); if (!r) return;
             var isSwap = r.kind === 'swap';
             KP.review.open({
+                role: role,
                 title: r.kind.charAt(0).toUpperCase() + r.kind.slice(1), ref: r.ref,
                 status: r.status, user: r.user,
                 headline: r.from + ' → ' + r.to,
@@ -750,6 +870,8 @@
         $('#aQueue').on('click', '.rv-open', function () {
             var r = q.rowOf(this); if (!r) return;
             KP.review.open({
+                role: role,
+                onBlock: function () { q.repaint(); },
                 title: r.type, ref: r.ref, status: r.status, user: r.user,
                 headline: KP.fmt.usd(r.usd), headSub: r.detail + ' · ' + r.date,
                 groups: [
@@ -825,16 +947,45 @@
                 + '<div class="summary-rows mb-3" style="max-height:280px;overflow:auto">'
                 + '<div class="mb-2"><b style="font-size:.8rem">' + t.user.name + '</b>'
                 + '<p class="mb-0 text-muted" style="font-size:.82rem">' + t.subject
-                + '. Please check — the reference is on my transaction list.</p></div>'
+                + '. Please check — the reference is on my transaction list.</p>'
+                /* What the user attached when they raised it. Being able to see
+                   the evidence without leaving the thread is the whole point. */
+                + '<div class="kp-attach-list mt-2" style="display:grid;gap:.4rem">'
+                + '<div class="kp-attach-item"><span class="qa-icon qa-green sm">'
+                + '<i class="fas fa-image"></i></span>'
+                + '<span class="min-w-0"><span class="ai-name d-block text-truncate">bank-app-screenshot.png</span>'
+                + '<span class="ai-size d-block">412 KB · from ' + t.user.name.split(' ')[0] + '</span></span>'
+                + '<a class="ai-x" href="../images/kyc-document-sample.jpg" target="_blank" '
+                + 'rel="noopener" title="Open"><i class="fas fa-arrow-up-right-from-square"></i></a></div>'
+                + '</div></div>'
                 + '<div class="mb-2 text-end"><b style="font-size:.8rem">You</b>'
                 + '<p class="mb-0 text-muted" style="font-size:.82rem">Thanks — checking the queue now.</p></div></div>'
-                + '<textarea class="form-control mb-2" rows="3" placeholder="Type your reply…"></textarea>'
+                + '<textarea class="form-control mb-2" rows="3" id="sReplyBody" placeholder="Type your reply…"></textarea>'
+                + '<div class="mb-2" id="sAttachSlot"></div>'
                 + '<div class="d-flex gap-2"><button class="btn btn-primary flex-grow-1 s-reply">Send reply</button>'
                 + '<button class="btn btn-soft s-resolve">Mark resolved</button></div>'
             );
+
+            /* Same control the user files evidence with, so an agent can send a
+               screenshot back — a corrected reference, a provider's response. */
+            $('#sAttachSlot').html(KP.rails.attachField('sup-' + t.id, {
+                label: 'Attach a file to your reply',
+                hint: 'PNG, JPG or PDF · up to 5MB each'
+            }));
+            $('#sThread').data('ticket', t.id);
         });
 
-        $('#sThread').on('click', '.s-reply', function () { KP.rails.toast('Reply sent to the user.'); });
+        $('#sThread').on('click', '.s-reply', function () {
+            var id = $('#sThread').data('ticket');
+            var body = ($('#sReplyBody').val() || '').trim();
+            if (!body) { KP.rails.toast('Write a reply first.', 'danger'); return; }
+            var files = KP.rails.attached('sup-' + id);
+            $('#sReplyBody').val('');
+            KP.rails.clearAttached('sup-' + id);
+            KP.rails.toast('Reply sent to the user'
+                + (files.length ? ' with ' + files.length + ' attachment' + (files.length > 1 ? 's' : '') : '')
+                + '.');
+        });
         $('#sThread').on('click', '.s-resolve', function () { KP.rails.toast('Ticket marked resolved.'); q.repaint(); });
     };
 

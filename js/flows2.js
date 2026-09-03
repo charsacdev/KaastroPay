@@ -129,9 +129,20 @@
         $el.on('click', '.flow-back', list);
     }
 
-    /* =========================== R E Q U E S T =========================== */
+    /* ============================ R E Q U E S T ============================
+       Two shapes of request. From another Kaastro user, which is a notification
+       they approve in-app. Or a crypto payment link, which is a public page
+       anyone can open — they see who is asking, send crypto to the address on
+       it, and the requester is credited in Naira. The payer needs no account,
+       so everything that page renders travels in the link itself. */
 
     function request($el) {
+        var me = KP.data.ME;
+
+        function handle() {
+            return '@' + me.name.toLowerCase().split(' ')[0];
+        }
+
         function chooser() {
             $el.html(
                 '<div class="card p-3 p-md-4">'
@@ -147,13 +158,22 @@
                 + KP.flows.railCard({
                     id: 'link', icon: 'fa-link', tone: 'qa-amber',
                     title: 'Request Crypto Payment',
-                    desc: 'Create a payment link and receive the ' + C().currency + ' equivalent.',
+                    desc: 'Create a link, send it to your client, and receive the '
+                        + C().currency + ' equivalent.',
                     meta: [['fa-arrows-rotate', 'Converts automatically', 'pill-manual']]
+                })
+                + KP.flows.railCard({
+                    id: 'bank', icon: 'fa-building-columns', tone: 'qa-green',
+                    title: 'Request Bank Payment',
+                    desc: 'A link that collects ' + C().currency
+                        + ' into a dedicated account. Your client needs no crypto.',
+                    meta: [['fa-bolt', 'Instant matching'], ['fa-hashtag', 'Reference required']]
                 })
                 + '</div>'
                 + '<div class="how-strip mt-3"><div class="hs-title">How crypto requests work</div>'
                 + '<div class="hs-row">'
-                + [['fa-pen-to-square', 'Enter amount'], ['fa-link', 'Share link'], ['fa-wallet', 'Receive ' + C().currency]]
+                + [['fa-pen-to-square', 'Enter amount'], ['fa-link', 'Share link'],
+                   ['fa-wallet', 'Receive ' + C().currency]]
                     .map(function (x, i) {
                         return (i ? '<i class="fas fa-chevron-right hs-sep"></i>' : '')
                             + '<span class="hs-step"><i class="fas ' + x[0] + '"></i>' + x[1] + '</span>';
@@ -164,62 +184,275 @@
             );
         }
 
-        function form(kind) {
-            var isLink = kind === 'link';
+        /* ---------------------- request from a Kaastro user ---------------------- */
+
+        function userForm() {
+            var contacts = KP.data.contacts('kaastro');
             $el.html(
-                KP.flows.backBar('<i class="fas fa-hand-holding-dollar"></i>'
-                    + (isLink ? 'Crypto Payment Link' : 'Request from Kaastro User'))
+                KP.flows.backBar('<i class="fas fa-hand-holding-dollar"></i>Request from Kaastro User')
                 + '<div class="card p-3 p-md-4">'
-                + (isLink ? '' :
-                    '<label class="form-label">Request from</label>'
-                    + '<select class="form-select mb-3" id="rqWho">'
-                    + people(6).map(function (p) {
-                        return '<option>' + p.u.name + ' · ' + p.handle + '</option>';
-                    }).join('') + '</select>')
+                + '<label class="form-label">Request from</label>'
+                + '<select class="form-select mb-3" id="rqWho">'
+                + contacts.map(function (c) {
+                    return '<option value="' + c.id + '">' + c.name + ' · ' + c.handle + '</option>';
+                }).join('') + '</select>'
                 + '<label class="form-label">Amount</label>'
                 + '<div class="amount-box mb-3"><div class="d-flex align-items-center gap-2">'
                 + '<input type="text" inputmode="decimal" id="rqAmt" placeholder="0.00">'
                 + '<span class="ab-side" style="cursor:default">' + C().currency + '</span></div></div>'
                 + '<label class="form-label">What is it for?</label>'
                 + '<input class="form-control mb-3" id="rqWhy" placeholder="Invoice 0042, rent, materials…">'
-                + (isLink
-                    ? '<div class="k-alert k-info mb-3"><i class="fas fa-circle-info"></i><div>'
-                      + 'Whoever pays sends crypto. You receive ' + C().currency + ' at the deposit rate '
-                      + 'the moment it confirms.</div></div>' : '')
-                + '<button class="btn btn-primary w-100" id="rqGo">'
-                + (isLink ? 'Create payment link' : 'Send request') + '</button></div>'
+                + '<button class="btn btn-primary w-100" id="rqSend">Send request</button>'
+                + '<p class="text-muted text-center mt-2 mb-0" style="font-size:.75rem">'
+                + 'Your balance is not affected until they pay.</p></div>'
             );
-
-            $el.on('click', '#rqGo', function () {
-                var v = parseFloat(($('#rqAmt').val() || '').replace(/,/g, '')) || 0;
-                if (!v) { KP.rails.toast('Enter an amount.', 'danger'); return; }
-                var ref = 'REQ-' + Math.floor(58200 + v % 900);
-                if (isLink) {
-                    var link = 'https://kaastropay.com/pay/' + ref.toLowerCase();
-                    KP.showModal('Payment link ready',
-                        '<div class="text-center mb-3"><div class="qa-icon qa-green lg mx-auto mb-2">'
-                        + '<i class="fas fa-link"></i></div>'
-                        + '<div class="rc-amt">' + F().fiat(v, C().currency) + '</div>'
-                        + '<div class="small text-muted">' + ($('#rqWhy').val() || 'Payment request') + '</div></div>'
-                        + '<div class="address-box">' + link + '</div>'
-                        + '<button class="btn btn-primary w-100 mt-3 kp-copy" data-copy="' + link + '">'
-                        + '<i class="fas fa-copy me-1"></i>Copy link</button>');
-                } else {
-                    KP.receipt.show({
-                        title: 'Request sent', ref: ref, amount: F().fiat(v, C().currency),
-                        sub: 'from ' + ($('#rqWho').val() || ''), status: 'pending',
-                        rows: [['Reference', ref], ['From', $('#rqWho').val() || ''],
-                               ['Amount', F().fiat(v, C().currency)],
-                               ['Reason', $('#rqWhy').val() || '—'], ['Date', new Date().toLocaleString()]],
-                        note: 'They get a notification straight away.'
-                    });
-                }
-            });
         }
 
+        /* ------------------------- crypto payment link ------------------------- */
+
+        /* kind decides the whole link: 'crypto' collects into a wallet address,
+           'bank' into a dedicated collection account. Both end on the same
+           public page and share one status vocabulary. */
+        var link = { kind: 'crypto', asset: 'USDT', network: 'TRC20', amount: 0,
+                     why: '', expiry: '24 hours', ref: null };
+
+        function linkForm() {
+            var a = KP.ASSETS[link.asset];
+            var rate = KP.rates.depositRate(link.asset, C().currency);
+            var isBank = link.kind === 'bank';
+
+            $el.html(
+                KP.flows.backBar('<i class="fas fa-' + (isBank ? 'building-columns' : 'link') + '"></i>'
+                    + (isBank ? 'Bank Payment Link' : 'Crypto Payment Link'))
+                + '<div class="card p-3 p-md-4">'
+                + '<h2 class="card-title mb-1">'
+                + (isBank ? 'Request Bank Payment' : 'Request Crypto Payment') + '</h2>'
+                + '<p class="text-muted mb-3" style="font-size:.83rem">'
+                + (isBank
+                    ? 'Your client transfers ' + C().currency + ' from any bank. No crypto, and no account with us.'
+                    : 'Your client pays in crypto. You are credited in ' + C().currency + '.') + '</p>'
+
+                + '<div class="summary-rows mb-3">'
+                + '<div class="sr"><span>Requested by</span><span>' + me.name + '</span></div>'
+                + '<div class="sr total"><span>Your handle</span><span>' + handle() + '</span></div></div>'
+
+                + '<label class="form-label">Expected amount</label>'
+                + '<div class="amount-box mb-3"><div class="d-flex align-items-center gap-2">'
+                + '<input type="text" inputmode="decimal" id="lkAmt" placeholder="0.00">'
+                + '<span class="ab-side" style="cursor:default">' + C().currency + '</span></div></div>'
+
+                + (isBank ? '' :
+                  '<div class="row g-2 mb-3">'
+                + '<div class="col-6"><label class="form-label">Asset</label>'
+                + '<select class="form-select" id="lkAsset">'
+                + KP.ASSET_LIST.map(function (x) {
+                    return '<option value="' + x.symbol + '"' + (x.symbol === link.asset ? ' selected' : '') + '>'
+                        + x.symbol + ' · ' + x.name + '</option>';
+                }).join('') + '</select></div>'
+                + '<div class="col-6"><label class="form-label">Network</label>'
+                + '<select class="form-select" id="lkNet">'
+                + a.networks.map(function (n) {
+                    return '<option value="' + n.id + '"' + (n.id === link.network ? ' selected' : '') + '>'
+                        + n.id + '</option>';
+                }).join('') + '</select></div></div>')
+
+                + '<label class="form-label">Description <span class="text-muted">(optional)</span></label>'
+                + '<input class="form-control mb-3" id="lkWhy" placeholder="Website design, Invoice #104…">'
+
+                + '<label class="form-label">Link expires in</label>'
+                + '<div class="seg mb-3" id="lkExp">'
+                + ['1 hour', '24 hours', '3 days', 'No expiry'].map(function (e) {
+                    return '<button class="' + (e === link.expiry ? 'active' : '') + '" data-e="' + e + '">'
+                        + e + '</button>';
+                }).join('') + '</div>'
+
+                + '<div class="summary-rows mb-3" id="lkQuote">'
+                + (isBank
+                    ? '<div class="sr"><span>Rail</span><span>Bank transfer</span></div>'
+                      + '<div class="sr"><span>Payer sends</span><span id="lkSends">—</span></div>'
+                    : '<div class="sr"><span>Rate</span><span>' + F().fiat(rate, C().currency)
+                      + ' / ' + link.asset + '</span></div>'
+                      + '<div class="sr"><span>Payer sends</span><span id="lkSends">—</span></div>')
+                + '<div class="sr total"><span>You receive</span>'
+                + '<span class="text-up" id="lkGets">' + F().fiat(0, C().currency) + '</span></div></div>'
+
+                + '<div class="k-alert k-info mb-3"><i class="fas fa-circle-info"></i><div>'
+                + 'Whoever opens the link sees your verified name, the amount and what it is for. '
+                + (isBank
+                    ? 'They transfer from any bank quoting the reference on the page, and you are credited on arrival.'
+                    : 'They choose a network, send crypto, and you receive ' + C().currency
+                      + ' at the deposit rate the moment it confirms.')
+                + ' No account is needed to pay.</div></div>'
+
+                + '<button class="btn btn-primary w-100" id="lkGo">Create payment link</button></div>'
+            );
+            quote();
+        }
+
+        function quote() {
+            var v = parseFloat(($('#lkAmt').val() || '').replace(/,/g, '')) || 0;
+            var rate = KP.rates.depositRate(link.asset, C().currency);
+            $('#lkSends').text(!v ? '—'
+                : link.kind === 'bank' ? F().fiat(v, C().currency)
+                : F().crypto(v / rate, link.asset));
+            $('#lkGets').text(F().fiat(v, C().currency));
+        }
+
+        /* The public URL. Everything the payer page renders is in the query, so
+           it works for someone with no account and no session. */
+        function payUrl() {
+            var q = [
+                'r=' + link.ref,
+                'n=' + encodeURIComponent(me.name),
+                'h=' + encodeURIComponent(handle()),
+                'a=' + link.amount,
+                'c=' + C().currency,
+                'k=' + link.kind,
+                'as=' + link.asset,
+                'nw=' + link.network,
+                'd=' + encodeURIComponent(link.why || ''),
+                'x=' + encodeURIComponent(link.expiry)
+            ].join('&');
+            return location.origin + location.pathname.replace(/dashboard\/.*$/, '') + 'pay.html?' + q;
+        }
+
+        function created() {
+            var url = payUrl();
+            var rate = KP.rates.depositRate(link.asset, C().currency);
+            var isBank = link.kind === 'bank';
+            var sends = link.amount / rate;
+
+            $el.html(
+                KP.flows.backBar('<i class="fas fa-link"></i>Payment Link')
+                + '<div class="card p-3 p-md-4">'
+                + '<div class="result-hero">'
+                + '<div class="rh-ico"><i class="fas fa-check"></i></div>'
+                + '<div class="rh-amt">' + F().fiat(link.amount, C().currency) + '</div>'
+                + '<div class="rh-sub">'
+                + (isBank ? 'Payer transfers ' + F().fiat(link.amount, C().currency) + ' from any bank'
+                          : 'Payer sends ' + F().crypto(sends, link.asset) + ' · ' + link.network)
+                + '</div>'
+                + '<div class="mt-2"><span class="pill pill-manual">'
+                + (link.expiry === 'No expiry' ? 'Never expires' : 'Expires in ' + link.expiry)
+                + '</span></div></div>'
+
+                + '<div class="text-center mt-3"><div class="qr-box" id="lkQr"></div></div>'
+
+                + '<div class="address-box mt-3" style="font-size:.72rem">' + url + '</div>'
+                + '<div class="d-flex gap-2 mt-2">'
+                + '<button class="btn btn-primary flex-grow-1 kp-copy" data-copy="' + url + '">'
+                + '<i class="fas fa-copy me-1"></i>Copy link</button>'
+                + '<button class="btn btn-soft flex-grow-1" id="lkShare">'
+                + '<i class="fas fa-share-nodes me-1"></i>Share</button></div>'
+                + '<a class="btn btn-soft w-100 mt-2" href="' + url + '" target="_blank" rel="noopener">'
+                + '<i class="fas fa-arrow-up-right-from-square me-1"></i>Preview what your client sees</a>'
+
+                + '<div class="summary-rows mt-3">'
+                + '<div class="sr"><span>Reference</span><span>' + link.ref + '</span></div>'
+                + '<div class="sr"><span>Requested by</span><span>' + me.name + '</span></div>'
+                + '<div class="sr"><span>Rail</span><span>'
+                + (isBank ? 'Bank transfer · ' + C().currency : link.asset + ' · ' + link.network) + '</span></div>'
+                + '<div class="sr"><span>Description</span><span>' + (link.why || '—') + '</span></div>'
+                + '<div class="sr total"><span>You receive</span><span class="text-up">'
+                + F().fiat(link.amount, C().currency) + '</span></div></div>'
+
+                + '<div class="k-alert k-warn mt-3" id="lkWait"><i class="fas fa-clock"></i><div>'
+                + '<b class="hd">Waiting for payment.</b>'
+                + 'We will notify you the moment your client’s payment confirms.</div></div>'
+
+                + '<button class="btn btn-soft w-100 mt-1" id="lkCancel">Cancel request</button>'
+                + '<p class="text-muted text-center mt-2 mb-0" style="font-size:.74rem">'
+                + '<i class="fas fa-shield-halved me-1"></i>'
+                + 'Crypto received is converted to ' + C().currency + ' automatically.</p>'
+                + '</div>'
+            );
+
+            $('#lkQr').empty();
+            if (typeof QRCode === 'function') {
+                new QRCode(document.getElementById('lkQr'), {
+                    text: url, width: 178, height: 178,
+                    colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        }
+
+        /* ------------------------------- wiring ------------------------------- */
+
         chooser();
-        $el.on('click', '.method-card', function () { form($(this).data('m')); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-        $el.on('click', '.flow-back', chooser);
+
+        $el.on('click', '.method-card', function () {
+            var m = $(this).data('m');
+            if (m === 'link' || m === 'bank') { link.kind = m === 'bank' ? 'bank' : 'crypto'; linkForm(); }
+            else userForm();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        $el.on('click', '.flow-back', function () { chooser(); });
+
+        $el.on('input', '#lkAmt', quote);
+        $el.on('change', '#lkAsset', function () {
+            link.asset = $(this).val();
+            link.network = KP.ASSETS[link.asset].networks[0].id;
+            linkForm();
+        });
+        $el.on('change', '#lkNet', function () { link.network = $(this).val(); quote(); });
+        $el.on('click', '#lkExp button', function () {
+            $('#lkExp button').removeClass('active');
+            $(this).addClass('active');
+            link.expiry = $(this).data('e');
+        });
+
+        $el.on('click', '#lkGo', function () {
+            var v = parseFloat(($('#lkAmt').val() || '').replace(/,/g, '')) || 0;
+            if (!v) { KP.rails.toast('Enter the amount you are requesting.', 'danger'); return; }
+            link.amount = v;
+            link.why = ($('#lkWhy').val() || '').trim();
+            link.ref = 'KPR-' + Math.floor(200000 + Math.random() * 799999);
+            created();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        $el.on('click', '#lkShare', function () {
+            var url = payUrl();
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Payment request from ' + me.name,
+                    text: me.name + ' is requesting ' + F().fiat(link.amount, C().currency),
+                    url: url
+                });
+            } else {
+                navigator.clipboard.writeText(url);
+                KP.rails.toast('Payment link copied.');
+            }
+        });
+
+        $el.on('click', '#lkCancel', function () {
+            KP.rails.sheet('Cancel this request?',
+                '<p class="text-muted" style="font-size:.83rem">The link stops working immediately. '
+                + 'Anyone who opens it afterwards sees that it was cancelled.</p>'
+                + '<div class="d-grid gap-2">'
+                + '<button class="btn btn-danger" id="lkCancelYes">Cancel request</button>'
+                + '<button class="btn btn-soft" data-bs-dismiss="modal">Keep it active</button></div>');
+        });
+        $(document).on('click', '#lkCancelYes', function () {
+            KP.rails.closeSheet();
+            KP.rails.toast('Payment request cancelled.');
+            chooser();
+        });
+
+        $el.on('click', '#rqSend', function () {
+            var v = parseFloat(($('#rqAmt').val() || '').replace(/,/g, '')) || 0;
+            if (!v) { KP.rails.toast('Enter an amount.', 'danger'); return; }
+            var who = KP.data.findContact($('#rqWho').val());
+            var ref = 'KPR-' + Math.floor(200000 + Math.random() * 799999);
+            KP.receipt.show({
+                title: 'Request sent', amount: F().fiat(v, C().currency),
+                sub: 'Requested from ' + (who ? who.name : ''), status: 'pending',
+                rows: [['Reference', ref], ['From', who ? who.name + ' · ' + who.handle : ''],
+                       ['Amount', F().fiat(v, C().currency)],
+                       ['Reason', $('#rqWhy').val() || '—'], ['Date', new Date().toLocaleString()]],
+                note: 'They get a notification straight away.'
+            });
+        });
     }
 
     /* ======================== S E N D  A B R O A D ======================== */
@@ -335,65 +568,260 @@
         $el.on('click', '.flow-back', list);
     }
 
-    /* ============================== S C A N ============================== */
+    /* ============================== S C A N ==============================
+       Kaastro-to-Kaastro only. There is no merchant acquiring product here:
+       a QR always resolves to another Kaastro Pay user, so the whole flow can
+       assume a handle on the other end and skip merchant-ID handling. */
 
     function scan($el) {
-        $el.html(
-            '<div class="card p-3 p-md-4">'
-            + '<p class="text-center text-muted mb-3" style="font-size:.85rem">Scan a Kaastro Pay QR code</p>'
-            + '<div class="scanner"><div class="sc-frame">'
-            + '<span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>'
-            + '<span class="sc-line"></span></div>'
-            + '<div class="sc-hint"><i class="fas fa-camera"></i>Camera preview</div></div>'
-            + '<p class="text-center text-muted mt-3 mb-2" style="font-size:.83rem">'
-            + 'Point your camera at a user, merchant or payment request</p>'
-            + '<p class="text-center mb-3" style="font-size:.78rem">'
-            + '<i class="fas fa-shield-halved text-primary-k me-1"></i>Always confirm the recipient before paying</p>'
-            + '<div class="row g-2 mb-3">'
-            + [['fa-image', 'Upload QR'], ['fa-qrcode', 'My QR'], ['fa-keyboard', 'Enter Code']]
-                .map(function (x) {
-                    return '<div class="col-4"><button class="biller-tile sc-act" data-a="' + x[1] + '">'
-                        + '<span class="qa-icon qa-green"><i class="fas ' + x[0] + '"></i></span>'
-                        + '<span>' + x[1] + '</span></button></div>';
-                }).join('') + '</div>'
-            + '<button class="btn btn-soft w-100 text-primary-k" id="torch">'
-            + '<i class="fas fa-lightbulb me-2"></i>Turn on flashlight</button>'
-            + '</div>'
+        var me = KP.data.ME;
+        var target = null;
 
-            + '<div class="card p-3 mt-3">'
-            + '<div class="section-head"><h2>Recent QR Payments</h2>'
-            + '<a href="insights.html" class="text-primary-k">See all</a></div>'
-            + [['Cafe Haven', 'fa-mug-hot', 8500, 'May 12, 10:32 AM'],
-               ['John Doe', 'fa-user', 25000, 'May 10, 6:45 PM']].map(function (r) {
-                return '<div class="tx-row"><div class="tx-icon tx-out"><i class="fas ' + r[1] + '"></i></div>'
-                    + '<div class="tx-meta"><b>' + r[0] + '</b>'
-                    + '<small>Paid · ' + r[3] + '</small></div>'
-                    + '<div class="tx-amt-col"><span class="amt">' + F().fiat(r[2], C().currency) + '</span></div></div>';
-            }).join('') + '</div>'
-        );
+        function contactCard(c, sub) {
+            return '<div class="d-flex align-items-center gap-3 p-3 rounded-3"'
+                + ' style="background:var(--bg-sunk);border:1px solid var(--border-color)">'
+                + '<span class="kp-avatar ring">'
+                + (c.avatar ? '<img src="../images/' + c.avatar + '" alt="">'
+                            : c.name.slice(0, 2).toUpperCase())
+                + '<span class="av-check"><i class="fas fa-check"></i></span></span>'
+                + '<div class="min-w-0"><div class="fw-bold text-truncate">' + c.name + '</div>'
+                + '<div class="text-muted text-truncate" style="font-size:.76rem">'
+                + (sub || c.handle + ' · Kaastro Pay user') + '</div></div></div>';
+        }
+
+        function scanner() {
+            target = null;
+            var recent = KP.data.contacts('kaastro').slice(0, 3);
+            $el.html(
+                '<div class="card p-3 p-md-4">'
+                + '<p class="text-center text-muted mb-3" style="font-size:.85rem">'
+                + 'Scan another Kaastro Pay user’s QR code</p>'
+                + '<div class="scanner"><div class="sc-frame">'
+                + '<span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>'
+                + '<span class="sc-line"></span></div>'
+                + '<div class="sc-hint"><i class="fas fa-camera"></i>Camera preview</div></div>'
+                + '<p class="text-center text-muted mt-3 mb-2" style="font-size:.83rem">'
+                + 'Point your camera at a Kaastro Pay user’s code or a payment request</p>'
+                + '<p class="text-center mb-3" style="font-size:.78rem">'
+                + '<i class="fas fa-shield-halved text-primary-k me-1"></i>'
+                + 'Always confirm the recipient before paying</p>'
+                + '<div class="row g-2 mb-3">'
+                + [['fa-image', 'Upload QR'], ['fa-qrcode', 'My QR'], ['fa-keyboard', 'Enter Code']]
+                    .map(function (x) {
+                        return '<div class="col-4"><button class="biller-tile sc-act" data-a="' + x[1] + '">'
+                            + '<span class="qa-icon qa-green"><i class="fas ' + x[0] + '"></i></span>'
+                            + '<span>' + x[1] + '</span></button></div>';
+                    }).join('') + '</div>'
+                + '<button class="btn btn-soft w-100 text-primary-k mb-2" id="torch">'
+                + '<i class="fas fa-lightbulb me-2"></i>Turn on flashlight</button>'
+                + '<button class="btn btn-primary w-100" id="simScan">'
+                + '<i class="fas fa-qrcode me-1"></i>Simulate a scan</button>'
+                + '</div>'
+
+                + '<div class="card p-3 mt-3">'
+                + '<div class="section-head"><h2>Scan someone you know</h2>'
+                + '<a href="contacts.html" class="text-primary-k">All contacts</a></div>'
+                + recent.map(function (c) {
+                    return '<button class="contact-row sc-pick" data-id="' + c.id + '">'
+                        + '<span class="kp-avatar sm ring">'
+                        + '<img src="../images/' + c.avatar + '" alt="">'
+                        + '<span class="av-check"><i class="fas fa-check"></i></span></span>'
+                        + '<span class="flex-grow-1 min-w-0">'
+                        + '<span class="cr-name d-block text-truncate">' + c.name + '</span>'
+                        + '<span class="cr-sub d-block text-truncate">' + c.handle + '</span></span>'
+                        + '<i class="fas fa-chevron-right text-muted"></i></button>';
+                }).join('') + '</div>'
+
+                + '<div class="card p-3 mt-3">'
+                + '<div class="section-head"><h2>Recent QR Payments</h2>'
+                + '<a href="insights.html" class="text-primary-k">See all</a></div>'
+                + KP.data.contacts('kaastro').slice(0, 2).map(function (c, i) {
+                    return '<div class="tx-row"><div class="tx-icon tx-out"><i class="fas fa-qrcode"></i></div>'
+                        + '<div class="tx-meta"><b>' + c.name + '</b>'
+                        + '<small>Paid · ' + c.handle + '</small></div>'
+                        + '<div class="tx-amt-col"><span class="amt">'
+                        + F().fiat(i ? 25000 : 8500, C().currency) + '</span></div></div>';
+                }).join('') + '</div>'
+            );
+        }
+
+        /* --- the code resolved to a user --- */
+        function result(c) {
+            target = c;
+            $el.html(
+                KP.flows.backBar('<i class="fas fa-qrcode"></i>Scan Result')
+                + '<div class="card p-3 p-md-4">'
+                + contactCard(c)
+                + '<label class="form-label mt-3">Amount</label>'
+                + '<div class="amount-box mb-2"><div class="d-flex align-items-center gap-2">'
+                + '<input type="text" inputmode="decimal" id="scAmt" placeholder="0.00">'
+                + '<span class="ab-side" style="cursor:default">' + C().currency + '</span></div></div>'
+                + '<div class="d-flex gap-2 mb-3">'
+                + [1000, 5000, 10000].map(function (v) {
+                    return '<button class="btn btn-soft btn-sm flex-grow-1 sc-quick" data-v="' + v + '">'
+                        + F().fiat(v, C().currency) + '</button>';
+                }).join('') + '</div>'
+                + '<label class="form-label">Note <span class="text-muted">(optional)</span></label>'
+                + '<input class="form-control mb-3" id="scNote" placeholder="What is this for?">'
+                + '<div class="summary-rows mb-3">'
+                + '<div class="sr"><span>Available balance</span><span>'
+                + F().fiat(me.fiatBalance, C().currency) + '</span></div>'
+                + '<div class="sr total"><span>Fee</span><span class="text-up">'
+                + F().fiat(0, C().currency) + '</span></div></div>'
+                + '<button class="btn btn-primary w-100" id="scNext">Continue</button>'
+                + '<p class="text-muted text-center mt-2 mb-0" style="font-size:.75rem">'
+                + '<i class="fas fa-shield-halved me-1"></i>Confirm the name before you pay.</p>'
+                + '</div>'
+            );
+        }
+
+        function confirm(amount, note) {
+            $el.html(
+                KP.flows.backBar('<i class="fas fa-qrcode"></i>Confirm Payment')
+                + '<div class="card p-3 p-md-4">'
+                + '<div class="result-hero">'
+                + '<div class="text-muted" style="font-size:.8rem">You are paying</div>'
+                + '<div class="rh-amt">' + F().fiat(amount, C().currency) + '</div>'
+                + '</div>'
+                + '<div class="mt-3">' + contactCard(target) + '</div>'
+                + '<div class="summary-rows mt-3">'
+                + '<div class="sr"><span>Amount</span><span>' + F().fiat(amount, C().currency) + '</span></div>'
+                + '<div class="sr"><span>Fee</span><span class="text-up">' + F().fiat(0, C().currency) + '</span></div>'
+                + '<div class="sr"><span>Note</span><span>' + (note || '—') + '</span></div>'
+                + '<div class="sr total"><span>Balance after payment</span><span>'
+                + F().fiat(me.fiatBalance - amount, C().currency) + '</span></div></div>'
+                + '<button class="btn btn-primary w-100 mt-3" id="scPay">Confirm payment</button>'
+                + '<button class="btn btn-soft w-100 mt-2" id="scCancel">Cancel</button>'
+                + '<p class="text-muted text-center mt-2 mb-0" style="font-size:.75rem">'
+                + '<i class="fas fa-lock me-1"></i>Protected with PIN or biometrics</p>'
+                + '</div>'
+            );
+        }
+
+        function done(amount, note) {
+            var ref = 'KPT-' + Math.floor(200000 + Math.random() * 799999);
+            $el.html(
+                '<div class="card p-3 p-md-4">'
+                + '<div class="result-hero">'
+                + '<div class="rh-ico"><i class="fas fa-check"></i></div>'
+                + '<div class="rh-amt">' + F().fiat(amount, C().currency) + '</div>'
+                + '<div class="rh-sub">Paid to ' + target.name + '</div>'
+                + '<div class="mt-2"><span class="pill pill-success">'
+                + '<i class="fas fa-circle-check"></i>Completed</span></div></div>'
+                + '<div class="summary-rows mt-3">'
+                + '<div class="sr"><span>To</span><span>' + target.handle + '</span></div>'
+                + '<div class="sr"><span>Reference</span><span>' + ref + '</span></div>'
+                + '<div class="sr"><span>Note</span><span>' + (note || '—') + '</span></div>'
+                + '<div class="sr"><span>Date</span><span>' + new Date().toLocaleString() + '</span></div>'
+                + '<div class="sr total"><span>New balance</span><span class="text-up">'
+                + F().fiat(me.fiatBalance - amount, C().currency) + '</span></div></div>'
+                + '<button class="btn btn-primary w-100 mt-3" id="scReceipt">'
+                + '<i class="fas fa-receipt me-1"></i>Share receipt</button>'
+                + '<button class="btn btn-soft w-100 mt-2" id="scAgain">Scan again</button>'
+                + '<a href="index.html" class="btn btn-soft w-100 mt-2">Back to home</a>'
+                + '</div>'
+            );
+
+            $el.data('lastPay', { ref: ref, amount: amount, note: note });
+        }
+
+        scanner();
+
+        $el.on('click', '.flow-back, #scAgain, #scCancel', function () {
+            scanner();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        /* No camera in a prototype, so a scan resolves to a saved contact. */
+        $el.on('click', '#simScan', function () {
+            var pool = KP.data.contacts('kaastro');
+            result(pool[Math.floor(Math.random() * pool.length)]);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        $el.on('click', '.sc-pick', function () {
+            result(KP.data.findContact($(this).data('id')));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        $el.on('click', '.sc-quick', function () { $('#scAmt').val($(this).data('v')); });
+
+        $el.on('click', '#scNext', function () {
+            var v = parseFloat(($('#scAmt').val() || '').replace(/,/g, '')) || 0;
+            if (!v) { KP.rails.toast('Enter an amount.', 'danger'); return; }
+            if (v > me.fiatBalance) { KP.rails.toast('That is more than your balance.', 'danger'); return; }
+            confirm(v, $('#scNote').val().trim());
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        $el.on('click', '#scPay', function () {
+            var amt = parseFloat(($('.rh-amt').text() || '').replace(/[^0-9.]/g, '')) || 0;
+            var note = $('.summary-rows .sr:nth-child(3) span:last-child').text();
+            KP.rails.requirePin('Pay ' + F().fiat(amt, C().currency) + ' to ' + target.name)
+                .then(function (ok) {
+                    if (!ok) return;
+                    done(amt, note === '—' ? '' : note);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+        });
+
+        $el.on('click', '#scReceipt', function () {
+            var d = $el.data('lastPay') || {};
+            KP.receipt.show({
+                title: 'Payment receipt',
+                amount: F().fiat(d.amount, C().currency),
+                sub: 'Paid to ' + target.name,
+                status: 'successful',
+                rows: [
+                    ['To', target.name], ['Handle', target.handle],
+                    ['Reference', d.ref], ['Note', d.note || '—'],
+                    ['Fee', F().fiat(0, C().currency)],
+                    ['Date', new Date().toLocaleString()]
+                ],
+                note: 'Kaastro to Kaastro payments are instant and free.'
+            });
+        });
 
         $el.on('click', '.sc-act', function () {
             var a = $(this).data('a');
             if (a === 'My QR') {
-                KP.showModal('My Kaastro QR',
+                var handle = '@' + me.name.toLowerCase().split(' ')[0];
+                KP.rails.sheet('My Kaastro QR',
                     '<div class="text-center"><div class="qr-box" id="myQr"></div>'
-                    + '<p class="fw-bold mt-3 mb-0">' + KP.data.ME.name + '</p>'
-                    + '<p class="text-muted" style="font-size:.82rem">@'
-                    + KP.data.ME.name.toLowerCase().split(' ')[0] + ' · ' + KP.data.ME.id + '</p></div>');
+                    + '<p class="fw-bold mt-3 mb-0">' + me.name + '</p>'
+                    + '<p class="text-muted" style="font-size:.82rem">' + handle + ' · ' + me.id + '</p>'
+                    + '<button class="btn btn-soft w-100 mt-2 kp-copy" data-copy="' + me.id + '">'
+                    + '<i class="fas fa-copy me-1"></i>Copy my Kaastro ID</button>'
+                    + '<p class="text-muted mt-2 mb-0" style="font-size:.74rem">'
+                    + 'Any Kaastro Pay user can scan this to pay you.</p></div>');
                 if (typeof QRCode === 'function') {
                     new QRCode(document.getElementById('myQr'), {
-                        text: 'kaastropay://pay/' + KP.data.ME.id, width: 190, height: 190,
+                        text: 'kaastropay://pay/' + me.id, width: 190, height: 190,
                         colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
                     });
                 }
             } else if (a === 'Enter Code') {
-                KP.showModal('Enter payment code',
-                    '<input class="form-control mb-3" placeholder="e.g. KP-10240 or a request code">'
-                    + '<button class="btn btn-primary w-100" data-bs-dismiss="modal">Look up</button>');
+                KP.rails.sheet('Enter a Kaastro ID',
+                    '<p class="text-muted" style="font-size:.83rem">'
+                    + 'Type the handle or Kaastro ID of the person you want to pay.</p>'
+                    + '<input class="form-control mb-3" id="scCode" placeholder="@handle or KP-10240">'
+                    + '<button class="btn btn-primary w-100" id="scLookup">Look up</button>');
             } else {
                 KP.rails.toast('Choose a QR image from your gallery.');
             }
         });
+
+        $(document).on('click', '#scLookup', function () {
+            var v = ($('#scCode').val() || '').trim().toLowerCase();
+            if (!v) { KP.rails.toast('Enter a handle or Kaastro ID.', 'danger'); return; }
+            var hit = KP.data.contacts('kaastro').filter(function (c) {
+                return c.handle.toLowerCase() === (v[0] === '@' ? v : '@' + v)
+                    || c.name.toLowerCase().indexOf(v) > -1;
+            })[0];
+            if (!hit) { KP.rails.toast('No Kaastro Pay user matches that.', 'danger'); return; }
+            KP.rails.closeSheet();
+            result(hit);
+        });
+
         $el.on('click', '#torch', function () {
             var on = $(this).hasClass('btn-primary');
             $(this).toggleClass('btn-primary', !on).toggleClass('btn-soft text-primary-k', on)
@@ -421,7 +849,7 @@
             + '<div class="card p-3 p-md-4 mb-3">'
             + '<div class="section-head"><h2>Money Overview</h2>'
             + '<i class="fas fa-eye text-muted"></i></div>'
-            + '<div class="flow-3">'
+            + '<div class="flow-stack">'
             + '<div><span>Money In</span><b class="text-up">' + F().fiat(inSum, C().currency) + '</b></div>'
             + '<div><span>Money Out</span><b class="text-down">' + F().fiat(outSum, C().currency) + '</b></div>'
             + '<div><span>Net Flow</span><b class="' + (inSum - outSum >= 0 ? 'text-up' : 'text-down') + '">'
@@ -430,14 +858,14 @@
             + '<canvas id="flowChart" height="150" class="mt-3"></canvas></div>'
 
             + '<div class="row g-2 mb-3">'
-            + '<div class="col-6"><div class="card p-3 h-100 d-flex flex-row align-items-center gap-2">'
-            + '<span class="qa-icon qa-amber"><i class="fas fa-receipt"></i></span>'
-            + '<span class="min-w-0"><span class="st-label d-block">Fees Paid</span>'
-            + '<b style="font-size:1.05rem">' + F().fiat(fees, C().currency) + '</b></span></div></div>'
-            + '<div class="col-6"><div class="card p-3 h-100 d-flex flex-row align-items-center gap-2">'
-            + '<span class="qa-icon qa-blue"><i class="fas fa-chart-simple"></i></span>'
-            + '<span class="min-w-0"><span class="st-label d-block">Transactions</span>'
-            + '<b style="font-size:1.05rem">' + tx.length + '</b></span></div></div></div>'
+            + '<div class="col-6"><div class="card figure-tile">'
+            + '<span class="qa-icon qa-green sm"><i class="fas fa-receipt"></i></span>'
+            + '<span class="ft-label">Fees Paid</span>'
+            + '<b class="ft-value">' + F().fiat(fees, C().currency) + '</b></div></div>'
+            + '<div class="col-6"><div class="card figure-tile">'
+            + '<span class="qa-icon qa-green sm"><i class="fas fa-chart-simple"></i></span>'
+            + '<span class="ft-label">Transactions</span>'
+            + '<b class="ft-value">' + tx.length + '</b></div></div></div>'
 
             + '<div class="card p-3 p-md-4 mb-3">'
             + '<div class="section-head"><h2>Spending Breakdown</h2></div>'
@@ -457,7 +885,7 @@
             + 'Crypto is converted automatically and is not stored.</p></div>'
 
             + '<div class="k-alert k-ok mb-3"><i class="fas fa-arrow-trend-up"></i><div>'
-            + '<b>You received 15% more this month.</b>Your inflows are up compared to last month.</div></div>'
+            + '<b class="hd">You received 15% more this month.</b>Your inflows are up compared to last month.</div></div>'
 
             + '<button class="btn btn-primary w-100 mb-3" id="dlStatement">'
             + '<i class="fas fa-download me-2"></i>Download Statement</button>'

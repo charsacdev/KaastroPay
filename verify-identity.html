@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verify your identity | Kaastro Pay</title>
-<meta name="theme-color" content="#10b981">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Kaastro Pay">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
-<script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||'light');}catch(e){}})();</script>
+<script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||document.documentElement.getAttribute('data-theme-default')||'dark');}catch(e){}})();</script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <link rel="stylesheet" href="css/kaastro.css">
@@ -21,7 +21,7 @@
 <body>
 
 <div class="auth-wrap"><div class="auth-card" style="max-width:520px">
-  <a href="index.html" class="brand-logo mb-4"><img src="images/logo.png" alt="Kaastro Pay" class="brand-img"></a>
+  <a href="index.html" class="brand-logo mb-4"><img src="images/logo-onDark.png" alt="Kaastro Pay" class="brand-img"></a>
 
   <div class="stepper mb-4">
     <div class="stp done"><span class="n"><i class="fas fa-check" style="font-size:.55rem"></i></span>Email</div>
@@ -51,7 +51,7 @@
 
     <div class="k-alert k-info mb-3">
       <i class="fas fa-lock"></i>
-      <div><b>Why we ask.</b>Your national ID is what lets us issue your deposit account
+      <div><b class="hd">Why we ask.</b>Your national ID is what lets us issue your deposit account
         and raise your limits. It is a regulatory requirement in every country we operate in,
         and your documents are encrypted at rest.</div>
     </div>

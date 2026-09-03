@@ -14,12 +14,26 @@
 
     var THEME_KEY = 'kaastro-theme';
 
-    function currentTheme() {
-        try { return localStorage.getItem(THEME_KEY) || 'light'; } catch (e) { return 'light'; }
+    /* Two surfaces, two defaults. The wallet is dark; the marketing and legal
+       pages are light, the way both are drawn. A page states its own default
+       with <html data-theme-default="light"> and the app falls back to dark,
+       so neither has to know about the other. A theme the user actually chose
+       always wins over both. */
+    function defaultTheme() {
+        return document.documentElement.getAttribute('data-theme-default') || 'dark';
     }
-    function applyTheme(t) {
+    function storedTheme() {
+        try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+    }
+    function currentTheme() {
+        return storedTheme() || defaultTheme();
+    }
+    /* persist defaults to true: only an explicit choice should be written, or
+       the first page a visitor happens to land on would pin their theme for
+       every page after it. */
+    function applyTheme(t, persist) {
         document.documentElement.setAttribute('data-bs-theme', t);
-        try { localStorage.setItem(THEME_KEY, t); } catch (e) { }
+        if (persist !== false) { try { localStorage.setItem(THEME_KEY, t); } catch (e) { } }
         $('#kpThemeBtn i').attr('class', t === 'dark' ? 'fas fa-sun' : 'fas fa-moon');
     }
     $(document).on('click', '#kpThemeBtn', function () {
@@ -52,7 +66,7 @@
         if (!PANIC.isActive()) return false;
         var html = '<div class="sys-banner sys-panic">' +
             '<i class="fas fa-triangle-exclamation fs-5"></i>' +
-            '<div><b>' + (what || 'Transactions') + ' are temporarily frozen.</b>' +
+            '<div><b class="hd">' + (what || 'Transactions') + ' are temporarily frozen.</b>' +
             '<div class="small">Platform freeze activated by ' + PANIC.by() + ' on ' + PANIC.at() +
             '. Your funds are safe — this lifts as soon as our providers are back.</div></div></div>';
         $mount.prepend(html);
@@ -116,7 +130,7 @@
        by a revoked permission, or by a suspended account. */
     function applyLock($mount, title, note) {
         $mount.prepend('<div class="sys-banner sys-shift">'
-            + '<i class="fas fa-lock fs-5"></i><div><b>' + title + '</b>'
+            + '<i class="fas fa-lock fs-5"></i><div><b class="hd">' + title + '</b>'
             + '<div class="small">' + note + '</div></div></div>');
         $mount.find('.kp-approve, .kp-reject, .kp-manual').prop('disabled', true).addClass('disabled');
         return true;
@@ -271,7 +285,7 @@
             '<input type="file" class="form-control" id="kpManualProof">' +
             '<div class="form-text">Bank statement, explorer screenshot, or provider correspondence.</div></div>' +
             '<div id="kpManualSecond" class="d-none"><div class="k-alert k-danger mb-2">' +
-            '<i class="fas fa-user-shield"></i><div><b>Second approver required.</b>' +
+            '<i class="fas fa-user-shield"></i><div><b class="hd">Second approver required.</b>' +
             'This amount is above the ' + '$' + MANUAL.THRESHOLD_USD.toLocaleString() + ' threshold.</div></div>' +
             '<label class="form-label">Approving supervisor</label>' +
             '<select class="form-select" id="kpManualApprover"><option value="">Select…</option>' +
@@ -327,6 +341,335 @@
         manualCtx = null;
     });
 
+    /* ================== Blocked transactions ==================
+       Blocking one transaction is not the same as blocking an account. A user
+       can be in good standing and still have a single movement that must not
+       settle — a duplicate, a chargeback risk, a compliance hold on one
+       counterparty. This keeps the block on the transaction, with the reason
+       attached, so anyone who opens it afterwards sees why it stopped and who
+       stopped it rather than guessing.
+
+       Only an admin can place or lift one. An agent sees the block and the
+       reason, and cannot act on the row. */
+
+    var TXBLOCK = {
+        KEY: 'kaastro-blocked-tx',
+        REASONS: [
+            'Suspected fraud — under investigation',
+            'Duplicate of an earlier transaction',
+            'Compliance hold — sanctions or PEP screening',
+            'Chargeback or reversal risk',
+            'Counterparty account under review',
+            'Awaiting source-of-funds evidence',
+            'Other (described below)'
+        ],
+        all: function () {
+            try { return JSON.parse(localStorage.getItem(this.KEY) || '{}') || {}; } catch (e) { return {}; }
+        },
+        save: function (m) {
+            try { localStorage.setItem(this.KEY, JSON.stringify(m)); } catch (e) { }
+        },
+        get: function (ref) { return this.all()[ref] || null; },
+        isBlocked: function (ref) { return !!this.all()[ref]; },
+        count: function () { return Object.keys(this.all()).length; },
+        list: function () {
+            var m = this.all();
+            return Object.keys(m).map(function (k) { return m[k]; })
+                .sort(function (a, b) { return (b.atMs || 0) - (a.atMs || 0); });
+        },
+        block: function (entry) {
+            var m = this.all();
+            m[entry.ref] = entry;
+            this.save(m);
+            return entry;
+        },
+        unblock: function (ref, by, note) {
+            var m = this.all();
+            var e = m[ref];
+            delete m[ref];
+            this.save(m);
+            return e ? $.extend({}, e, { liftedBy: by, liftNote: note }) : null;
+        }
+    };
+
+    var blockCtx = null;
+
+    function blockModal() {
+        if ($('#kpBlockModal').length) return;
+        $('body').append(
+            '<div class="modal fade" id="kpBlockModal" tabindex="-1">' +
+            '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">' +
+            '<div class="modal-content"><div class="modal-header">' +
+            '<h5 class="modal-title"><i class="fas fa-ban text-danger me-2"></i>Block this transaction</h5>' +
+            '<button class="btn-close" data-bs-dismiss="modal"></button></div>' +
+            '<div class="modal-body">' +
+            '<div class="k-alert k-danger mb-3"><i class="fas fa-triangle-exclamation"></i><div>' +
+            '<b class="hd">This stops the transaction, not the account.</b>' +
+            'It cannot be approved, rejected or manually confirmed while blocked. The user ' +
+            'is told it is under review; they are not told why.</div></div>' +
+            '<div class="summary-rows mb-3" id="kpBlockSummary"></div>' +
+            '<div class="mb-3"><label class="form-label">Reason <span class="text-danger">*</span></label>' +
+            '<select class="form-select" id="kpBlockReason">' +
+            '<option value="">Select a reason…</option>' +
+            TXBLOCK.REASONS.map(function (r) { return '<option>' + r + '</option>'; }).join('') +
+            '</select></div>' +
+            '<div class="mb-3"><label class="form-label">Details <span class="text-danger">*</span></label>' +
+            '<textarea class="form-control" id="kpBlockNotes" rows="3" ' +
+            'placeholder="What prompted the block, and what has to happen before it can be lifted."></textarea>' +
+            '<div class="form-text">Whoever lifts this will read your note first.</div></div>' +
+            '<div class="mb-3"><label class="form-label">Notify the user</label>' +
+            '<div class="form-check form-switch"><input class="form-check-input" type="checkbox" ' +
+            'id="kpBlockNotify" checked><label class="form-check-label" for="kpBlockNotify" ' +
+            'style="font-size:.83rem">Tell them it is under review</label></div></div>' +
+            '<div class="mb-2"><label class="form-label">Evidence</label><div id="kpBlockAttach"></div></div>' +
+            '</div><div class="modal-footer">' +
+            '<button class="btn btn-soft" data-bs-dismiss="modal">Cancel</button>' +
+            '<button class="btn btn-danger" id="kpBlockGo">Block transaction</button>' +
+            '</div></div></div></div>'
+        );
+    }
+
+    /* KP.rails.blockTransaction({ref, who, what, amount, actor}) -> Promise */
+    function blockTransaction(ctx) {
+        blockModal();
+        blockCtx = ctx;
+        $('#kpBlockSummary').html(
+            '<div class="sr"><span>Reference</span><span>' + ctx.ref + '</span></div>' +
+            '<div class="sr"><span>User</span><span>' + ctx.who + '</span></div>' +
+            '<div class="sr"><span>Transaction</span><span>' + ctx.what + '</span></div>' +
+            '<div class="sr total"><span>Amount</span><span>' + ctx.amount + '</span></div>'
+        );
+        $('#kpBlockReason,#kpBlockNotes').val('');
+        $('#kpBlockNotify').prop('checked', true);
+        $('#kpBlockAttach').html(attachField('block', {
+            label: 'Attach supporting evidence',
+            hint: 'Screening result, provider notice or internal memo'
+        }));
+        new bootstrap.Modal(document.getElementById('kpBlockModal')).show();
+        return new Promise(function (resolve) { blockCtx.resolve = resolve; });
+    }
+
+    $(document).on('click', '#kpBlockGo', function () {
+        var reason = $('#kpBlockReason').val();
+        var notes = ($('#kpBlockNotes').val() || '').trim();
+        if (!reason || !notes) {
+            toast('A reason and your notes are both required.', 'danger');
+            return;
+        }
+        var entry = TXBLOCK.block({
+            ref: blockCtx.ref,
+            who: blockCtx.who,
+            what: blockCtx.what,
+            amount: blockCtx.amount,
+            reason: reason,
+            notes: notes,
+            notified: $('#kpBlockNotify').is(':checked'),
+            evidence: attached('block').map(function (f) { return f.name; }),
+            by: blockCtx.actor || 'Admin User',
+            at: new Date().toLocaleString(),
+            atMs: Date.now()
+        });
+        clearAttached('block');
+        bootstrap.Modal.getInstance(document.getElementById('kpBlockModal')).hide();
+        toast('Transaction ' + entry.ref + ' blocked.', 'danger');
+        if (blockCtx.resolve) blockCtx.resolve(entry);
+        blockCtx = null;
+    });
+
+    /* Lifting takes a note too — a block that is quietly removed is worse than
+       one that was never placed. */
+    function unblockTransaction(ref, actor) {
+        var b = TXBLOCK.get(ref);
+        if (!b) return Promise.resolve(null);
+        return new Promise(function (resolve) {
+            sheet('Lift the block on ' + ref + '?',
+                '<div class="summary-rows mb-3">'
+                + '<div class="sr"><span>Blocked by</span><span>' + b.by + '</span></div>'
+                + '<div class="sr"><span>When</span><span>' + b.at + '</span></div>'
+                + '<div class="sr total"><span>Reason</span><span>' + b.reason + '</span></div></div>'
+                + '<p class="text-muted" style="font-size:.83rem">' + b.notes + '</p>'
+                + '<label class="form-label">Why is it safe to lift?</label>'
+                + '<textarea class="form-control mb-3" id="kpUnblockNote" rows="2" '
+                + 'placeholder="What changed since the block was placed."></textarea>'
+                + '<button class="btn btn-primary w-100" id="kpUnblockGo">Lift the block</button>');
+            $(document).off('click.unblock').on('click.unblock', '#kpUnblockGo', function () {
+                var note = ($('#kpUnblockNote').val() || '').trim();
+                if (!note) { toast('Say why it is safe to lift.', 'danger'); return; }
+                var e = TXBLOCK.unblock(ref, actor || 'Admin User', note);
+                closeSheet();
+                toast('Block lifted on ' + ref + '.', 'success');
+                resolve(e);
+            });
+        });
+    }
+
+    /* ====================== Escalation to an admin ======================
+       The honest alternative to a manual confirmation. When an agent is not
+       certain — the evidence is thin, the amount is large, the user's story
+       does not reconcile — the safe move is to hand it up rather than credit
+       a balance and hope. Escalations queue for an admin, carry the same
+       evidence a manual confirmation would have needed, and are attributed to
+       the agent who raised them. */
+
+    var ESCALATION = {
+        KEY: 'kaastro-escalations',
+        all: function () {
+            try { return JSON.parse(localStorage.getItem(this.KEY) || '[]'); } catch (e) { return []; }
+        },
+        save: function (list) {
+            try { localStorage.setItem(this.KEY, JSON.stringify(list.slice(0, 200))); } catch (e) { }
+        },
+        add: function (entry) {
+            var l = this.all();
+            l.unshift(entry);
+            this.save(l);
+            return entry;
+        },
+        open: function () {
+            return this.all().filter(function (e) { return e.status === 'open'; });
+        },
+        /* A deposit escalation often exists precisely because the recorded
+           amount is wrong — the provider reported one figure, the statement
+           shows another. An admin can correct it before deciding, and the
+           original is kept alongside so the change is never silent. */
+        amountParts: function (s) {
+            var m = String(s || '').match(/^([^\d\-]*)([\d,.\-]+)(.*)$/);
+            if (!m) return null;
+            return { prefix: m[1], value: parseFloat(m[2].replace(/,/g, '')) || 0, suffix: m[3] };
+        },
+        setAmount: function (id, newValue, by, note) {
+            var l = this.all(), self = this;
+            l.forEach(function (e) {
+                if (e.id !== id) return;
+                var p = self.amountParts(e.amount);
+                if (!p) return;
+                if (e.amountOriginal == null) e.amountOriginal = e.amount;
+                var dp = p.value % 1 ? 2 : (String(p.value).length > 6 ? 2 : 2);
+                e.amount = p.prefix + Number(newValue).toLocaleString('en-US',
+                    { minimumFractionDigits: dp, maximumFractionDigits: dp }) + p.suffix;
+                e.amountEditedBy = by;
+                e.amountEditedAt = new Date().toLocaleString();
+                e.amountEditNote = note || '';
+            });
+            this.save(l);
+            return l.filter(function (e) { return e.id === id; })[0] || null;
+        },
+        resolve: function (id, outcome, by, note) {
+            var l = this.all();
+            l.forEach(function (e) {
+                if (e.id === id) {
+                    e.status = outcome;          /* 'approved' | 'declined' */
+                    e.decidedBy = by;
+                    e.decidedAt = new Date().toLocaleString();
+                    e.decisionNote = note || '';
+                }
+            });
+            this.save(l);
+        }
+    };
+
+    var escalateCtx = null;
+
+    function escalateModal() {
+        if ($('#kpEscalateModal').length) return;
+        $('body').append(
+            '<div class="modal fade" id="kpEscalateModal" tabindex="-1">' +
+            '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">' +
+            '<div class="modal-content"><div class="modal-header">' +
+            '<h5 class="modal-title"><i class="fas fa-arrow-up-right-dots text-warning me-2"></i>' +
+            'Escalate to an admin</h5>' +
+            '<button class="btn-close" data-bs-dismiss="modal"></button></div>' +
+            '<div class="modal-body">' +
+            '<div class="k-alert k-info mb-3"><i class="fas fa-circle-info"></i><div>' +
+            '<b class="hd">This is the safe path when you are not sure.</b>' +
+            'Nothing moves until an admin decides. The user keeps waiting, but no ' +
+            'balance is credited on thin evidence.</div></div>' +
+            '<div class="summary-rows mb-3" id="kpEscSummary"></div>' +
+            '<div class="mb-3"><label class="form-label">Why are you escalating? ' +
+            '<span class="text-danger">*</span></label>' +
+            '<select class="form-select" id="kpEscReason">' +
+            '<option value="">Select a reason…</option>' +
+            '<option>Evidence is inconclusive</option>' +
+            '<option>Amount is above my comfort or daily cap</option>' +
+            '<option>User&rsquo;s account is under review</option>' +
+            '<option>Possible duplicate or double credit</option>' +
+            '<option>Suspected fraud — needs compliance</option>' +
+            '<option>Provider dispute, outcome unclear</option>' +
+            '<option>Other (describe below)</option></select></div>' +
+            '<div class="mb-3"><label class="form-label">What have you checked? ' +
+            '<span class="text-danger">*</span></label>' +
+            '<textarea class="form-control" id="kpEscNotes" rows="3" ' +
+            'placeholder="What you verified, what does not add up, what you need decided."></textarea></div>' +
+            '<div class="mb-3"><label class="form-label">Priority</label>' +
+            '<div class="seg" id="kpEscPriority">' +
+            '<button type="button" data-p="normal" class="active">Normal</button>' +
+            '<button type="button" data-p="high">High</button>' +
+            '<button type="button" data-p="urgent">Urgent</button></div></div>' +
+            '<div class="mb-2"><label class="form-label">Evidence</label>' +
+            '<div id="kpEscAttach"></div></div>' +
+            '</div><div class="modal-footer">' +
+            '<button class="btn btn-soft" data-bs-dismiss="modal">Cancel</button>' +
+            '<button class="btn btn-primary" id="kpEscSend">Send to admin</button>' +
+            '</div></div></div></div>'
+        );
+    }
+
+    /* KP.rails.escalate({ref, who, what, amount, usd, actor, kind}) -> Promise */
+    function escalate(ctx) {
+        escalateModal();
+        escalateCtx = ctx;
+        $('#kpEscSummary').html(
+            '<div class="sr"><span>Reference</span><span>' + ctx.ref + '</span></div>' +
+            '<div class="sr"><span>User</span><span>' + ctx.who + '</span></div>' +
+            '<div class="sr"><span>Action requested</span><span>' + ctx.what + '</span></div>' +
+            '<div class="sr total"><span>Amount</span><span>' + ctx.amount + '</span></div>'
+        );
+        $('#kpEscReason,#kpEscNotes').val('');
+        $('#kpEscPriority button').removeClass('active').first().addClass('active');
+        $('#kpEscAttach').html(attachField('escalate', {
+            label: 'Attach what you looked at',
+            hint: 'Statement, explorer page or provider email · PNG, JPG or PDF'
+        }));
+        new bootstrap.Modal(document.getElementById('kpEscalateModal')).show();
+        return new Promise(function (resolve) { escalateCtx.resolve = resolve; });
+    }
+
+    $(document).on('click', '#kpEscPriority button', function () {
+        $('#kpEscPriority button').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    $(document).on('click', '#kpEscSend', function () {
+        var reason = $('#kpEscReason').val();
+        var notes = ($('#kpEscNotes').val() || '').trim();
+        if (!reason || !notes) {
+            toast('A reason and your notes are both required.', 'danger');
+            return;
+        }
+        var files = attached('escalate');
+        var entry = ESCALATION.add({
+            id: 'ESC-' + Math.floor(10000 + Math.random() * 89999),
+            ref: escalateCtx.ref,
+            who: escalateCtx.who,
+            what: escalateCtx.what,
+            amount: escalateCtx.amount,
+            usd: escalateCtx.usd || 0,
+            kind: escalateCtx.kind || 'manual',
+            reason: reason,
+            notes: notes,
+            priority: $('#kpEscPriority button.active').data('p'),
+            evidence: files.map(function (f) { return f.name; }),
+            raisedBy: escalateCtx.actor || (myAgent() ? myAgent().name : 'Agent'),
+            raisedAt: new Date().toLocaleString(),
+            status: 'open'
+        });
+        clearAttached('escalate');
+        bootstrap.Modal.getInstance(document.getElementById('kpEscalateModal')).hide();
+        toast('Escalated to an admin as ' + entry.id + '.', 'success');
+        if (escalateCtx.resolve) escalateCtx.resolve(entry);
+        escalateCtx = null;
+    });
+
     /* ============================ Toast ============================ */
 
     function toast(msg, tone) {
@@ -345,6 +688,124 @@
         el.addEventListener('hidden.bs.toast', function () { el.remove(); });
     }
 
+    /* =========================== Attachments ===========================
+       Support runs on evidence — a screenshot of the bank app, a block explorer
+       page, a photo of a receipt. One control, used by the user's ticket form,
+       the agent's and admin's reply box, and the escalation dialog, so an
+       attachment behaves and validates the same wherever it is offered. */
+
+    var ATTACH = {
+        MAX_MB: 5,
+        MAX_FILES: 4,
+        ACCEPT: 'image/png,image/jpeg,image/webp,application/pdf',
+        store: {}          /* id -> [ {name, size, type} ] */
+    };
+
+    function humanSize(b) {
+        if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MB';
+        if (b >= 1024) return Math.round(b / 1024) + ' KB';
+        return b + ' B';
+    }
+
+    /* Renders the field. `id` must be unique on the page; read the result back
+       with KP.rails.attached(id). */
+    function attachField(id, opts) {
+        opts = opts || {};
+        ATTACH.store[id] = [];
+        return '<div class="kp-attach" data-attach="' + id + '">'
+            + '<input type="file" class="kp-attach-input" hidden multiple'
+            + ' accept="' + (opts.accept || ATTACH.ACCEPT) + '">'
+            + '<button type="button" class="kp-attach-drop">'
+            + '<i class="fas fa-paperclip"></i>'
+            + '<span><b>' + (opts.label || 'Attach evidence') + '</b>'
+            + '<small>' + (opts.hint || 'PNG, JPG or PDF · up to '
+                + ATTACH.MAX_MB + 'MB each · ' + ATTACH.MAX_FILES + ' files')
+            + '</small></span></button>'
+            + '<div class="kp-attach-list"></div></div>';
+    }
+
+    function attached(id) { return (ATTACH.store[id] || []).slice(); }
+    function clearAttached(id) {
+        ATTACH.store[id] = [];
+        $('.kp-attach[data-attach="' + id + '"] .kp-attach-list').empty();
+        $('.kp-attach[data-attach="' + id + '"] .kp-attach-input').val('');
+    }
+
+    function paintAttachList($wrap) {
+        var id = $wrap.data('attach');
+        var files = ATTACH.store[id] || [];
+        $wrap.find('.kp-attach-list').html(files.map(function (f, i) {
+            var isImg = f.type.indexOf('image/') === 0;
+            return '<div class="kp-attach-item">'
+                + '<span class="qa-icon qa-green sm"><i class="fas '
+                + (isImg ? 'fa-image' : 'fa-file-pdf') + '"></i></span>'
+                + '<span class="min-w-0"><span class="ai-name d-block text-truncate">' + f.name + '</span>'
+                + '<span class="ai-size d-block">' + humanSize(f.size) + '</span></span>'
+                + '<button type="button" class="ai-x" data-rm="' + i + '" title="Remove">'
+                + '<i class="fas fa-xmark"></i></button></div>';
+        }).join(''));
+    }
+
+    $(document).on('click', '.kp-attach-drop', function () {
+        $(this).closest('.kp-attach').find('.kp-attach-input').trigger('click');
+    });
+
+    $(document).on('change', '.kp-attach-input', function () {
+        var $wrap = $(this).closest('.kp-attach');
+        var id = $wrap.data('attach');
+        var list = ATTACH.store[id] || (ATTACH.store[id] = []);
+
+        Array.prototype.forEach.call(this.files, function (f) {
+            if (list.length >= ATTACH.MAX_FILES) {
+                toast('You can attach ' + ATTACH.MAX_FILES + ' files at most.', 'danger');
+                return;
+            }
+            if (f.size > ATTACH.MAX_MB * 1048576) {
+                toast(f.name + ' is over ' + ATTACH.MAX_MB + 'MB.', 'danger');
+                return;
+            }
+            list.push({ name: f.name, size: f.size, type: f.type });
+        });
+
+        /* Reset the input so re-picking the same file still fires a change. */
+        this.value = '';
+        paintAttachList($wrap);
+    });
+
+    $(document).on('click', '.kp-attach-item .ai-x', function () {
+        var $wrap = $(this).closest('.kp-attach');
+        var id = $wrap.data('attach');
+        (ATTACH.store[id] || []).splice($(this).data('rm'), 1);
+        paintAttachList($wrap);
+    });
+
+    /* ============================ Sheet ============================
+       The user portal needs the same "ask one question over the current
+       screen" affordance the back office gets from KP.showModal, but without
+       pulling backoffice.js into every wallet page. On phones this rises from
+       the bottom the way the mockups draw it; on desktop it centres. */
+
+    function sheet(title, body, opts) {
+        opts = opts || {};
+        $('#kpSheet').remove();
+        $('body').append('<div class="modal fade kp-sheet" id="kpSheet" tabindex="-1">'
+            + '<div class="modal-dialog modal-dialog-centered ' + (opts.size || '') + '">'
+            + '<div class="modal-content">'
+            + '<div class="modal-header">'
+            + '<h5 class="modal-title">' + title + '</h5>'
+            + '<button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>'
+            + '<div class="modal-body">' + body + '</div></div></div></div>');
+        var el = document.getElementById('kpSheet');
+        var m = new bootstrap.Modal(el);
+        m.show();
+        el.addEventListener('hidden.bs.modal', function () { $(el).remove(); });
+        return m;
+    }
+    function closeSheet() {
+        var el = document.getElementById('kpSheet');
+        if (el) { var m = bootstrap.Modal.getInstance(el); if (m) m.hide(); }
+    }
+
     /* ========================= Copy helper ========================= */
 
     $(document).on('click', '.kp-copy', function () {
@@ -357,7 +818,7 @@
     /* ============================ Boot ============================ */
 
     $(function () {
-        applyTheme(currentTheme());
+        applyTheme(currentTheme(), false);
         if ($('body').data('portal') === 'agent') mountShiftControl();
     });
 
@@ -370,7 +831,11 @@
         block: BLOCK,
         pin: PIN, requirePin: requirePin,
         manual: MANUAL, manualConfirm: manualConfirm,
-        toast: toast
+        escalation: ESCALATION, escalate: escalate,
+        txblock: TXBLOCK, blockTransaction: blockTransaction, unblockTransaction: unblockTransaction,
+        toast: toast,
+        sheet: sheet, closeSheet: closeSheet,
+        attachField: attachField, attached: attached, clearAttached: clearAttached
     };
 
 })(window, jQuery);

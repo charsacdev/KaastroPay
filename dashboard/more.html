@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>More | Kaastro Pay</title>
+<meta name="theme-color" content="#0A0A0A">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="more" data-title="More" data-sub="Services and account tools">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <div class="col-lg-5">
+      <!-- Who you are, and how far through verification. The mockups put this
+           at the top of More so the tier is never more than one tap away. -->
+      <div class="card p-3 p-md-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="kp-avatar lg ring">
+            <img src="../images/avatar-john.jpg" alt="">
+            <span class="av-check"><i class="fas fa-check"></i></span>
+          </span>
+          <div class="min-w-0">
+            <div class="fw-bold text-truncate" id="meName" style="font-size:1rem"></div>
+            <div class="text-muted text-truncate" id="meHandle" style="font-size:.78rem"></div>
+          </div>
+        </div>
+        <div id="tierBox" class="mt-3"></div>
+        <a href="profile.html" class="btn btn-soft w-100 mt-3">
+          <i class="fas fa-user-pen me-1"></i>View profile</a>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card p-3 p-md-4" id="groups"></div>
+
+      <div class="card p-3 mt-3 text-center">
+        <div class="fw-bold" style="letter-spacing:.06em">KAASTRO <span class="text-primary-k">PAY</span></div>
+        <div class="text-muted mt-1" style="font-size:.75rem">
+          Version 1.0.0 &middot; Operated by Wins Begin Limited</div>
+        <div class="text-muted mt-1" style="font-size:.72rem">
+          A Naira wallet for crypto holders. Supported crypto is converted to Naira
+          after confirmation &mdash; Kaastro Pay does not store cryptocurrency.</div>
+        <button class="btn btn-soft btn-sm mt-3" id="logout">
+          <i class="fas fa-arrow-right-from-bracket me-1"></i>Log out</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var me = KP.data.ME;
+
+  $('#meName').text(me.name);
+  $('#meHandle').text(me.id + '  ·  ' + me.phone);
+
+  /* Tier is the single most consequential thing on a Kaastro account: it is
+     what decides whether crypto withdrawal is available at all. Show the
+     current tier and, when it is short of 3, what unlocking it buys. */
+  var t = me.tier;
+  $('#tierBox').html(
+    '<div class="k-alert ' + (t >= 3 ? 'k-ok' : 'k-warn') + '">'
+    + '<i class="fas fa-shield-halved"></i><div>'
+    + '<b class="hd">Tier ' + t + (t >= 3 ? ' · Fully verified' : ' account') + '</b>'
+    + (t >= 3
+        ? 'Crypto withdrawals are unlocked and your limits are at maximum.'
+        : 'Complete Tier 3 verification to unlock crypto withdrawals and raise your limits.')
+    + '</div></div>'
+    + (t >= 3 ? '' : '<a href="profile.html#verification" class="btn btn-primary w-100 mt-2">'
+        + 'Complete verification</a>')
+  );
+
+  /* One list definition drives the whole page, so adding a destination is a
+     single line rather than a block of markup. */
+  var GROUPS = [
+    ['Payments', [
+      ['fa-earth-africa', 'Send Abroad', 'send-abroad.html', 'Ghana, Kenya, South Africa and more'],
+      ['fa-link', 'Payment Links', 'request.html', 'Get paid in crypto, receive Naira'],
+      ['fa-building-columns', 'Saved Bank Accounts', 'contacts.html', 'Beneficiaries and verified accounts'],
+      ['fa-bolt', 'Pay Bills', 'bills.html', 'Airtime, data, electricity, TV, betting']
+    ]],
+    ['Account', [
+      ['fa-file-lines', 'Statements', 'insights.html', 'Download or email a statement'],
+      ['fa-chart-line', 'Today’s Rates', 'rates.html', 'Deposit and withdrawal rates'],
+      ['fa-gauge-high', 'Transaction Limits', 'profile.html#verification', 'Daily limits by tier'],
+      ['fa-user-shield', 'KYC Verification', 'profile.html#verification', 'Tier 1 to Tier 3'],
+      ['fa-lock', 'Security', 'profile.html', 'PIN, biometrics, devices, 2FA']
+    ]],
+    ['Support', [
+      ['fa-headset', 'Help &amp; Support', 'support.html', 'Chat with us or browse answers'],
+      ['fa-triangle-exclamation', 'Report a Transaction', 'support.html', 'Something went wrong with a payment'],
+      ['fa-bell', 'Notifications', 'notifications.html', 'Everything we told you']
+    ]],
+    ['Legal', [
+      ['fa-file-contract', 'Terms &amp; Conditions', '../terms.html', 'How the service works'],
+      ['fa-user-lock', 'Privacy Policy', '../privacy.html', 'What we collect and why'],
+      ['fa-scale-balanced', 'AML / KYC Policy', '../aml.html', 'Our compliance obligations'],
+      ['fa-circle-info', 'About Kaastro Pay', '../about.html', 'Who operates the platform']
+    ]]
+  ];
+
+  $('#groups').html(GROUPS.map(function (g) {
+    return '<div class="section-head"><h2>' + g[0] + '</h2></div>'
+      + '<div class="mb-3">' + g[1].map(function (r) {
+        return '<a href="' + r[2] + '" class="contact-row">'
+          + '<span class="qa-icon qa-green sm"><i class="fas ' + r[0] + '"></i></span>'
+          + '<span class="flex-grow-1 min-w-0">'
+          + '<span class="cr-name d-block text-truncate">' + r[1] + '</span>'
+          + '<span class="cr-sub d-block text-truncate">' + r[3] + '</span></span>'
+          + '<i class="fas fa-chevron-right text-muted"></i></a>';
+      }).join('') + '</div>';
+  }).join(''));
+
+  $('#logout').on('click', function () {
+    KP.rails.sheet('Log out?',
+      '<p class="text-muted" style="font-size:.83rem">You will need your password '
+      + 'or biometrics to sign back in. Your balance and history are unaffected.</p>'
+      + '<div class="d-grid gap-2">'
+      + '<a href="../login.html" class="btn btn-danger">Log out</a>'
+      + '<button class="btn btn-soft" data-bs-dismiss="modal">Stay signed in</button></div>');
+  });
+});
+</script>
+</body>
+</html>

@@ -240,9 +240,12 @@
     function wireButtons() {
         document.addEventListener('click', function (e) {
             var btn = e.target.closest('[data-install]');
-            if (!btn) return;
-            e.preventDefault();
-            install();
+            if (btn) { e.preventDefault(); install(); return; }
+            /* A second entry point that always explains rather than prompting.
+               Someone who clicks "Installation guide" wants the steps, not a
+               dialog their browser may never show. */
+            var guide = e.target.closest('[data-install-guide]');
+            if (guide) { e.preventDefault(); showSheet(); }
         });
 
         // Hide install affordances once the app is actually installed.

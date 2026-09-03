@@ -51,18 +51,55 @@
             && ['successful', 'approved', 'rejected', 'failed', 'delivered'].indexOf(spec.status) === -1;
 
         var actionBar = '';
-        if (canAct) {
-            actionBar = spec.locked
+        var blocked = KP.rails.txblock.get(spec.ref);
+
+        if (blocked) {
+            /* A blocked transaction cannot be approved, rejected or manually
+               confirmed by anyone. The reason travels with it so whoever opens
+               it next does not have to go asking. */
+            actionBar = '<div class="k-alert k-danger w-100"><i class="fas fa-ban"></i><div>'
+                + '<b class="hd">Blocked &mdash; ' + blocked.reason + '</b>'
+                + blocked.notes + '<br>'
+                + '<span class="t-mono">Blocked by ' + blocked.by + ' &middot; ' + blocked.at
+                + (blocked.evidence && blocked.evidence.length
+                    ? ' &middot; ' + blocked.evidence.length + ' file(s)' : '') + '</span></div></div>'
+                + (spec.role === 'admin'
+                    ? '<button class="btn btn-soft w-100 mt-2 rv-unblock">'
+                      + '<i class="fas fa-lock-open me-1"></i>Lift the block</button>'
+                    : '<div class="text-muted text-center w-100 mt-2" style="font-size:.75rem">'
+                      + 'Only an admin can lift a block.</div>');
+        } else if (canAct) {
+            /* Escalate sits alongside Manual, and only for agents. It is the
+               honest option when the evidence will not carry a manual credit:
+               hand the decision to an admin instead of guessing. An admin
+               already has that authority, so they never see the button. */
+            var escBtn = spec.onEscalate
+                ? '<button class="btn btn-soft flex-grow-1 rv-escalate" title="Escalate to an admin">'
+                  + '<i class="fas fa-arrow-up-right-dots me-1"></i>Escalate</button>'
+                : '';
+            /* Blocking is an admin power, and it is destructive enough to sit
+               apart from the approve/reject row. */
+            var blockBtn = spec.role === 'admin'
+                ? '<button class="btn btn-soft text-danger w-100 rv-block">'
+                  + '<i class="fas fa-ban me-1"></i>Block this transaction</button>'
+                : '';
+            actionBar = (spec.locked
                 ? '<div class="k-alert k-warn w-100"><i class="fas fa-lock"></i><div>'
                   + (spec.lockedNote || 'You cannot act on this right now.') + '</div></div>'
+                  + (escBtn ? '<div class="d-flex w-100 mt-2">' + escBtn + '</div>' : '')
                 : '<button class="btn btn-soft text-danger flex-grow-1 rv-reject">'
                   + '<i class="fas fa-xmark me-1"></i>Reject</button>'
                   + '<button class="btn btn-soft flex-grow-1 rv-manual">'
                   + '<i class="fas fa-hand me-1"></i>Manual</button>'
+                  + escBtn
                   + '<button class="btn btn-primary flex-grow-1 rv-approve">'
-                  + '<i class="fas fa-check me-1"></i>Approve</button>';
+                  + '<i class="fas fa-check me-1"></i>Approve</button>')
+                + blockBtn;
         } else {
-            actionBar = '<button class="btn btn-soft flex-grow-1" data-bs-dismiss="modal">Close</button>';
+            actionBar = '<button class="btn btn-soft flex-grow-1" data-bs-dismiss="modal">Close</button>'
+                + (spec.role === 'admin' && !blocked
+                    ? '<button class="btn btn-soft text-danger w-100 mt-2 rv-block">'
+                      + '<i class="fas fa-ban me-1"></i>Block this transaction</button>' : '');
         }
 
         $('body').append(
@@ -110,6 +147,27 @@
         $(el).on('click', '.rv-reject', function () {
             modal.hide();
             spec.onReject && spec.onReject();
+        });
+        $(el).on('click', '.rv-block', function () {
+            modal.hide();
+            setTimeout(function () {
+                KP.rails.blockTransaction({
+                    ref: spec.ref, who: (spec.user && spec.user.name) || '—',
+                    what: spec.title, amount: spec.headline,
+                    actor: 'Admin User'
+                }).then(function () { spec.onBlock && spec.onBlock(); });
+            }, 250);
+        });
+        $(el).on('click', '.rv-unblock', function () {
+            modal.hide();
+            setTimeout(function () {
+                KP.rails.unblockTransaction(spec.ref, 'Admin User')
+                    .then(function () { spec.onBlock && spec.onBlock(); });
+            }, 250);
+        });
+        $(el).on('click', '.rv-escalate', function () {
+            modal.hide();
+            setTimeout(function () { spec.onEscalate && spec.onEscalate(); }, 250);
         });
         $(el).on('click', '.rv-manual', function () {
             modal.hide();

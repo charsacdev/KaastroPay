@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Request | Kaastro Pay</title>
+<meta name="theme-color" content="#0A0A0A">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+<script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||document.documentElement.getAttribute('data-theme-default')||'dark');}catch(e){}})();</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" href="css/kaastro.css">
+<style>
+  /* The payer has no account and no nav. One column, centred, nothing to
+     click but the payment itself. */
+  body { background: var(--bg-body); }
+  .pay-wrap { max-width: 460px; margin: 0 auto; padding: 1.1rem 0.9rem 3rem; }
+  .pay-brand {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    font-weight: 800; letter-spacing: .04em; font-size: 0.95rem;
+    padding: 0.5rem 0 1rem;
+  }
+  .pay-brand img { height: 26px; width: auto; }
+  .pay-foot { text-align: center; font-size: 0.72rem; color: var(--text-muted); margin-top: 1.2rem; }
+  .req-head { text-align: center; padding: 0.4rem 0 0.2rem; }
+  .req-amt { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .req-eq { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem; }
+  /* Network chooser — the payer picks the chain they actually hold funds on. */
+  .net-pick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .net-pick button {
+    flex: 1 1 auto; min-width: 84px;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-sunk);
+    color: var(--text-main);
+    font-size: 0.78rem; font-weight: 700;
+    line-height: 1.25;
+  }
+  .net-pick button small { display: block; font-size: 0.66rem; font-weight: 600; color: var(--text-muted); }
+  .net-pick button.on { border-color: var(--primary-color); background: var(--primary-soft); }
+  .net-pick button.on small { color: inherit; }
+</style>
+</head>
+<body>
+
+<div class="pay-wrap">
+  <div class="pay-brand">
+    <img src="images/logo-onDark.png" alt="Kaastro Pay">
+    <span>KAASTRO <span class="text-primary-k">PAY</span></span>
+  </div>
+
+  <div id="mount"></div>
+
+  <div class="pay-foot">
+    Powered by Kaastro Pay &middot; Operated by Wins Begin Limited<br>
+    No account needed to pay. Never send funds to an address you did not get from this page.
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/rates-engine.js"></script>
+<script src="js/mock-data.js"></script>
+<script src="js/rails.js"></script>
+<script src="js/receipt.js"></script>
+<script>
+$(function () {
+  var F = KP.fmt;
+
+  /* Everything shown here rides in the query string, because the person
+     opening this link has no Kaastro account and no session to read from. */
+  function q(k, d) {
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : (d || '');
+  }
+
+  var req = {
+    ref:      q('r', 'KPR-000000'),
+    name:     q('n', 'A Kaastro Pay user'),
+    handle:   q('h', ''),
+    amount:   parseFloat(q('a', '0')) || 0,
+    currency: q('c', 'NGN'),
+    kind:     q('k', 'crypto'),        /* crypto | bank */
+    asset:    q('as', 'USDT'),
+    network:  q('nw', ''),             /* empty = payer chooses */
+    desc:     q('d', ''),
+    expiry:   q('x', 'No expiry')
+  };
+
+  var isBank = req.kind === 'bank';
+  var asset = KP.ASSETS[req.asset] || KP.ASSETS.USDT;
+  var rate  = KP.rates.depositRate(req.asset, req.currency);
+
+  /* The payer picks the chain. A link that forces one network is a link a lot
+     of payers cannot use, so the requester's choice is only a default. */
+  var networks = asset.networks;
+  var chosen = networks.filter(function (n) { return n.id === req.network; })[0] || networks[0];
+
+  function sendsOn() { return req.amount / rate; }
+  function confsNeeded() { return chosen.conf || 12; }
+
+  function addressFor(net) {
+    var seed = req.ref.length * 7 + net.id.length * 13;
+    return net.id === 'TRC20' ? KP.data.hashAddr('T', seed, 34)
+         : req.asset === 'BTC' ? KP.data.hashAddr('bc1q', seed, 42)
+         : KP.data.hashAddr('0x', seed, 42);
+  }
+
+  /* A Naira link collects into a dedicated account instead of a wallet. */
+  var bankAcc = {
+    bank: 'SafeHaven MFB',
+    number: String(20481675 + (req.ref.length * 37)).slice(0, 10).padEnd(10, '0'),
+    name: 'KAASTRO PAY COLLECTION',
+    narration: req.ref
+  };
+
+  var $m = $('#mount');
+  var timer = null;
+  var state = 'awaiting';
+  var confs = 0;
+  var settlement = 'exact';   /* exact | underpaid | overpaid */
+  var received = 0;
+
+  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+
+  function requesterCard() {
+    return '<div class="d-flex align-items-center gap-3 mb-3">'
+      + '<span class="kp-avatar ring">' + req.name.slice(0, 2).toUpperCase()
+      + '<span class="av-check"><i class="fas fa-check"></i></span></span>'
+      + '<div class="min-w-0">'
+      + '<div class="fw-bold text-truncate">' + req.name + '</div>'
+      + '<div class="text-muted text-truncate" style="font-size:.76rem">'
+      + '<i class="fas fa-circle-check text-primary-k me-1"></i>Verified recipient'
+      + (req.handle ? ' &middot; ' + req.handle : '') + '</div></div></div>';
+  }
+
+  /* The shared status track. Both the payer here and the recipient in the app
+     read the same six-step vocabulary, so neither has to translate. */
+  function trackHtml(activeKey) {
+    var s = KP.paymentStatus(activeKey, req.kind);
+    var at = s.step;
+    return '<div class="track">' + KP.paymentTrack(req.kind).map(function (k, i) {
+      var st = KP.paymentStatus(k, req.kind);
+      var cls = at == null ? (i === 0 ? 'on' : 'pending')
+              : i < at ? 'done' : i === at ? 'on' : 'pending';
+      return '<div class="tk ' + cls + '">'
+        + '<span class="tk-dot"><i class="fas fa-check"></i></span>'
+        + '<span class="tk-body"><span class="tk-title d-block">' + st.label + '</span>'
+        + '<span class="tk-sub d-block">'
+        + (at != null && i < at ? 'Completed' : i === at ? 'In progress' : st.payer)
+        + '</span></span></div>';
+    }).join('') + '</div>';
+  }
+
+  function amountLine() {
+    return isBank
+      ? '<div class="req-amt">' + F.fiat(req.amount, req.currency) + '</div>'
+        + '<div class="req-eq">Pay by bank transfer</div>'
+      : '<div class="req-amt">' + F.crypto(sendsOn(), req.asset) + '</div>'
+        + '<div class="req-eq">&asymp; ' + F.fiat(req.amount, req.currency) + '</div>';
+  }
+
+  /* ---------------------------- 1. the request ---------------------------- */
+
+  function ask() {
+    stop();
+    state = 'awaiting';
+    var addr = addressFor(chosen);
+
+    $m.html(
+      '<div class="card p-3 p-md-4">'
+      + requesterCard()
+      + '<div class="req-head">'
+      + '<div class="text-muted" style="font-size:.8rem">Payment request</div>'
+      + amountLine()
+      + (req.desc ? '<div class="mt-2"><span class="pill pill-neutral">' + req.desc + '</span></div>' : '')
+      + '<div class="mt-2">' + KP.statusPill('awaiting', req.kind) + '</div>'
+      + '</div>'
+
+      + (isBank ? '' :
+          '<div class="mt-3"><div class="text-muted mb-1" style="font-size:.74rem;font-weight:700;'
+          + 'text-transform:uppercase;letter-spacing:.05em">Choose a network</div>'
+          + '<div class="net-pick" id="netPick">'
+          + networks.map(function (n) {
+              return '<button data-net="' + n.id + '"' + (n.id === chosen.id ? ' class="on"' : '') + '>'
+                + n.id + '<small>' + n.conf + ' confirmations</small></button>';
+            }).join('')
+          + '</div>'
+          + '<div class="form-text">Pick the chain you are sending from. The address changes with it.</div></div>')
+
+      + '<div class="summary-rows mt-3">'
+      + (isBank
+          ? '<div class="sr"><span>Bank</span><span>' + bankAcc.bank + '</span></div>'
+            + '<div class="sr"><span>Account name</span><span>' + bankAcc.name + '</span></div>'
+          : '<div class="sr"><span>Asset</span><span>' + req.asset + ' &middot; ' + asset.name + '</span></div>'
+            + '<div class="sr"><span>Network</span><span>' + chosen.id + '</span></div>'
+            + '<div class="sr"><span>Rate</span><span>' + F.fiat(rate, req.currency) + ' / ' + req.asset + '</span></div>')
+      + '<div class="sr"><span>Purpose</span><span>' + (req.desc || 'Payment') + '</span></div>'
+      + '<div class="sr"><span>Reference</span><span>' + req.ref + '</span></div>'
+      + '<div class="sr total"><span>Expires</span><span>' + req.expiry + '</span></div></div>'
+
+      + '<div class="text-center mt-3"><div class="qr-box" id="payQr"></div></div>'
+
+      + '<div class="text-muted mt-3 mb-1" style="font-size:.74rem;font-weight:700;'
+      + 'text-transform:uppercase;letter-spacing:.05em">'
+      + (isBank ? 'Account number' : 'Wallet address') + '</div>'
+      + '<div class="address-box">' + (isBank ? bankAcc.number : addr) + '</div>'
+      + '<button class="btn btn-soft w-100 mt-2 kp-copy" data-copy="' + (isBank ? bankAcc.number : addr) + '">'
+      + '<i class="fas fa-copy me-1"></i>Copy ' + (isBank ? 'account number' : 'address') + '</button>'
+
+      + (isBank
+          ? '<div class="k-alert k-warn mt-3"><i class="fas fa-triangle-exclamation"></i><div>'
+            + 'Put <b>' + bankAcc.narration + '</b> in the narration. The account is shared, and '
+            + 'without it we cannot tell which payment is yours.</div></div>'
+          : '<div class="k-alert k-warn mt-3"><i class="fas fa-triangle-exclamation"></i><div>'
+            + 'Send only <b>' + req.asset + '</b> on the <b>' + chosen.id + '</b> network. '
+            + 'Anything else may be unrecoverable.</div></div>')
+
+      + '<button class="btn btn-primary w-100 mt-2" id="sent">I have sent the payment</button>'
+      + '<button class="btn btn-soft w-100 mt-2" id="simOdd">Simulate a partial payment</button>'
+      + '<p class="text-muted text-center mt-2 mb-0" style="font-size:.74rem">'
+      + 'You do not need a Kaastro Pay account to pay this.</p>'
+      + '</div>'
+    );
+
+    $('#payQr').empty();
+    if (typeof QRCode === 'function') {
+      new QRCode(document.getElementById('payQr'), {
+        text: isBank ? (bankAcc.bank + ' ' + bankAcc.number + ' ' + bankAcc.narration) : addr,
+        width: 176, height: 176,
+        colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  }
+
+  /* ------------------------- 2. watching it settle ------------------------- */
+
+  function watch(amountReceived) {
+    stop();
+    received = amountReceived;
+    confs = 0;
+    state = 'detected';
+
+    function render() {
+      var s = KP.paymentStatus(state, req.kind);
+      var pct = Math.round((confs / confsNeeded()) * 100);
+      var offPath = s.step == null;
+
+      $m.html(
+        '<div class="card p-3 p-md-4">'
+        + '<div class="result-hero ' + (s.tone === 'ok' ? '' : s.tone === 'fail' ? 'is-fail' : 'is-wait') + '">'
+        + '<div class="rh-ico"><i class="fas '
+        + (s.tone === 'ok' ? 'fa-check' : offPath ? 'fa-triangle-exclamation' : 'fa-circle-notch fa-spin')
+        + '"></i></div>'
+        + '<div class="rh-amt" style="font-size:1.35rem">' + s.label + '</div>'
+        + '<div class="rh-sub">' + s.payer + '</div>'
+        + '<div class="mt-2">' + KP.statusPill(state, req.kind) + '</div></div>'
+
+        + (isBank || offPath ? '' :
+            '<div class="conf-meter">'
+            + '<div class="cm-top"><span class="text-muted">Confirmations</span>'
+            + '<span class="cm-n">' + confs + ' of ' + confsNeeded() + '</span></div>'
+            + '<div class="cm-bar"><div class="cm-fill" style="width:' + pct + '%"></div></div></div>')
+
+        + '<div class="mt-3">' + trackHtml(offPath ? 'confirming' : state) + '</div>'
+
+        + '<div class="summary-rows mt-3">'
+        + '<div class="sr"><span>Requested</span><span>'
+        + (isBank ? F.fiat(req.amount, req.currency) : F.crypto(sendsOn(), req.asset)) + '</span></div>'
+        + '<div class="sr"><span>Received</span><span>'
+        + (isBank ? F.fiat(received, req.currency) : F.crypto(received, req.asset)) + '</span></div>'
+        + '<div class="sr"><span>To</span><span>' + req.name + '</span></div>'
+        + '<div class="sr total"><span>Reference</span><span>' + req.ref + '</span></div></div>'
+
+        + (offPath
+            ? '<div class="k-alert k-warn mt-3"><i class="fas fa-triangle-exclamation"></i><div>'
+              + '<b class="hd">' + s.label + '</b>' + s.payer + '</div></div>'
+              + (state === 'underpaid'
+                  ? '<button class="btn btn-primary w-100 mt-2" id="topUp">Send the difference</button>' : '')
+              + '<a class="btn btn-soft w-100 mt-2" href="mailto:support@kaastropay.com?subject='
+              + encodeURIComponent(s.label + ' — ' + req.ref) + '">Contact the recipient</a>'
+            : state === 'completed'
+              ? '<button class="btn btn-primary w-100 mt-3" id="rx">'
+                + '<i class="fas fa-receipt me-1"></i>Download receipt</button>'
+                + '<a class="btn btn-soft w-100 mt-2" href="index.html">What is Kaastro Pay?</a>'
+              : '<button class="btn btn-soft w-100 mt-3" id="refresh">'
+                + '<i class="fas fa-rotate me-1"></i>Refresh status</button>')
+
+        + '<p class="text-muted text-center mt-2 mb-0" style="font-size:.74rem">'
+        + 'You can close this page. Keep the link to check back later.</p>'
+        + '</div>'
+      );
+    }
+
+    render();
+
+    /* No chain and no bank feed behind a prototype, so the sequence advances on
+       a timer. The order and the vocabulary are the real deliverable. */
+    timer = setInterval(function () {
+      if (state === 'detected') {
+        state = 'confirming';
+      } else if (state === 'confirming') {
+        confs++;
+        if (confs >= confsNeeded()) {
+          /* What actually arrived decides where this goes next. */
+          var verdict = KP.settlementOf(isBank ? req.amount : sendsOn(), received);
+          settlement = verdict;
+          if (verdict !== 'exact') { state = verdict; stop(); render(); return; }
+          state = 'confirmed';
+        }
+      } else if (state === 'confirmed') {
+        state = isBank ? 'completed' : 'converted';
+        if (isBank) { stop(); render(); return; }
+      } else if (state === 'converted') {
+        state = 'completed';
+        stop();
+        render();
+        return;
+      }
+      render();
+    }, isBank ? 1100 : 600);
+  }
+
+  /* ------------------------------- guards ------------------------------- */
+
+  function dead(key) {
+    var s = KP.paymentStatus(key, req.kind);
+    $m.html('<div class="card p-3 p-md-4">'
+      + '<div class="result-hero is-fail">'
+      + '<div class="rh-ico"><i class="fas fa-link-slash"></i></div>'
+      + '<div class="rh-amt" style="font-size:1.25rem">' + s.label + '</div>'
+      + '<div class="rh-sub">' + s.payer + '</div>'
+      + '<div class="mt-2">' + KP.statusPill(key, req.kind) + '</div></div>'
+      + '<a class="btn btn-soft w-100 mt-3" href="index.html">What is Kaastro Pay?</a></div>');
+  }
+
+  if (!req.amount) { dead('cancelled'); return; }
+  if (q('s') === 'expired') { dead('expired'); return; }
+  if (q('s') === 'cancelled') { dead('cancelled'); return; }
+
+  ask();
+
+  $m.on('click', '#netPick button', function () {
+    var id = $(this).data('net');
+    chosen = networks.filter(function (n) { return n.id === id; })[0] || chosen;
+    ask();
+  });
+
+  $m.on('click', '#sent', function () { watch(isBank ? req.amount : sendsOn()); });
+  $m.on('click', '#topUp', function () { watch(isBank ? req.amount : sendsOn()); });
+  $m.on('click', '#simOdd', function () {
+    /* Deliberately short, so the underpaid path can be seen without a wallet. */
+    watch((isBank ? req.amount : sendsOn()) * 0.85);
+  });
+  $m.on('click', '#refresh', function () { KP.rails.toast('Still watching. Nothing has changed yet.'); });
+});
+</script>
+</body>
+</html>

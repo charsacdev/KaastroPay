@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Today's Rates | Kaastro Pay</title>
-<meta name="theme-color" content="#10b981">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -108,13 +108,23 @@ KP.ready(function () {
       + '<span class="rb-label">USDT Withdrawal</span><b>' + F.fiat(wdr, C.currency) + '</b>'
       + '<div class="ar-sub mt-1">What you pay per USDT</div></div>');
 
+    /* A BTC rate is eleven digits wide and blows the table off a phone screen.
+       Anything in the millions is shown compact (₦100.05M); the exact figure is
+       still there on hover and in the converter below. */
+    function rateCell(v) {
+      var exact = F.fiat(v, C.currency);
+      return v >= 1e6
+        ? '<span title="' + exact + '">' + C.symbol + F.compact(v) + '</span>'
+        : exact;
+    }
+
     $('#rows').html(KP.ASSET_LIST.map(function (a) {
       return '<tr><td><div class="d-flex align-items-center gap-2">'
         + '<span class="asset-icon sm" style="background:' + a.color + '">' + a.symbol.slice(0, 3) + '</span>'
         + '<div style="line-height:1.25"><div class="t-strong">' + a.symbol + '</div>'
         + '<div class="t-mono">' + a.name + '</div></div></div></td>'
-        + '<td class="text-end t-strong text-up">' + F.fiat(KP.rates.depositRate(a.symbol, C.currency), C.currency) + '</td>'
-        + '<td class="text-end t-strong">' + F.fiat(KP.rates.withdrawalRate(a.symbol, C.currency), C.currency) + '</td></tr>';
+        + '<td class="text-end t-strong text-up">' + rateCell(KP.rates.depositRate(a.symbol, C.currency)) + '</td>'
+        + '<td class="text-end t-strong">' + rateCell(KP.rates.withdrawalRate(a.symbol, C.currency)) + '</td></tr>';
     }).join(''));
 
     convert();

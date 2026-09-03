@@ -13,7 +13,7 @@
         if (LOGO) return LOGO;
         LOGO = (location.pathname.indexOf('/dashboard/') > -1
              || location.pathname.indexOf('/agent/') > -1
-             || location.pathname.indexOf('/admin/') > -1) ? '../images/logo.png' : 'images/logo.png';
+             || location.pathname.indexOf('/admin/') > -1) ? '../images/logo-onLight.png' : 'images/logo-onLight.png';
         return LOGO;
     }
 

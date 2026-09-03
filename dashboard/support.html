@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Support | Kaastro Pay</title>
-<meta name="theme-color" content="#10b981">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -48,7 +48,9 @@
             <label class="form-label">Transaction reference (if any)</label>
             <input class="form-control mb-3" placeholder="e.g. DEP-C48231">
             <label class="form-label">Describe the problem</label>
-            <textarea class="form-control mb-3" rows="3" placeholder="What happened, and when?"></textarea>
+            <textarea class="form-control mb-3" rows="3" id="tkBody" placeholder="What happened, and when?"></textarea>
+            <label class="form-label">Evidence <span class="text-muted">(optional)</span></label>
+            <div class="mb-3" id="tkAttachSlot"></div>
             <button class="btn btn-primary w-100" id="sendTicket">Send to support</button>
           </div>
         </div>
@@ -88,9 +90,23 @@ KP.ready(function () {
       + '<span class="pill ' + pill + '">' + t.status + '</span></div>';
   }).join(''));
 
+  /* The evidence field is shared with the agent and admin consoles, so a
+     screenshot attached here looks the same in the queue that receives it. */
+  $('#tkAttachSlot').html(KP.rails.attachField('ticket', {
+    label: 'Attach a screenshot or receipt',
+    hint: 'PNG, JPG or PDF · up to 5MB each · 4 files'
+  }));
+
   $('#sendTicket').on('click', function () {
+    var body = ($('#tkBody').val() || '').trim();
+    if (!body) { KP.rails.toast('Tell us what happened.', 'danger'); return; }
+    var files = KP.rails.attached('ticket');
     $('#newTicket').collapse('hide');
-    KP.rails.toast('Ticket created. An agent will reply shortly.');
+    $('#tkBody').val('');
+    KP.rails.clearAttached('ticket');
+    KP.rails.toast('Ticket created'
+      + (files.length ? ' with ' + files.length + ' attachment' + (files.length > 1 ? 's' : '') : '')
+      + '. An agent will reply shortly.');
   });
 });
 </script>

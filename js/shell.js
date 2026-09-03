@@ -18,12 +18,13 @@
             { id: 'request', href: 'request.html', icon: 'fa-hand-holding-dollar', label: 'Request' },
             { id: 'send-abroad', href: 'send-abroad.html', icon: 'fa-earth-africa', label: 'Send Abroad' },
             { id: 'scan', href: 'scan.html', icon: 'fa-qrcode', label: 'Scan &amp; Pay' },
+            { id: 'contacts', href: 'contacts.html', icon: 'fa-user-group', label: 'Contacts' },
             { s: 'Services' },
             { id: 'bills', href: 'bills.html', icon: 'fa-bolt', label: 'Pay Bills' },
             { id: 'rates', href: 'rates.html', icon: 'fa-chart-line', label: 'Today\u2019s Rates' },
             { s: 'Account' },
             { id: 'insights', href: 'insights.html', icon: 'fa-chart-pie', label: 'Insights' },
-            { id: 'verification', href: 'verification.html', icon: 'fa-user-shield', label: 'Verification' },
+            { id: 'verification', href: 'profile.html#verification', icon: 'fa-user-shield', label: 'Verification' },
             { id: 'notifications', href: 'notifications.html', icon: 'fa-bell', label: 'Notifications', badge: 'notifs' },
             { id: 'profile', href: 'profile.html', icon: 'fa-gear', label: 'Profile &amp; Security' },
             { id: 'support', href: 'support.html', icon: 'fa-headset', label: 'Support' }
@@ -31,25 +32,26 @@
         agent: [
             { id: 'dashboard', href: 'dashboard.html', icon: 'fa-gauge-high', label: 'Dashboard' },
             { id: 'users', href: 'users.html', icon: 'fa-users', label: 'Users' },
-            { id: 'kyc', href: 'verification.html', icon: 'fa-user-shield', label: 'KYC Queue', badge: 'kyc' },
+            { id: 'kyc', href: 'kyc.html', icon: 'fa-user-shield', label: 'KYC Queue', badge: 'kyc' },
             { s: 'Queues' },
             { id: 'deposits', href: 'deposits.html', icon: 'fa-arrow-down', label: 'Deposits', badge: 'deposits' },
             { id: 'withdrawals', href: 'withdrawals.html', icon: 'fa-arrow-up', label: 'Withdrawals', badge: 'withdrawals' },
             { id: 'trades', href: 'trades.html', icon: 'fa-right-left', label: 'Trades' },
             { s: 'Other' },
-            { id: 'transactions', href: 'insights.html', icon: 'fa-list', label: 'All Transactions' },
+            { id: 'transactions', href: 'transactions.html', icon: 'fa-list', label: 'All Transactions' },
             { id: 'support', href: 'support.html', icon: 'fa-headset', label: 'Support', badge: 'tickets' },
             { id: 'settings', href: 'settings.html', icon: 'fa-gear', label: 'Settings' }
         ],
         admin: [
             { id: 'dashboard', href: 'dashboard.html', icon: 'fa-gauge-high', label: 'Dashboard' },
             { id: 'users', href: 'users.html', icon: 'fa-users', label: 'Users' },
-            { id: 'kyc', href: 'verification.html', icon: 'fa-user-shield', label: 'KYC Queue', badge: 'kyc' },
+            { id: 'kyc', href: 'kyc.html', icon: 'fa-user-shield', label: 'KYC Queue', badge: 'kyc' },
             { s: 'Queues' },
             { id: 'deposits', href: 'deposits.html', icon: 'fa-arrow-down', label: 'Deposits', badge: 'deposits' },
             { id: 'withdrawals', href: 'withdrawals.html', icon: 'fa-arrow-up', label: 'Withdrawals', badge: 'withdrawals' },
             { id: 'trades', href: 'trades.html', icon: 'fa-right-left', label: 'Trades' },
-            { id: 'transactions', href: 'insights.html', icon: 'fa-list', label: 'All Transactions' },
+            { id: 'escalations', href: 'escalations.html', icon: 'fa-arrow-up-right-dots', label: 'Escalations', badge: 'escalations' },
+            { id: 'transactions', href: 'transactions.html', icon: 'fa-list', label: 'All Transactions' },
             { s: 'Control' },
             { id: 'rates', href: 'rates.html', icon: 'fa-percent', label: 'Rates & Margins' },
             { id: 'fees', href: 'fees.html', icon: 'fa-receipt', label: 'Fee Manager' },
@@ -67,18 +69,23 @@
     /* Five tabs, with Scan raised in the middle — the shape in the mockups. */
     var TABBAR = [
         { id: 'home', href: 'index.html', icon: 'fa-house', label: 'Home' },
-        { id: 'insights', href: 'insights.html', icon: 'fa-chart-pie', label: 'Insights' },
+        { id: 'contacts', href: 'contacts.html', icon: 'fa-user-group', label: 'Contacts' },
         { id: 'scan', href: 'scan.html', icon: 'fa-qrcode', label: 'Scan', fab: true },
-        { id: 'rates', href: 'rates.html', icon: 'fa-chart-line', label: 'Rates' },
-        { id: 'profile', href: 'profile.html', icon: 'fa-user', label: 'More', dot: 'notifs' }
+        { id: 'insights', href: 'insights.html', icon: 'fa-chart-simple', label: 'Insights' },
+        { id: 'more', href: 'more.html', icon: 'fa-grip', label: 'More', dot: 'notifs' }
     ];
 
     /* Pages that are not themselves a tab still light one up, so the bar never
-       shows an empty state while the user is inside a flow. */
+       shows an empty state while the user is inside a flow. Rates moved off the
+       bar when Contacts took its slot, so it points at More alongside the rest
+       of the account tools. */
     var TAB_ALIAS = {
         deposit: 'home', withdraw: 'home', transfer: 'home',
         request: 'home', 'send-abroad': 'home', bills: 'home',
-        verification: 'profile', support: 'profile', notifications: 'profile'
+        'payment-links': 'home', beneficiaries: 'contacts',
+        rates: 'more', profile: 'more', security: 'more', settings: 'more',
+        verification: 'more', support: 'more', notifications: 'more',
+        statements: 'more', limits: 'more', rewards: 'more'
     };
 
     var PORTAL_META = {
@@ -98,6 +105,7 @@
         if (key === 'kyc') return p.kyc;
         if (key === 'deposits') return p.cryptoDeposits + p.fiatDeposits;
         if (key === 'withdrawals') return p.fiatWithdrawals + p.cryptoWithdrawals;
+        if (key === 'escalations') { try { return KP.rails.escalation.open().length; } catch (e) { return 0; } }
         if (key === 'tickets') return p.tickets;
         if (key === 'notifs') return global.KP.data.unreadNotifications();
         return 0;
@@ -105,7 +113,7 @@
 
     /* Detail pages are not nav entries, but they still belong to one — keep
        the sidebar highlighted so the operator never loses their place. */
-    var NAV_ALIAS = { 'kyc-review': 'kyc', 'user-details': 'users' };
+    var NAV_ALIAS = { 'kyc-review': 'kyc', 'user-details': 'users', more: 'profile' };
 
     function navHtml(portal, page) {
         page = NAV_ALIAS[page] || page;
@@ -123,8 +131,13 @@
 
     function brandHtml(portal) {
         var m = PORTAL_META[portal];
+        /* Both wordmark variants ship; CSS reveals whichever suits the theme,
+           because "PAY" is near-white and the sidebar is not always dark. */
         return '<a href="' + (portal === 'user' ? 'index.html' : 'dashboard.html') + '" class="brand-logo">' +
-            '<img src="../images/logo.png" alt="Kaastro Pay" class="brand-img">' +
+            '<span class="brand-img">' +
+            '<img src="../images/logo-onLight.png" alt="Kaastro Pay" class="bi-light">' +
+            '<img src="../images/logo-onDark.png" alt="" aria-hidden="true" class="bi-dark">' +
+            '</span>' +
             '<span class="brand-tag">' + m.tag + '</span></a>';
     }
 
@@ -181,7 +194,7 @@
             '<div class="d-none d-md-block lh-sm"><div style="font-size:.8rem;font-weight:700">' + who + '</div>' + role + '</div></div>' +
             '<ul class="dropdown-menu dropdown-menu-end p-2">' +
             (portal === 'user' ? '<li><a class="dropdown-item" href="profile.html"><i class="fas fa-user me-2"></i>Profile</a></li>' +
-                '<li><a class="dropdown-item" href="verification.html"><i class="fas fa-user-shield me-2"></i>Verification</a></li>' : '') +
+                '<li><a class="dropdown-item" href="profile.html#verification"><i class="fas fa-user-shield me-2"></i>Verification</a></li>' : '') +
             '<li><hr class="dropdown-divider"></li>' +
             '<li><a class="dropdown-item text-danger" href="' + loginHref(portal) + '"><i class="fas fa-right-from-bracket me-2"></i>Log out</a></li>' +
             '</ul></div></div></header>';

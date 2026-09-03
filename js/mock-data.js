@@ -694,6 +694,82 @@
         ]
     };
 
+    /* ====================== Contacts & beneficiaries ======================
+       This is NOT the phone book. A contact gets here one of two ways, and
+       `source` records which: 'paid' means it was created the first time money
+       moved to them, 'manual' means the user added it deliberately. Nothing is
+       ever imported from the device.
+
+       Two record types share the list. A Kaastro contact is another user,
+       addressed by @handle and paid instantly. A bank beneficiary is an account
+       at a real bank, name-verified with that bank before it can be saved. The
+       type travels on each record rather than splitting the list in two, which
+       is what lets one search box find "whoever I paid last week". */
+    var CONTACTS = [
+        { id: 'CT-01', kind: 'kaastro', source: 'paid',   name: 'Ada Okafor',    handle: '@adaokafor', phone: '0803 111 2233', avatar: 'avatar-a1.jpg',        verified: true, favourite: true,  lastAmount: 25000,  lastAgo: 0, times: 12 },
+        { id: 'CT-02', kind: 'kaastro', source: 'paid',   name: 'Emeka John',    handle: '@emekaj',    phone: '0805 444 1122', avatar: 'avatar-b2.jpg',        verified: true, favourite: true,  lastAmount: 12000,  lastAgo: 1, times: 8 },
+        { id: 'CT-03', kind: 'kaastro', source: 'paid',   name: 'Chidi Nwosu',   handle: '@chidin',    phone: '0812 909 7766', avatar: 'avatar-c3.jpg',        verified: true, favourite: true,  lastAmount: 8500,   lastAgo: 2, times: 5 },
+        { id: 'CT-04', kind: 'kaastro', source: 'manual', name: 'Sarah Bello',   handle: '@sarahb',    phone: '0701 335 8890', avatar: 'avatar-mercy24.jpg',   verified: true, favourite: true,  lastAmount: 40000,  lastAgo: 3, times: 3 },
+        { id: 'CT-05', kind: 'kaastro', source: 'paid',   name: 'Amina Yusuf',   handle: '@aminay',    phone: '0809 220 6644', avatar: 'avatar-blessingfx.jpg', verified: true, favourite: false, lastAmount: 50000, lastAgo: 1, times: 7 },
+        { id: 'CT-06', kind: 'kaastro', source: 'manual', name: 'Tunde Adebayo', handle: '@tundeadebayo', phone: '0706 771 4432', avatar: 'avatar-tunde2000.jpg', verified: true, favourite: false, lastAmount: 15000, lastAgo: 6, times: 2 },
+        { id: 'CT-07', kind: 'bank', source: 'paid',   name: 'Mary Jane',   bank: 'GTBank',      number: '0123454521', nickname: 'Mary GTB',     verified: true, favourite: true,  lastAmount: 50000, lastAgo: 2, times: 9 },
+        { id: 'CT-08', kind: 'bank', source: 'manual', name: 'Emeka John',  bank: 'Access Bank', number: '0987657683', nickname: 'Emeka Access', verified: true, favourite: false, lastAmount: 25000, lastAgo: 4, times: 4 },
+        { id: 'CT-09', kind: 'bank', source: 'paid',   name: 'John Doe',    bank: 'GTBank',      number: '0123456789', nickname: 'John GTB',     verified: true, favourite: false, lastAmount: 75000, lastAgo: 5, times: 6 },
+        { id: 'CT-10', kind: 'bank', source: 'manual', name: 'Michael Ade', bank: 'Kuda Microfinance Bank', number: '2019383456', nickname: '',  verified: true, favourite: false, lastAmount: 9000,  lastAgo: 7, times: 1 }
+    ];
+
+    function contacts(kind) {
+        if (!kind || kind === 'all') return CONTACTS.slice();
+        return CONTACTS.filter(function (c) { return c.kind === kind; });
+    }
+    function favourites() {
+        return CONTACTS.filter(function (c) { return c.favourite; });
+    }
+    /* Most recently paid first — the order the "Recent Recipients" list uses. */
+    function recentContacts(n) {
+        return CONTACTS.slice().sort(function (a, b) { return a.lastAgo - b.lastAgo; }).slice(0, n || 4);
+    }
+    function findContact(id) {
+        return CONTACTS.filter(function (c) { return c.id === id; })[0] || null;
+    }
+    /* Manual add. Everything the user types is theirs; `source` is stamped so
+       the list can tell "someone I paid" from "someone I added" without asking.
+       A bank account arrives unverified — the name check happens against the
+       bank, not here. */
+    function addContact(rec) {
+        var c = {
+            id: 'CT-' + String(CONTACTS.length + 1).padStart(2, '0'),
+            kind: rec.kind || 'kaastro',
+            source: 'manual',
+            name: rec.name,
+            verified: rec.kind === 'kaastro',
+            favourite: !!rec.favourite,
+            lastAmount: 0,
+            lastAgo: -1,
+            times: 0
+        };
+        if (c.kind === 'kaastro') {
+            c.handle = rec.handle && rec.handle[0] === '@' ? rec.handle : '@' + (rec.handle || '');
+            c.phone = rec.phone || '';
+        } else {
+            c.bank = rec.bank || '';
+            c.number = rec.number || '';
+            c.nickname = rec.nickname || '';
+        }
+        CONTACTS.push(c);
+        return c;
+    }
+    function removeContact(id) {
+        var i = CONTACTS.map(function (c) { return c.id; }).indexOf(id);
+        if (i > -1) CONTACTS.splice(i, 1);
+        return i > -1;
+    }
+    function toggleFavourite(id) {
+        var c = findContact(id);
+        if (c) c.favourite = !c.favourite;
+        return c;
+    }
+
     /* My own transaction feed, drawn from the platform sets. */
     function myTransactions() {
         var out = [];
@@ -721,6 +797,14 @@
         REF: REF,
         USERS: USERS,
         ME: ME,
+        CONTACTS: CONTACTS,
+        contacts: contacts,
+        favourites: favourites,
+        recentContacts: recentContacts,
+        findContact: findContact,
+        addContact: addContact,
+        removeContact: removeContact,
+        toggleFavourite: toggleFavourite,
         CRYPTO_DEPOSITS: CRYPTO_DEPOSITS,
         FIAT_DEPOSITS: FIAT_DEPOSITS,
         TRADES: TRADES,
