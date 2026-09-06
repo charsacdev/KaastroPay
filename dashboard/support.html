@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Support | Kaastro Pay</title>
+<title>Help &amp; Support | Kaastro Pay</title>
 <meta name="theme-color" content="#0A0A0A">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
@@ -14,100 +14,374 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
 <script src="../js/boot.js" data-root="../"></script>
 </head>
-<body data-portal="user" data-page="support" data-title="Support" data-sub="We usually reply in minutes">
+<body data-portal="user" data-page="support" data-title="Help &amp; Support" data-sub="We usually reply in minutes">
 
 <main class="main-content">
   <div class="row g-3">
 
-    <div class="col-lg-4">
-      <div class="card p-3">
-        <h2 class="card-title mb-2">Common questions</h2>
-        <div class="accordion accordion-flush" id="faq"></div>
+    <!-- ------------------------- help centre ------------------------- -->
+    <div class="col-lg-5">
+      <div class="card p-3 p-md-4">
+        <div class="kp-search mb-3">
+          <i class="fas fa-magnifying-glass"></i>
+          <input class="form-control" id="hq" placeholder="How can we help?" autocomplete="off">
+        </div>
+
+        <div class="section-head"><h2>Quick help</h2></div>
+        <div class="row g-2" id="quickHelp"></div>
+
+        <div class="section-head mt-3"><h2>Popular topics</h2></div>
+        <div id="topics"></div>
+
+        <button class="btn btn-primary w-100 mt-3" id="startChat">
+          <i class="fas fa-comments me-1"></i>Chat with support</button>
+        <p class="text-muted text-center mt-2 mb-0" style="font-size:.75rem">
+          <i class="fas fa-circle text-up me-1" style="font-size:.4rem"></i>Support available 24/7</p>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>Recent cases</h2>
+          <span class="small text-muted" id="caseCount"></span></div>
+        <div id="cases"></div>
+        <button class="btn btn-soft w-100 mt-2 text-danger" id="reportSus">
+          <i class="fas fa-triangle-exclamation me-1"></i>Report suspicious activity</button>
       </div>
     </div>
 
-    <div class="col-lg-8">
-      <div class="card p-3 p-md-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 class="card-title">Your tickets</h2>
-          <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#newTicket">
-            <i class="fas fa-plus me-1"></i>New ticket</button>
-        </div>
+    <!-- ------------------- chat / report / case ------------------- -->
+    <div class="col-lg-7">
+      <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tChat">Live support</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tReport">Report a transaction</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tFaq">Answers</button></li>
+      </ul>
 
-        <div class="collapse mb-3" id="newTicket">
-          <div class="card p-3" style="background:var(--bg-sunk)">
-            <label class="form-label">What is this about?</label>
-            <select class="form-select mb-3">
-              <option>Deposit not credited</option>
-              <option>Withdrawal delayed</option>
-              <option>Wrong network / wrong asset sent</option>
-              <option>KYC or verification</option>
-              <option>Rate or fee question</option>
-              <option>Something else</option>
-            </select>
-            <label class="form-label">Transaction reference (if any)</label>
-            <input class="form-control mb-3" placeholder="e.g. DEP-C48231">
-            <label class="form-label">Describe the problem</label>
-            <textarea class="form-control mb-3" rows="3" id="tkBody" placeholder="What happened, and when?"></textarea>
-            <label class="form-label">Evidence <span class="text-muted">(optional)</span></label>
-            <div class="mb-3" id="tkAttachSlot"></div>
-            <button class="btn btn-primary w-100" id="sendTicket">Send to support</button>
+      <div class="tab-content">
+
+        <!-- live chat -->
+        <div class="tab-pane fade show active" id="tChat">
+          <div class="card p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <span class="kp-avatar sm ring">K<span class="av-check"><i class="fas fa-check"></i></span></span>
+              <div class="min-w-0">
+                <div class="fw-bold" style="font-size:.9rem">Kaastro Support</div>
+                <div class="ar-sub">We are here to help</div>
+              </div>
+              <span class="pill pill-success ms-auto">
+                <i class="fas fa-circle" style="font-size:.4rem"></i>Online</span>
+            </div>
+
+            <div class="chat-log" id="chatLog"></div>
+
+            <div class="chat-compose mt-3">
+              <button class="btn btn-soft flex-shrink-0" id="chatAttach" title="Attach a file">
+                <i class="fas fa-paperclip"></i></button>
+              <input class="form-control" id="chatMsg" placeholder="Type a message…" autocomplete="off">
+              <button class="btn btn-primary flex-shrink-0" id="chatSend">
+                <i class="fas fa-paper-plane"></i></button>
+            </div>
+            <div id="chatAttachSlot" class="mt-2"></div>
+            <p class="text-muted text-center mt-2 mb-0" style="font-size:.73rem">
+              <i class="fas fa-lock me-1"></i>Never share your PIN or OTP.</p>
           </div>
         </div>
 
-        <div id="ticketList"></div>
+        <!-- report a transaction -->
+        <div class="tab-pane fade" id="tReport">
+          <div class="card p-3 p-md-4">
+            <label class="form-label">Which transaction?</label>
+            <select class="form-select mb-3" id="rTx"></select>
+
+            <label class="form-label">Issue type</label>
+            <select class="form-select mb-3" id="rType">
+              <option>Transfer delayed</option>
+              <option>Deposit not credited</option>
+              <option>Wrong amount received</option>
+              <option>Sent on the wrong network</option>
+              <option>Withdrawal failed but balance debited</option>
+              <option>I do not recognise this transaction</option>
+              <option>Something else</option>
+            </select>
+
+            <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+            <textarea class="form-control mb-1" id="rBody" rows="3" maxlength="500"
+              placeholder="What happened, and when?"></textarea>
+            <div class="form-text mb-3"><span id="rCount">0</span>/500</div>
+
+            <label class="form-label">Upload evidence <span class="text-muted">(optional)</span></label>
+            <div class="mb-3" id="rAttachSlot"></div>
+
+            <label class="form-label">Preferred contact</label>
+            <select class="form-select mb-3" id="rContact">
+              <option>In-app notification</option>
+              <option>Email</option>
+              <option>Phone call</option>
+            </select>
+
+            <button class="btn btn-primary w-100" id="rSubmit">Submit report</button>
+            <p class="text-muted text-center mt-2 mb-0" style="font-size:.75rem">
+              <i class="fas fa-circle-info me-1"></i>Reports are reviewed as quickly as possible.</p>
+          </div>
+        </div>
+
+        <!-- faq -->
+        <div class="tab-pane fade" id="tFaq">
+          <div class="card p-3 p-md-4">
+            <div class="accordion" id="faq"></div>
+          </div>
+        </div>
+
       </div>
     </div>
+
   </div>
 </main>
 
 <script>
 KP.ready(function () {
-  var FAQ = [
-    ['My deposit has not arrived', 'Crypto credits after the network confirms — 12 confirmations on TRC20, 2 on Bitcoin. If the transaction shows on the explorer but not here after an hour, open a ticket with the hash.'],
-    ['I sent the wrong network', 'Tell us immediately with the hash and the address you used. Recovery is manual and never guaranteed, but the sooner we know the better the odds.'],
-    ['Why is my sell rate lower than the chart?', 'The chart is the mid-market price. Your buy price sits above it and your sell price below — that gap is our spread, and it is the same for every user in your country.'],
-    ['How long do withdrawals take?', 'Cash payouts usually land in under five minutes. Crypto sends depend on the network. If a provider is down, an agent confirms it by hand instead.'],
-    ['Why do I need to verify my identity?', 'Your national ID is what lets us issue your deposit account and raise your limits. It is a regulatory requirement in every country we operate in.']
+  var D = KP.data, F = KP.fmt, C = KP.currentCountry();
+
+  /* ------------------------- help centre ------------------------- */
+
+  var QUICK = [
+    ['fa-arrow-down', 'Deposits', 'Help with making deposits', 'deposit'],
+    ['fa-arrow-up', 'Withdrawals', 'Help with cashing out to your bank', 'withdrawal'],
+    ['fa-paper-plane', 'Transfers', 'Help sending money to others', 'transfer'],
+    ['fa-user-shield', 'Account & Verification', 'KYC, profiles and account help', 'kyc']
+  ];
+  $('#quickHelp').html(QUICK.map(function (q) {
+    return '<div class="col-6"><button class="biller-tile help-tile" data-t="' + q[3] + '">'
+      + '<span class="qa-icon qa-green"><i class="fas ' + q[0] + '"></i></span>'
+      + '<span>' + q[1] + '</span>'
+      + '<small>' + q[2] + '</small></button></div>';
+  }).join(''));
+
+  var TOPICS = [
+    ['Where is my bank transfer?', 'Cash payouts usually land in under five minutes. If it has been longer than an hour, report the transaction and we will trace it with the bank.'],
+    ['How long does a crypto deposit take?', 'It credits once the network confirms — 12 confirmations on TRC20, 2 on Bitcoin. You can watch the count on the deposit screen.'],
+    ['Why is my withdrawal pending?', 'Either the network is busy, or the payout is waiting on a manual check. You will be told the moment it settles.'],
+    ['I sent the wrong network', 'Tell us immediately with the transaction hash and the address you used. Recovery is manual and never guaranteed, but the sooner we know the better the odds.'],
+    ['Why do I need to verify my identity?', 'Your national ID is what lets us issue your deposit account and raise your limits. It is a regulatory requirement in every country we operate in.'],
+    ['Why is my rate lower than the chart?', 'The chart is the mid-market price. Your deposit rate sits just under it and your withdrawal rate just above. That gap is the same for everyone in your country.']
   ];
 
-  $('#faq').html(FAQ.map(function (f, i) {
-    return '<div class="accordion-item" style="background:transparent;border-color:var(--border-color)">'
-      + '<h3 class="accordion-header"><button class="accordion-button collapsed" style="background:transparent;color:var(--text-main);font-size:.85rem;font-weight:700" '
-      + 'data-bs-toggle="collapse" data-bs-target="#f' + i + '">' + f[0] + '</button></h3>'
-      + '<div id="f' + i + '" class="accordion-collapse collapse" data-bs-parent="#faq">'
-      + '<div class="accordion-body text-muted" style="font-size:.82rem">' + f[1] + '</div></div></div>';
+  function paintTopics(filterText) {
+    var list = TOPICS.filter(function (t) {
+      if (!filterText) return true;
+      return (t[0] + ' ' + t[1]).toLowerCase().indexOf(filterText) > -1;
+    });
+    $('#topics').html(list.length ? list.map(function (t, i) {
+      return '<button class="contact-row topic-open" data-i="' + TOPICS.indexOf(t) + '">'
+        + '<span class="qa-icon qa-green sm"><i class="fas fa-circle-question"></i></span>'
+        + '<span class="flex-grow-1 min-w-0"><span class="cr-name d-block text-truncate">'
+        + t[0] + '</span></span>'
+        + '<i class="fas fa-chevron-right text-muted"></i></button>';
+    }).join('') : '<div class="empty-state"><i class="fas fa-magnifying-glass"></i>'
+      + '<p>Nothing matches that. Try the live chat.</p></div>');
+  }
+  paintTopics('');
+
+  $('#hq').on('input', function () { paintTopics($(this).val().trim().toLowerCase()); });
+
+  $(document).on('click', '.topic-open', function () {
+    var t = TOPICS[$(this).data('i')];
+    KP.rails.sheet(t[0],
+      '<p style="font-size:.88rem;line-height:1.6">' + t[1] + '</p>'
+      + '<div class="d-grid gap-2 mt-3">'
+      + '<button class="btn btn-primary" id="topicChat">Still need help? Chat with us</button>'
+      + '<button class="btn btn-soft" data-bs-dismiss="modal">That answers it</button></div>');
+  });
+  $(document).on('click', '#topicChat', function () {
+    KP.rails.closeSheet();
+    new bootstrap.Tab(document.querySelector('[data-bs-target="#tChat"]')).show();
+  });
+
+  $(document).on('click', '.help-tile', function () {
+    var t = $(this).data('t');
+    paintTopics(t === 'kyc' ? 'identity' : t);
+    $('html, body').animate({ scrollTop: $('#topics').offset().top - 90 }, 300);
+  });
+
+  /* ------------------------- recent cases ------------------------- */
+
+  var CASES = [
+    { id: 'KP-20418', t: 'Bank withdrawal delayed', status: 'In review', tone: 'pill-manual',
+      when: 'Reported today, 10:45 AM', amount: 50000, to: 'GTBank ••••6789', ref: 'WDR-F52310',
+      steps: [['Report submitted', 'Today, 10:45 AM', 'done'],
+              ['Assigned to support', 'Today, 11:02 AM', 'done'],
+              ['Under review', 'Today, 11:15 AM', 'on'],
+              ['Resolved', 'Pending', 'pending']],
+      latest: 'We are confirming the transfer status with the receiving bank.' },
+    { id: 'KP-20402', t: 'Deposit not credited', status: 'Resolved', tone: 'pill-success',
+      when: 'Reported Aug 28', amount: 150000, to: 'Naira wallet', ref: 'DEP-C48231',
+      steps: [['Report submitted', 'Aug 28, 9:10 AM', 'done'],
+              ['Assigned to support', 'Aug 28, 9:40 AM', 'done'],
+              ['Under review', 'Aug 28, 2:15 PM', 'done'],
+              ['Resolved', 'Aug 29, 8:02 AM', 'done']],
+      latest: 'The deposit was credited after the twelfth confirmation cleared.' }
+  ];
+
+  $('#caseCount').text(CASES.length + (CASES.length === 1 ? ' case' : ' cases'));
+  $('#cases').html(CASES.map(function (c, i) {
+    return '<button class="contact-row case-open" data-i="' + i + '">'
+      + '<span class="qa-icon ' + (c.status === 'Resolved' ? 'qa-green' : 'qa-amber qa-warn') + ' sm">'
+      + '<i class="fas fa-' + (c.status === 'Resolved' ? 'circle-check' : 'clock') + '"></i></span>'
+      + '<span class="flex-grow-1 min-w-0">'
+      + '<span class="cr-name d-block text-truncate">' + c.t + '</span>'
+      + '<span class="cr-sub d-block">Ticket #' + c.id + ' &middot; ' + c.when + '</span></span>'
+      + '<span class="pill ' + c.tone + ' flex-shrink-0">' + c.status + '</span></button>';
   }).join(''));
 
-  var mine = KP.data.TICKETS.slice(0, 4);
-  $('#ticketList').html(mine.map(function (t) {
-    var pill = t.status === 'open' ? 'pill-pending' : t.status === 'resolved' ? 'pill-success' : 'pill-processing';
-    return '<div class="asset-row">'
-      + '<div class="qa-icon ' + (t.priority === 'high' ? 'qa-red' : 'qa-blue') + '" style="width:38px;height:38px;font-size:.8rem">'
-      + '<i class="fas fa-comment-dots"></i></div>'
-      + '<div class="flex-grow-1 min-w-0"><div class="ar-name text-truncate">' + t.subject + '</div>'
-      + '<div class="ar-sub">' + t.id + ' · ' + t.msgs + ' messages · ' + t.last + '</div></div>'
-      + '<span class="pill ' + pill + '">' + t.status + '</span></div>';
-  }).join(''));
+  $(document).on('click', '.case-open', function () {
+    var c = CASES[$(this).data('i')];
+    KP.rails.sheet('#' + c.id,
+      '<div class="d-flex align-items-center gap-2 mb-3">'
+      + '<span class="qa-icon qa-green sm"><i class="fas fa-file-lines"></i></span>'
+      + '<div class="min-w-0"><div class="fw-bold" style="font-size:.9rem">' + c.t + '</div>'
+      + '<div class="ar-sub">' + c.when + '</div></div>'
+      + '<span class="pill ' + c.tone + ' ms-auto">' + c.status + '</span></div>'
+      + '<div class="track">' + c.steps.map(function (s) {
+          return '<div class="tk ' + s[2] + '">'
+            + '<span class="tk-dot"><i class="fas fa-check"></i></span>'
+            + '<span class="tk-body"><span class="tk-title d-block">' + s[0] + '</span>'
+            + '<span class="tk-sub d-block">' + s[1] + '</span></span></div>'; }).join('')
+      + '</div>'
+      + '<div class="k-alert k-info mt-3"><i class="fas fa-circle-info"></i><div>'
+      + '<b class="hd">Latest update</b>' + c.latest + '</div></div>'
+      + '<div class="section-head mt-3"><h2>Transaction</h2></div>'
+      + '<div class="summary-rows">'
+      + '<div class="sr"><span>Amount</span><span>' + F.fiat(c.amount, C.currency) + '</span></div>'
+      + '<div class="sr"><span>To</span><span>' + c.to + '</span></div>'
+      + '<div class="sr total"><span>Reference</span><span>' + c.ref + '</span></div></div>'
+      + '<div class="d-grid gap-2 mt-3">'
+      + '<button class="btn btn-primary" id="caseMore">Add more information</button>'
+      + '<button class="btn btn-soft" id="caseChat">'
+      + '<i class="fas fa-comments me-1"></i>Contact support</button></div>');
+  });
+  $(document).on('click', '#caseMore', function () {
+    KP.rails.closeSheet();
+    new bootstrap.Tab(document.querySelector('[data-bs-target="#tReport"]')).show();
+  });
+  $(document).on('click', '#caseChat', function () {
+    KP.rails.closeSheet();
+    new bootstrap.Tab(document.querySelector('[data-bs-target="#tChat"]')).show();
+  });
 
-  /* The evidence field is shared with the agent and admin consoles, so a
-     screenshot attached here looks the same in the queue that receives it. */
-  $('#tkAttachSlot').html(KP.rails.attachField('ticket', {
-    label: 'Attach a screenshot or receipt',
+  /* --------------------------- live chat --------------------------- */
+
+  var chat = [
+    { me: true,  t: 'Hi, my withdrawal to GTBank is still pending.', at: '10:27 AM' },
+    { me: false, t: 'Hello, thanks for reaching out. I have found your transaction. It is still processing with the bank.', at: '10:28 AM' },
+    { me: true,  t: 'When should I expect it?', at: '10:29 AM' },
+    { me: false, t: 'Most transfers complete within a few minutes. We will notify you once it is completed.', at: '10:30 AM' },
+    { me: false, t: 'Transaction reference WDR-F52310', at: '10:30 AM', ref: true },
+    { me: true,  t: 'Okay, thank you.', at: '10:30 AM' }
+  ];
+
+  function paintChat() {
+    $('#chatLog').html(chat.map(function (m) {
+      if (m.ref) {
+        return '<div class="chat-msg them"><div class="bubble ref">'
+          + '<i class="fas fa-receipt me-2 text-primary-k"></i>' + m.t + '</div></div>';
+      }
+      return '<div class="chat-msg ' + (m.me ? 'me' : 'them') + '">'
+        + '<div class="bubble">' + m.t + '</div>'
+        + '<div class="at">' + m.at + '</div></div>';
+    }).join(''));
+    var el = document.getElementById('chatLog');
+    el.scrollTop = el.scrollHeight;
+  }
+  paintChat();
+
+  $('#chatAttachSlot').html(KP.rails.attachField('chat', {
+    label: 'Attach a screenshot',
+    hint: 'PNG, JPG or PDF · up to 5MB each'
+  }));
+  $('#chatAttach').on('click', function () {
+    $('#chatAttachSlot .kp-attach-drop').trigger('click');
+  });
+
+  function send() {
+    var v = ($('#chatMsg').val() || '').trim();
+    var files = KP.rails.attached('chat');
+    if (!v && !files.length) return;
+    var now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    chat.push({ me: true, t: v || (files.length + ' file attached'), at: now });
+    $('#chatMsg').val('');
+    KP.rails.clearAttached('chat');
+    paintChat();
+    setTimeout(function () {
+      chat.push({ me: false, t: 'Thanks — an agent is looking at this now.', at: now });
+      paintChat();
+    }, 900);
+  }
+  $('#chatSend').on('click', send);
+  $('#chatMsg').on('keydown', function (e) { if (e.key === 'Enter') send(); });
+  $('#startChat').on('click', function () {
+    new bootstrap.Tab(document.querySelector('[data-bs-target="#tChat"]')).show();
+    $('#chatMsg').trigger('focus');
+  });
+
+  /* --------------------- report a transaction --------------------- */
+
+  $('#rTx').html('<option value="">Not about a specific transaction</option>'
+    + D.myTransactions().slice(0, 12).map(function (t) {
+      return '<option value="' + t.ref + '">' + t.label + ' · ' + t.ref + '</option>';
+    }).join(''));
+
+  $('#rAttachSlot').html(KP.rails.attachField('report', {
+    label: 'Add a screenshot or receipt',
     hint: 'PNG, JPG or PDF · up to 5MB each · 4 files'
   }));
 
-  $('#sendTicket').on('click', function () {
-    var body = ($('#tkBody').val() || '').trim();
-    if (!body) { KP.rails.toast('Tell us what happened.', 'danger'); return; }
-    var files = KP.rails.attached('ticket');
-    $('#newTicket').collapse('hide');
-    $('#tkBody').val('');
-    KP.rails.clearAttached('ticket');
-    KP.rails.toast('Ticket created'
-      + (files.length ? ' with ' + files.length + ' attachment' + (files.length > 1 ? 's' : '') : '')
-      + '. An agent will reply shortly.');
+  $('#rBody').on('input', function () { $('#rCount').text($(this).val().length); });
+
+  $('#rSubmit').on('click', function () {
+    var type = $('#rType').val();
+    var files = KP.rails.attached('report');
+    var id = 'KP-' + Math.floor(20400 + Math.random() * 500);
+    $('#rBody').val(''); $('#rCount').text('0');
+    KP.rails.clearAttached('report');
+    KP.rails.sheet('Report submitted',
+      '<div class="result-hero"><div class="rh-ico"><i class="fas fa-check"></i></div>'
+      + '<div class="rh-amt" style="font-size:1.2rem">Ticket #' + id + '</div>'
+      + '<div class="rh-sub">' + type + '</div></div>'
+      + '<div class="summary-rows mt-3">'
+      + '<div class="sr"><span>Transaction</span><span>' + ($('#rTx').val() || '—') + '</span></div>'
+      + '<div class="sr"><span>Evidence</span><span>' + (files.length || 'none') + '</span></div>'
+      + '<div class="sr total"><span>Contact by</span><span>' + $('#rContact').val() + '</span></div></div>'
+      + '<p class="text-muted mt-3" style="font-size:.8rem">You can track this under '
+      + '<b>Recent cases</b>. We will update you as soon as we have something.</p>'
+      + '<button class="btn btn-primary w-100" data-bs-dismiss="modal">Done</button>');
   });
+
+  $('#reportSus').on('click', function () {
+    KP.rails.sheet('Report suspicious activity',
+      '<div class="k-alert k-danger mb-3"><i class="fas fa-triangle-exclamation"></i><div>'
+      + '<b class="hd">If money is moving right now, freeze the account first.</b>'
+      + 'Freezing pauses withdrawals, transfers and payment links immediately.</div></div>'
+      + '<div class="d-grid gap-2">'
+      + '<a class="btn btn-danger" href="security.html">Freeze my account</a>'
+      + '<button class="btn btn-primary" id="susReport">Report without freezing</button>'
+      + '<button class="btn btn-soft" data-bs-dismiss="modal">Cancel</button></div>');
+  });
+  $(document).on('click', '#susReport', function () {
+    KP.rails.closeSheet();
+    new bootstrap.Tab(document.querySelector('[data-bs-target="#tReport"]')).show();
+    $('#rType').val('I do not recognise this transaction');
+  });
+
+  /* ------------------------------ faq ------------------------------ */
+
+  $('#faq').html(TOPICS.map(function (t, i) {
+    return '<div class="accordion-item" style="background:transparent;border-color:var(--border-color)">'
+      + '<h3 class="accordion-header"><button class="accordion-button collapsed" '
+      + 'style="background:transparent;color:var(--text-main);font-size:.86rem;font-weight:700" '
+      + 'data-bs-toggle="collapse" data-bs-target="#f' + i + '">' + t[0] + '</button></h3>'
+      + '<div id="f' + i + '" class="accordion-collapse collapse" data-bs-parent="#faq">'
+      + '<div class="accordion-body text-muted" style="font-size:.85rem;line-height:1.6">'
+      + t[1] + '</div></div></div>';
+  }).join(''));
 });
 </script>
 </body>

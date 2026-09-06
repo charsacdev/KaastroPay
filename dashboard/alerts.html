@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rate Alerts | Kaastro Pay</title>
+<meta name="theme-color" content="#0A0A0A">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="alerts" data-title="Rate Alerts" data-sub="Tell us the rate you are waiting for">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <div class="col-lg-5">
+      <!-- What the rates are right now, so a target can be set against
+           something rather than from memory. -->
+      <div class="card p-3 p-md-4">
+        <div class="section-head"><h2>Current rates</h2>
+          <span class="small text-muted">
+            <i class="fas fa-circle text-up" style="font-size:.4rem"></i>
+            <span id="tick">Updated just now</span></span></div>
+        <div class="rate-pair" id="pair"></div>
+      </div>
+
+      <div class="card p-3 mt-3">
+        <div class="asset-row">
+          <div class="qa-icon qa-green sm"><i class="fas fa-bell"></i></div>
+          <div class="flex-grow-1 min-w-0"><div class="ar-name">Enable rate alerts</div>
+            <div class="ar-sub">Get notified when rates hit your target</div></div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="alertsOn" checked>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3" id="createCard">
+        <div class="section-head"><h2>Create alert</h2></div>
+
+        <label class="form-label">Transaction type</label>
+        <select class="form-select mb-3" id="alType"></select>
+
+        <label class="form-label">Condition</label>
+        <select class="form-select mb-3" id="alCond">
+          <option value="gte">Rate reaches or rises above</option>
+          <option value="lte">Rate falls to or below</option>
+        </select>
+
+        <label class="form-label">Target rate</label>
+        <div class="input-group mb-3">
+          <span class="input-group-text" id="ccySym"></span>
+          <input class="form-control" id="alTarget" inputmode="decimal" placeholder="0.00">
+        </div>
+        <div class="form-text mb-3" id="alHint"></div>
+
+        <div class="section-head"><h2>Notification method</h2></div>
+        <div class="asset-row">
+          <div class="qa-icon qa-green sm"><i class="fas fa-mobile-screen"></i></div>
+          <div class="flex-grow-1 min-w-0"><div class="ar-name">Push notification</div>
+            <div class="ar-sub">On this device</div></div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="mPush" checked></div>
+        </div>
+        <div class="asset-row">
+          <div class="qa-icon qa-green sm"><i class="fas fa-envelope"></i></div>
+          <div class="flex-grow-1 min-w-0"><div class="ar-name">Email notification</div>
+            <div class="ar-sub" id="mEmailSub"></div></div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="mEmail"></div>
+        </div>
+
+        <button class="btn btn-primary w-100 mt-3" id="alCreate">Create rate alert</button>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card p-3 p-md-4">
+        <div class="section-head"><h2>Your rate alerts</h2>
+          <span class="small text-muted" id="alCount"></span></div>
+        <div id="alList"></div>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>How alerts work</h2></div>
+        <div class="k-alert k-info">
+          <i class="fas fa-circle-info"></i>
+          <div><b class="hd">An alert is a heads-up, not a trade.</b>
+            We tell you when the rate touches your target. Nothing is bought,
+            sold or converted on your behalf, and the rate can move again
+            before you act on it.</div>
+        </div>
+        <div class="k-alert k-warn mt-2">
+          <i class="fas fa-triangle-exclamation"></i>
+          <div>Rates can change between the alert and your confirmation. The
+            rate that counts is the one shown when you confirm.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var F = KP.fmt, C = KP.currentCountry();
+
+  /* Alerts are a per-device preference, so they live in local storage rather
+     than in the shared mock data — one browser, one set of alerts. */
+  var KEY = 'kaastro-rate-alerts';
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || 'null') || seed(); }
+    catch (e) { return seed(); }
+  }
+  function save(l) { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {} }
+  function seed() {
+    var dep = KP.rates.depositRate('USDT', C.currency);
+    var wdr = KP.rates.withdrawalRate('USDT', C.currency);
+    return [
+      { id: 'RA-1', asset: 'USDT', side: 'deposit', cond: 'gte',
+        target: Math.round(dep * 1.03), active: true, push: true, email: false },
+      { id: 'RA-2', asset: 'USDT', side: 'withdrawal', cond: 'lte',
+        target: Math.round(wdr * 0.98), active: false, push: true, email: true }
+    ];
+  }
+  var alerts = load();
+
+  function sideLabel(a) { return a.asset + ' ' + (a.side === 'deposit' ? 'Deposit' : 'Withdrawal'); }
+  function rateOf(a) {
+    return a.side === 'deposit'
+      ? KP.rates.depositRate(a.asset, C.currency)
+      : KP.rates.withdrawalRate(a.asset, C.currency);
+  }
+  /* Has this alert's condition been met at the current rate? */
+  function hit(a) {
+    var r = rateOf(a);
+    return a.cond === 'gte' ? r >= a.target : r <= a.target;
+  }
+
+  function paintRates() {
+    var dep = KP.rates.depositRate('USDT', C.currency);
+    var wdr = KP.rates.withdrawalRate('USDT', C.currency);
+    $('#pair').html(
+      '<div class="rate-box"><span class="rb-ico qa-icon qa-green"><i class="fas fa-arrow-down"></i></span>'
+      + '<span class="rb-label">USDT Deposit</span><b>' + F.fiat(dep, C.currency) + '</b>'
+      + '<div class="ar-sub mt-1">What we credit per USDT</div></div>'
+      + '<div class="rate-box"><span class="rb-ico qa-icon qa-green"><i class="fas fa-arrow-up"></i></span>'
+      + '<span class="rb-label">USDT Withdrawal</span><b>' + F.fiat(wdr, C.currency) + '</b>'
+      + '<div class="ar-sub mt-1">What you pay per USDT</div></div>');
+  }
+
+  function paintList() {
+    $('#alCount').text(alerts.length + (alerts.length === 1 ? ' alert' : ' alerts'));
+    if (!alerts.length) {
+      $('#alList').html('<div class="empty-state"><i class="fas fa-bell-slash"></i>'
+        + '<p>No alerts yet. Set a target and we will watch it for you.</p></div>');
+      return;
+    }
+    $('#alList').html(alerts.map(function (a) {
+      var met = hit(a);
+      return '<div class="asset-row" data-id="' + a.id + '">'
+        + '<div class="qa-icon ' + (a.active ? 'qa-green' : 'qa-slate') + ' sm">'
+        + '<i class="fas ' + (a.cond === 'gte' ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down') + '"></i></div>'
+        + '<div class="flex-grow-1 min-w-0">'
+        + '<div class="ar-name">' + (a.cond === 'gte' ? 'Rate ≥ ' : 'Rate ≤ ')
+        + F.fiat(a.target, C.currency) + '</div>'
+        + '<div class="ar-sub">' + sideLabel(a) + ' &middot; now '
+        + F.fiat(rateOf(a), C.currency) + '</div>'
+        + (met && a.active
+            ? '<div class="ar-sub text-up"><i class="fas fa-circle-check me-1"></i>Target met</div>' : '')
+        + '</div>'
+        + '<div class="d-flex align-items-center gap-2 flex-shrink-0">'
+        + '<span class="pill ' + (a.active ? 'pill-success' : 'pill-neutral') + '">'
+        + (a.active ? 'Active' : 'Paused') + '</span>'
+        + '<button class="btn btn-sm btn-soft al-toggle" data-id="' + a.id + '" title="'
+        + (a.active ? 'Pause' : 'Resume') + '"><i class="fas fa-'
+        + (a.active ? 'pause' : 'play') + '"></i></button>'
+        + '<button class="btn btn-sm btn-soft text-danger al-del" data-id="' + a.id + '" title="Remove">'
+        + '<i class="fas fa-trash-can"></i></button></div></div>';
+    }).join(''));
+  }
+
+  function repaint() { paintRates(); paintList(); }
+
+  /* Type picker: every asset, both directions. */
+  $('#alType').html(KP.ASSET_LIST.map(function (a) {
+    return '<option value="' + a.symbol + '|deposit">' + a.symbol + ' Deposit</option>'
+      + '<option value="' + a.symbol + '|withdrawal">' + a.symbol + ' Withdrawal</option>';
+  }).join(''));
+  $('#ccySym').text(C.symbol);
+  $('#mEmailSub').text(KP.data.ME.email);
+
+  function hint() {
+    var p = ($('#alType').val() || 'USDT|deposit').split('|');
+    var now = p[1] === 'deposit'
+      ? KP.rates.depositRate(p[0], C.currency)
+      : KP.rates.withdrawalRate(p[0], C.currency);
+    $('#alHint').html('Current ' + p[0] + ' ' + p[1] + ' rate is <b>'
+      + F.fiat(now, C.currency) + '</b>');
+  }
+  $('#alType').on('change', hint);
+  hint();
+
+  $('#alCreate').on('click', function () {
+    var v = parseFloat(($('#alTarget').val() || '').replace(/,/g, ''));
+    if (isNaN(v) || v <= 0) { KP.rails.toast('Enter the rate you are waiting for.', 'danger'); return; }
+    if (!$('#mPush').is(':checked') && !$('#mEmail').is(':checked')) {
+      KP.rails.toast('Choose at least one way to be told.', 'danger'); return;
+    }
+    var p = $('#alType').val().split('|');
+    alerts.unshift({
+      id: 'RA-' + Date.now().toString().slice(-6),
+      asset: p[0], side: p[1], cond: $('#alCond').val(), target: v,
+      active: true, push: $('#mPush').is(':checked'), email: $('#mEmail').is(':checked')
+    });
+    save(alerts);
+    $('#alTarget').val('');
+    KP.rails.toast('Alert created. We will watch that rate for you.');
+    repaint();
+  });
+
+  $(document).on('click', '.al-toggle', function () {
+    var id = $(this).data('id');
+    alerts.forEach(function (a) { if (a.id === id) a.active = !a.active; });
+    save(alerts); repaint();
+  });
+
+  $(document).on('click', '.al-del', function () {
+    var id = $(this).data('id');
+    alerts = alerts.filter(function (a) { return a.id !== id; });
+    save(alerts);
+    KP.rails.toast('Alert removed.');
+    repaint();
+  });
+
+  $('#alertsOn').on('change', function () {
+    var on = $(this).is(':checked');
+    $('#createCard').toggleClass('opacity-50', !on);
+    $('#createCard').find('input,select,button').prop('disabled', !on);
+    KP.rails.toast(on ? 'Rate alerts are on.' : 'Rate alerts paused. Nothing will notify you.');
+  });
+
+  /* The board moves; so should the "now" figure next to each target. */
+  if (KP.rates.onTick) KP.rates.onTick(repaint);
+  repaint();
+});
+</script>
+</body>
+</html>

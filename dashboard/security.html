@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Limits &amp; Devices | Kaastro Pay</title>
+<meta name="theme-color" content="#0A0A0A">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="security" data-title="Limits &amp; Devices" data-sub="What you can spend, and what is signed in">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <!-- ----------------------- spending limits ----------------------- -->
+    <div class="col-lg-6">
+      <div class="card p-3 p-md-4">
+        <div class="section-head"><h2>Monthly budget</h2>
+          <span class="small text-muted">your own cap</span></div>
+
+        <div class="flow-stack mb-3" id="budget"></div>
+        <div class="cap-bar mb-1"><div class="cap-fill" id="budgetFill"></div></div>
+        <div class="d-flex justify-content-between" style="font-size:.72rem">
+          <span class="text-muted" id="budgetPct"></span>
+          <span class="text-muted" id="budgetLeft"></span>
+        </div>
+
+        <div class="k-alert k-info mt-3">
+          <i class="fas fa-circle-info"></i>
+          <div><b class="hd">These are your limits, not ours.</b>
+            A personal cap does not change the regulatory limit your tier sets.
+            Whichever is lower applies.</div>
+        </div>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>Category limits</h2></div>
+        <div id="cats"></div>
+
+        <div class="asset-row mt-2">
+          <div class="qa-icon qa-amber qa-warn sm"><i class="fas fa-bell"></i></div>
+          <div class="flex-grow-1 min-w-0"><div class="ar-name">Warn me at 80%</div>
+            <div class="ar-sub">A nudge before you reach a cap</div></div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="warn80" checked></div>
+        </div>
+        <div class="asset-row">
+          <div class="qa-icon qa-red sm"><i class="fas fa-hand"></i></div>
+          <div class="flex-grow-1 min-w-0"><div class="ar-name">Block spending at the limit</div>
+            <div class="ar-sub">Refuse payments once a cap is reached</div></div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="blockAt"></div>
+        </div>
+
+        <div class="d-grid gap-2 mt-3">
+          <button class="btn btn-primary" id="saveLimits">Update limits</button>
+          <button class="btn btn-soft" id="resetMonth">Reset this month</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------ device sessions ------------------------ -->
+    <div class="col-lg-6">
+      <div class="card p-3 p-md-4">
+        <div class="section-head"><h2>This device</h2></div>
+        <div id="thisDevice"></div>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>Other sessions</h2>
+          <span class="small text-muted" id="devCount"></span></div>
+        <div id="devices"></div>
+
+        <div class="asset-row mt-2">
+          <div class="qa-icon qa-green sm"><i class="fas fa-shield-halved"></i></div>
+          <div class="flex-grow-1 min-w-0"><div class="ar-name">Require OTP for new devices</div>
+            <div class="ar-sub">A code before any new sign-in completes</div></div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="otpNew" checked></div>
+        </div>
+        <div class="asset-row">
+          <div class="qa-icon qa-green sm"><i class="fas fa-bell"></i></div>
+          <div class="flex-grow-1 min-w-0"><div class="ar-name">Alert me on new sign-in</div>
+            <div class="ar-sub">Told the moment a device is added</div></div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="loginAlerts" checked></div>
+        </div>
+
+        <div class="d-grid gap-2 mt-3">
+          <button class="btn btn-primary" id="secureAcct">
+            <i class="fas fa-shield-halved me-1"></i>Secure my account</button>
+          <button class="btn btn-soft text-danger" id="signOutAll">Sign out all other devices</button>
+        </div>
+      </div>
+
+      <div class="card p-3 mt-3">
+        <div class="section-head"><h2>Login activity</h2></div>
+        <div id="activity"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var F = KP.fmt, C = KP.currentCountry(), me = KP.data.ME;
+
+  /* Both of these are per-device preferences rather than platform records, so
+     they persist locally and reset cleanly if the browser is cleared. */
+  var LKEY = 'kaastro-spend-limits';
+  function loadLimits() {
+    try { return JSON.parse(localStorage.getItem(LKEY) || 'null') || seedLimits(); }
+    catch (e) { return seedLimits(); }
+  }
+  function saveLimits(l) { try { localStorage.setItem(LKEY, JSON.stringify(l)); } catch (e) {} }
+  function seedLimits() {
+    return {
+      budget: 500000, spent: 285000,
+      cats: [
+        { key: 'transfers', label: 'Transfers', icon: 'fa-right-left', cap: 200000, used: 120000 },
+        { key: 'bills',     label: 'Bills',     icon: 'fa-bolt',       cap: 100000, used: 65000 },
+        { key: 'betting',   label: 'Betting',   icon: 'fa-futbol',     cap: 20000,  used: 5000 },
+        { key: 'abroad',    label: 'Send Abroad', icon: 'fa-earth-africa', cap: 150000, used: 95000 }
+      ]
+    };
+  }
+  var lim = loadLimits();
+
+  function pct(a, b) { return b ? Math.min(100, Math.round((a / b) * 100)) : 0; }
+  function tone(p) { return p >= 90 ? 'is-over' : p >= 80 ? 'is-warn' : ''; }
+
+  function paintBudget() {
+    var p = pct(lim.spent, lim.budget);
+    $('#budget').html(
+      '<div><span>Monthly budget</span><b>' + F.fiat(lim.budget, C.currency) + '</b></div>'
+      + '<div><span>Spent</span><b class="text-down">' + F.fiat(lim.spent, C.currency) + '</b></div>'
+      + '<div><span>Remaining</span><b class="text-up">'
+      + F.fiat(Math.max(0, lim.budget - lim.spent), C.currency) + '</b></div>');
+    $('#budgetFill').css('width', p + '%').attr('class', 'cap-fill ' + tone(p));
+    $('#budgetPct').text(p + '% used');
+    $('#budgetLeft').text(F.fiat(Math.max(0, lim.budget - lim.spent), C.currency) + ' left');
+  }
+
+  function paintCats() {
+    $('#cats').html(lim.cats.map(function (c) {
+      var p = pct(c.used, c.cap);
+      return '<div class="cap-row" data-key="' + c.key + '">'
+        + '<div class="qa-icon qa-green sm"><i class="fas ' + c.icon + '"></i></div>'
+        + '<div class="flex-grow-1 min-w-0">'
+        + '<div class="d-flex justify-content-between gap-2">'
+        + '<span class="ar-name">' + c.label + '</span>'
+        + '<span class="ar-name">' + F.fiat(c.cap, C.currency) + '</span></div>'
+        + '<div class="cap-bar my-1"><div class="cap-fill ' + tone(p) + '" style="width:' + p + '%"></div></div>'
+        + '<div class="d-flex justify-content-between gap-2">'
+        + '<span class="ar-sub">' + F.fiat(c.used, C.currency) + ' used</span>'
+        + '<span class="ar-sub">' + p + '%</span></div></div>'
+        + '<button class="btn btn-sm btn-soft cap-edit flex-shrink-0" data-key="' + c.key + '">'
+        + '<i class="fas fa-pen"></i></button></div>';
+    }).join(''));
+  }
+
+  $(document).on('click', '.cap-edit', function () {
+    var key = $(this).data('key');
+    var c = lim.cats.filter(function (x) { return x.key === key; })[0];
+    if (!c) return;
+    KP.rails.sheet('Limit for ' + c.label,
+      '<p class="text-muted" style="font-size:.83rem">You have used '
+      + F.fiat(c.used, C.currency) + ' of this category so far this month.</p>'
+      + '<label class="form-label">Monthly cap</label>'
+      + '<div class="input-group mb-3"><span class="input-group-text">' + C.symbol + '</span>'
+      + '<input class="form-control" id="capV" inputmode="decimal" value="' + c.cap + '"></div>'
+      + '<button class="btn btn-primary w-100" data-capsave="' + key + '">Save limit</button>');
+  });
+
+  $(document).on('click', '[data-capsave]', function () {
+    var key = $(this).data('capsave');
+    var v = parseFloat(($('#capV').val() || '').replace(/,/g, ''));
+    if (isNaN(v) || v < 0) { KP.rails.toast('Enter a limit.', 'danger'); return; }
+    lim.cats.forEach(function (c) { if (c.key === key) c.cap = v; });
+    saveLimits(lim);
+    KP.rails.closeSheet();
+    KP.rails.toast('Limit updated.');
+    paintCats();
+  });
+
+  $('#saveLimits').on('click', function () {
+    KP.rails.sheet('Monthly budget',
+      '<label class="form-label">Total budget for the month</label>'
+      + '<div class="input-group mb-3"><span class="input-group-text">' + C.symbol + '</span>'
+      + '<input class="form-control" id="budV" inputmode="decimal" value="' + lim.budget + '"></div>'
+      + '<div class="k-alert k-info mb-3"><i class="fas fa-circle-info"></i><div>'
+      + 'This caps your own spending. It cannot raise the limit your tier allows.</div></div>'
+      + '<button class="btn btn-primary w-100" id="budSave">Update budget</button>');
+  });
+  $(document).on('click', '#budSave', function () {
+    var v = parseFloat(($('#budV').val() || '').replace(/,/g, ''));
+    if (isNaN(v) || v <= 0) { KP.rails.toast('Enter a budget.', 'danger'); return; }
+    lim.budget = v; saveLimits(lim);
+    KP.rails.closeSheet();
+    KP.rails.toast('Monthly budget updated.');
+    paintBudget();
+  });
+
+  $('#resetMonth').on('click', function () {
+    lim.spent = 0;
+    lim.cats.forEach(function (c) { c.used = 0; });
+    saveLimits(lim);
+    KP.rails.toast('Counters reset for this month.');
+    paintBudget(); paintCats();
+  });
+
+  /* --------------------------- devices --------------------------- */
+
+  var DEVICES = [
+    { id: 'D1', name: 'Samsung Galaxy S23', icon: 'fa-mobile-screen', where: 'Uyo, Nigeria',
+      when: 'Active now', ip: '102.89.xxx.24', current: true, trusted: true },
+    { id: 'D2', name: 'Chrome on Windows', icon: 'fa-desktop', where: 'Lagos, Nigeria',
+      when: 'Last active 2 days ago', ip: '102.89.xxx.11', current: false, trusted: false },
+    { id: 'D3', name: 'iPhone 14', icon: 'fa-mobile-screen-button', where: 'Abuja, Nigeria',
+      when: 'Last active Aug 28', ip: '197.210.xxx.7', current: false, trusted: true }
+  ];
+
+  function deviceRow(d) {
+    return '<div class="asset-row" data-id="' + d.id + '">'
+      + '<div class="qa-icon ' + (d.current ? 'qa-green' : 'qa-slate') + ' sm">'
+      + '<i class="fas ' + d.icon + '"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name text-truncate">' + d.name + '</div>'
+      + '<div class="ar-sub">' + d.where + ' &middot; ' + d.when + '</div>'
+      + '<div class="ar-sub t-mono">' + d.ip + '</div></div>'
+      + '<div class="d-flex align-items-center gap-2 flex-shrink-0">'
+      + (d.current
+          ? '<span class="pill pill-success">This device</span>'
+          : '<span class="pill ' + (d.trusted ? 'pill-neutral' : 'pill-warn') + '">'
+            + (d.trusted ? 'Trusted' : 'Review') + '</span>'
+            + '<button class="btn btn-sm btn-soft text-danger dv-out" data-id="' + d.id
+            + '" title="Sign out"><i class="fas fa-right-from-bracket"></i></button>')
+      + '</div></div>';
+  }
+
+  function paintDevices() {
+    var cur = DEVICES.filter(function (d) { return d.current; });
+    var others = DEVICES.filter(function (d) { return !d.current; });
+    $('#thisDevice').html(cur.map(deviceRow).join(''));
+    $('#devCount').text(others.length + (others.length === 1 ? ' session' : ' sessions'));
+    $('#devices').html(others.length ? others.map(deviceRow).join('')
+      : '<div class="empty-state"><i class="fas fa-laptop"></i>'
+        + '<p>No other device is signed in.</p></div>');
+  }
+
+  $(document).on('click', '.dv-out', function () {
+    var id = $(this).data('id');
+    var d = DEVICES.filter(function (x) { return x.id === id; })[0];
+    if (!d) return;
+    KP.rails.sheet('Sign out ' + d.name + '?',
+      '<p class="text-muted" style="font-size:.83rem">That session ends immediately. '
+      + 'Signing back in will need your password and a fresh code.</p>'
+      + '<div class="summary-rows mb-3">'
+      + '<div class="sr"><span>Where</span><span>' + d.where + '</span></div>'
+      + '<div class="sr"><span>Last active</span><span>' + d.when + '</span></div>'
+      + '<div class="sr total"><span>IP address</span><span>' + d.ip + '</span></div></div>'
+      + '<div class="d-grid gap-2">'
+      + '<button class="btn btn-danger" data-dvout="' + d.id + '">Sign out this device</button>'
+      + '<button class="btn btn-soft" data-bs-dismiss="modal">Keep it signed in</button></div>');
+  });
+
+  $(document).on('click', '[data-dvout]', function () {
+    var id = $(this).data('dvout');
+    var i = DEVICES.map(function (d) { return d.id; }).indexOf(id);
+    if (i > -1) DEVICES.splice(i, 1);
+    KP.rails.closeSheet();
+    KP.rails.toast('Device signed out.');
+    paintDevices();
+  });
+
+  $('#signOutAll').on('click', function () {
+    KP.rails.sheet('Sign out every other device?',
+      '<p class="text-muted" style="font-size:.83rem">Every session except this one ends. '
+      + 'Use this if you have lost a phone or think someone else has access.</p>'
+      + '<div class="d-grid gap-2">'
+      + '<button class="btn btn-danger" id="dvAllYes">Sign out all others</button>'
+      + '<button class="btn btn-soft" data-bs-dismiss="modal">Cancel</button></div>');
+  });
+  $(document).on('click', '#dvAllYes', function () {
+    for (var i = DEVICES.length - 1; i >= 0; i--) if (!DEVICES[i].current) DEVICES.splice(i, 1);
+    KP.rails.closeSheet();
+    KP.rails.toast('All other devices signed out.');
+    paintDevices();
+  });
+
+  $('#secureAcct').on('click', function () {
+    KP.rails.sheet('Secure my account',
+      '<p class="text-muted" style="font-size:.83rem">Run all of these if you think '
+      + 'someone else has had access.</p>'
+      + '<div class="d-grid gap-2">'
+      + '<a class="btn btn-soft text-start" href="profile.html"><i class="fas fa-key me-2 text-primary-k"></i>'
+      + 'Change your password</a>'
+      + '<a class="btn btn-soft text-start" href="profile.html"><i class="fas fa-lock me-2 text-primary-k"></i>'
+      + 'Reset your transaction PIN</a>'
+      + '<button class="btn btn-soft text-start" id="dvAllYes">'
+      + '<i class="fas fa-right-from-bracket me-2 text-primary-k"></i>Sign out all other devices</button>'
+      + '<a class="btn btn-soft text-start" href="support.html">'
+      + '<i class="fas fa-headset me-2 text-primary-k"></i>Contact support</a></div>');
+  });
+
+  $('#activity').html([
+    ['fa-right-to-bracket', 'Signed in', 'Samsung Galaxy S23 · Uyo', 'Today, 8:41 AM', 'qa-green'],
+    ['fa-key', 'PIN changed', 'Samsung Galaxy S23 · Uyo', 'Sep 1, 6:20 PM', 'qa-green'],
+    ['fa-right-to-bracket', 'Signed in', 'Chrome on Windows · Lagos', 'Aug 31, 8:36 AM', 'qa-amber qa-warn'],
+    ['fa-shield-halved', 'Two-step enabled', 'Samsung Galaxy S23 · Uyo', 'Aug 24, 11:02 AM', 'qa-green']
+  ].map(function (a) {
+    return '<div class="asset-row">'
+      + '<div class="qa-icon ' + a[4] + ' sm"><i class="fas ' + a[0] + '"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + a[1] + '</div>'
+      + '<div class="ar-sub">' + a[2] + '</div></div>'
+      + '<span class="ar-sub flex-shrink-0">' + a[3] + '</span></div>';
+  }).join(''));
+
+  paintBudget(); paintCats(); paintDevices();
+});
+</script>
+</body>
+</html>

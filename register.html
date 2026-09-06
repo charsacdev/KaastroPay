@@ -7,13 +7,9 @@
 <meta name="theme-color" content="#0A0A0A">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
-<meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
 <script>(function(){try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('kaastro-theme')||document.documentElement.getAttribute('data-theme-default')||'dark');}catch(e){}})();</script>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <link rel="stylesheet" href="css/kaastro.css">
 <link rel="stylesheet" href="css/public.css">
@@ -22,125 +18,288 @@
 
 <div class="auth-wrap">
   <div class="auth-card">
-    <a href="index.html" class="brand-logo mb-4">
+    <a href="index.html" class="brand-logo mb-3 justify-content-center">
       <img src="images/logo-onDark.png" alt="Kaastro Pay" class="brand-img">
     </a>
 
-    <h1>Create your account</h1>
-    <p class="sub mb-4">Your country sets your currency — pick carefully, it stays with the account.</p>
+    <!-- Three steps, and the stepper is the only place progress is stated,
+         so it stays put while the panel under it changes. -->
+    <div class="auth-steps" id="steps"></div>
 
-    <label class="form-label">Where are you?</label>
-    <div class="d-grid gap-2 mb-3" id="countries"></div>
+    <div id="panel"></div>
 
-    <div class="k-alert k-info mb-3" id="ccyNote"></div>
-
-    <div class="row g-2 mb-3">
-      <div class="col-6">
-        <label class="form-label">First name</label>
-        <input class="form-control" placeholder="Chukwudi">
-      </div>
-      <div class="col-6">
-        <label class="form-label">Last name</label>
-        <input class="form-control" placeholder="Okeke">
-      </div>
-    </div>
-
-    <label class="form-label">Email</label>
-    <input type="email" class="form-control mb-3" placeholder="you@example.com">
-
-    <label class="form-label">Phone number</label>
-    <div class="input-group mb-3">
-      <span class="input-group-text" id="dial">+234</span>
-      <input class="form-control" placeholder="803 123 4567">
-    </div>
-
-    <label class="form-label">Password</label>
-    <div class="input-group mb-1">
-      <input type="password" class="form-control" id="pw" placeholder="At least 8 characters">
-      <button class="btn btn-soft" id="pwToggle"><i class="fas fa-eye"></i></button>
-    </div>
-    <div class="progress mb-1" style="height:4px">
-      <div class="progress-bar" id="pwBar" style="width:0;background:var(--down)"></div>
-    </div>
-    <div class="form-text mb-3" id="pwHint">Use a mix of letters, numbers and symbols.</div>
-
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" id="terms">
-      <label class="form-check-label" for="terms" style="font-size:.82rem">
-        I agree to the <a href="#" class="text-primary-k">terms</a> and
-        <a href="#" class="text-primary-k">privacy policy</a>.</label>
-    </div>
-
-    <button class="btn btn-primary w-100" id="go">Create account</button>
-
-    <p class="text-center mt-3 mb-0" style="font-size:.85rem">
-      Already have one? <a href="login.html" class="text-primary-k fw-bold">Log in</a></p>
+    <p class="text-center text-muted mt-3 mb-0" style="font-size:.78rem" id="foot"></p>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/config.js"></script>
-<script src="js/rates-engine.js"></script>
-<script src="js/mock-data.js"></script>
 <script src="js/rails.js"></script>
-<script src="js/pwa.js"></script>
 <script>
 $(function () {
-  var DIAL = { NG: '+234', GH: '+233', KE: '+254', TZ: '+255', UG: '+256' };
-  var picked = KP.currentCountry().code;
+  var STEPS = ['Personal Details', 'Verification', 'PIN'];
+  var at = 1;
+  var form = { name: '', phone: '', email: '', ref: '', dial: '+234', country: 'NG' };
+  var pin = '', pinConfirm = '', entering = 'pin';
 
-  function paint() {
-    $('#countries').html(KP.COUNTRY_LIST.map(function (c) {
-      return '<button class="country-opt' + (c.code === picked ? ' selected' : '') + '" data-cc="' + c.code + '">'
-        + '<span class="co-flag">' + c.flag + '</span>'
-        + '<span><span class="co-name">' + c.name + '</span>'
-        + '<span class="co-ccy">' + c.currency + ' · ' + c.idLabel + '</span></span>'
-        + '<i class="fas fa-circle-check co-check"></i></button>';
+  function paintSteps() {
+    $('#steps').html(STEPS.map(function (s, i) {
+      var n = i + 1;
+      return (i ? '<span class="as-line"></span>' : '')
+        + '<span class="as-step ' + (n === at ? 'on' : n < at ? 'done' : '') + '">'
+        + '<span class="n">' + (n < at ? '<i class="fas fa-check"></i>' : n) + '</span>'
+        + '<span class="l">' + s + '</span></span>';
     }).join(''));
-
-    var c = KP.COUNTRIES[picked];
-    $('#dial').text(DIAL[picked]);
-    $('#ccyNote').html('<i class="fas fa-circle-info"></i><div>'
-      + '<b class="hd">Your balance will be in ' + c.currency + '.</b>'
-      + 'You will fund by ' + (c.fundingRail === 'virtual_account'
-        ? 'a dedicated account number we issue you'
-        : 'mobile money') + ', and verify with your ' + c.idLabel + '.</div>');
   }
-  paint();
 
-  $(document).on('click', '.country-opt', function () {
-    picked = $(this).data('cc');
-    KP.setCountry(picked);
-    paint();
+  /* ------------------------- 1. personal details ------------------------- */
+
+  function stepDetails() {
+    $('#panel').html(
+      '<h1 class="text-center">Create your account</h1>'
+      + '<p class="sub text-center mb-4">Your country sets your currency. It stays with the account.</p>'
+
+      + '<label class="form-label">Full name</label>'
+      + '<div class="input-group mb-3"><span class="input-group-text"><i class="fas fa-user"></i></span>'
+      + '<input class="form-control" id="fName" placeholder="Enter your full name" value="' + form.name + '"></div>'
+
+      + '<label class="form-label">Phone number</label>'
+      + '<div class="input-group mb-3">'
+      + '<select class="form-select flex-grow-0" id="fDial" style="max-width:120px">'
+      + KP.COUNTRY_LIST.map(function (c) {
+          return '<option value="' + c.code + '|' + c.dial + '"'
+            + (c.code === form.country ? ' selected' : '') + '>'
+            + c.flag + ' ' + c.dial + '</option>';
+        }).join('') + '</select>'
+      + '<input class="form-control" id="fPhone" placeholder="Enter your phone number" value="' + form.phone + '"></div>'
+
+      + '<label class="form-label">Email address</label>'
+      + '<div class="input-group mb-3"><span class="input-group-text"><i class="fas fa-envelope"></i></span>'
+      + '<input type="email" class="form-control" id="fEmail" placeholder="Enter your email address" value="' + form.email + '"></div>'
+
+      + '<label class="form-label">Referral code <span class="text-muted">(optional)</span></label>'
+      + '<div class="input-group mb-3"><span class="input-group-text"><i class="fas fa-gift"></i></span>'
+      + '<input class="form-control" id="fRef" placeholder="Enter referral code" value="' + form.ref + '"></div>'
+
+      + '<div class="k-alert k-info mb-3" id="ccyNote"></div>'
+
+      + '<div class="form-check mb-3">'
+      + '<input class="form-check-input" type="checkbox" id="fTerms">'
+      + '<label class="form-check-label" for="fTerms" style="font-size:.82rem">'
+      + 'I agree to the <a href="terms.html" class="text-primary-k">Terms</a> and '
+      + '<a href="privacy.html" class="text-primary-k">Privacy Policy</a>.</label></div>'
+
+      + '<button class="btn btn-primary w-100" id="toVerify">Continue</button>'
+    );
+    ccyNote();
+    $('#foot').html('Already have an account? <a href="login.html" class="text-primary-k fw-bold">Log in</a>'
+      + '<br><i class="fas fa-shield-halved me-1"></i>Your information is encrypted and protected.');
+  }
+
+  function ccyNote() {
+    var c = KP.COUNTRIES[form.country];
+    if (!c) return;
+    $('#ccyNote').html('<i class="fas fa-circle-info"></i><div>'
+      + 'You will hold and be paid in <b>' + c.currency + '</b>. '
+      + 'Crypto you receive converts to ' + c.currency + ' automatically.</div>');
+  }
+
+  /* --------------------------- 2. verification --------------------------- */
+
+  var seconds = 42, timer = null;
+
+  function stepVerify() {
+    clearInterval(timer);
+    $('#panel').html(
+      '<div class="auth-art"><i class="fas fa-shield-halved"></i>'
+      + '<span class="art-ok"><i class="fas fa-check"></i></span></div>'
+      + '<h1 class="text-center">Verify your phone</h1>'
+      + '<p class="sub text-center mb-4">Enter the 6-digit code sent to<br>'
+      + '<b class="text-main">' + form.dial + ' ' + (form.phone || '••• ••• ••••') + '</b></p>'
+
+      + '<div class="otp-row mb-3" id="otp">'
+      + [0,1,2,3,4,5].map(function (i) {
+          return '<input class="otp-box" inputmode="numeric" maxlength="1" data-i="' + i + '">';
+        }).join('') + '</div>'
+
+      + '<p class="text-center mb-3" style="font-size:.82rem">'
+      + '<span class="text-muted">Resend code in </span><b id="cd">0:42</b>'
+      + '<a href="#" class="text-primary-k fw-bold d-none" id="resend">Resend code</a></p>'
+
+      + '<button class="btn btn-primary w-100 mb-2" id="toPin">Verify &amp; continue</button>'
+      + '<button class="btn btn-soft w-100" id="backDetails">'
+      + '<i class="fas fa-arrow-left me-1"></i>Change phone number</button>'
+    );
+    $('#foot').html('<i class="fas fa-lock me-1"></i>Never share your verification code.');
+
+    seconds = 42;
+    timer = setInterval(function () {
+      seconds--;
+      $('#cd').text('0:' + (seconds < 10 ? '0' : '') + seconds);
+      if (seconds <= 0) {
+        clearInterval(timer);
+        $('#cd').addClass('d-none');
+        $('#resend').removeClass('d-none');
+      }
+    }, 1000);
+
+    $('#otp .otp-box').first().trigger('focus');
+  }
+
+  /* Move forward on entry, backward on delete — otherwise a six-box code is
+     more fiddly than a single field would have been. */
+  $(document).on('input', '.otp-box', function () {
+    var v = this.value.replace(/\D/g, '');
+    this.value = v.slice(0, 1);
+    if (v) $(this).next('.otp-box').trigger('focus');
+  });
+  $(document).on('keydown', '.otp-box', function (e) {
+    if (e.key === 'Backspace' && !this.value) $(this).prev('.otp-box').trigger('focus');
+  });
+  $(document).on('paste', '.otp-box', function (e) {
+    var t = (e.originalEvent.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    if (!t) return;
+    e.preventDefault();
+    $('.otp-box').each(function (i) { this.value = t[i] || ''; });
+    $('.otp-box').eq(Math.min(5, t.length - 1)).trigger('focus');
   });
 
-  $('#pwToggle').on('click', function () {
-    var t = $('#pw').attr('type') === 'password' ? 'text' : 'password';
-    $('#pw').attr('type', t);
-    $(this).find('i').attr('class', t === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash');
-  });
+  /* ------------------------------- 3. PIN ------------------------------- */
 
-  $('#pw').on('input', function () {
-    var v = $(this).val();
-    var score = 0;
-    if (v.length >= 8) score++;
-    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
-    if (/\d/.test(v)) score++;
-    if (/[^A-Za-z0-9]/.test(v)) score++;
-    var colors = ['var(--down)', 'var(--down)', 'var(--warn)', 'var(--info)', 'var(--up)'];
-    var words = ['Too short', 'Weak', 'Getting there', 'Good', 'Strong'];
-    $('#pwBar').css({ width: (score / 4 * 100) + '%', background: colors[score] });
-    $('#pwHint').text(v ? words[score] : 'Use a mix of letters, numbers and symbols.');
-  });
+  function stepPin() {
+    clearInterval(timer);
+    $('#panel').html(
+      '<div class="auth-art"><i class="fas fa-lock"></i>'
+      + '<span class="art-ok"><i class="fas fa-check"></i></span></div>'
+      + '<h1 class="text-center">Set a secure 4-digit PIN</h1>'
+      + '<p class="sub text-center mb-4">You will use this to approve every transaction.</p>'
 
-  $('#go').on('click', function () {
-    if (!$('#terms').is(':checked')) {
-      KP.rails.toast('Accept the terms to continue.', 'danger');
-      return;
+      + '<div class="pin-group mb-3">'
+      + '<div class="pin-label">Enter PIN</div>'
+      + '<div class="pin-dots" id="dots1"></div></div>'
+
+      + '<div class="pin-group mb-3">'
+      + '<div class="pin-label">Confirm PIN</div>'
+      + '<div class="pin-dots" id="dots2"></div></div>'
+
+      + '<div class="pin-rules mb-3">'
+      + [['Avoid repeated numbers', function () { return !/(\d)\1{3}/.test(pin); }],
+         ['Do not use your birth year', function () { return !/^(19|20)\d\d$/.test(pin); }],
+         ['Keep your PIN private', function () { return true; }]]
+          .map(function (r, i) {
+            return '<div class="pin-rule" data-r="' + i + '">'
+              + '<i class="fas fa-circle-check"></i><span>' + r[0] + '</span></div>';
+          }).join('') + '</div>'
+
+      + '<div class="asset-row mb-3">'
+      + '<div class="qa-icon qa-green sm"><i class="fas fa-fingerprint"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name">Enable fingerprint or Face ID</div>'
+      + '<div class="ar-sub">Approve without typing your PIN</div></div>'
+      + '<div class="form-check form-switch m-0">'
+      + '<input class="form-check-input" type="checkbox" id="bio" checked></div></div>'
+
+      + '<div class="keypad" id="pad">'
+      + [1,2,3,4,5,6,7,8,9].map(function (n) { return '<button data-k="' + n + '">' + n + '</button>'; }).join('')
+      + '<button data-k="bio" class="k-soft"><i class="fas fa-fingerprint"></i></button>'
+      + '<button data-k="0">0</button>'
+      + '<button data-k="del" class="k-soft"><i class="fas fa-delete-left"></i></button>'
+      + '</div>'
+
+      + '<button class="btn btn-primary w-100 mt-3" id="createPin" disabled>Create PIN</button>'
+    );
+    $('#foot').html('<i class="fas fa-shield-halved me-1"></i>'
+      + 'You will use this PIN to approve transactions.');
+    paintPin();
+  }
+
+  function paintPin() {
+    function dots(v, active) {
+      return [0,1,2,3].map(function (i) {
+        return '<span class="pin-dot' + (i < v.length ? ' filled' : '')
+          + (active && i === v.length ? ' next' : '') + '"></span>';
+      }).join('');
     }
-    location.href = 'verify-code.html';
+    $('#dots1').html(dots(pin, entering === 'pin'));
+    $('#dots2').html(dots(pinConfirm, entering === 'confirm'));
+
+    var rules = [!/(\d)\1{3}/.test(pin), !/^(19|20)\d\d$/.test(pin), true];
+    $('.pin-rule').each(function (i) {
+      $(this).toggleClass('bad', pin.length === 4 && !rules[i]);
+    });
+
+    var ok = pin.length === 4 && pinConfirm.length === 4 && rules[0] && rules[1];
+    $('#createPin').prop('disabled', !ok || pin !== pinConfirm);
+    if (pin.length === 4 && pinConfirm.length === 4 && pin !== pinConfirm) {
+      $('#dots2').addClass('mismatch');
+    } else {
+      $('#dots2').removeClass('mismatch');
+    }
+  }
+
+  $(document).on('click', '#pad button', function () {
+    var k = String($(this).data('k'));
+    if (k === 'del') {
+      if (entering === 'confirm' && pinConfirm.length) pinConfirm = pinConfirm.slice(0, -1);
+      else { entering = 'pin'; pin = pin.slice(0, -1); }
+    } else if (k === 'bio') {
+      KP.rails.toast('Biometric setup happens on the device.');
+      return;
+    } else {
+      if (pin.length < 4) { entering = 'pin'; pin += k; }
+      else if (pinConfirm.length < 4) { entering = 'confirm'; pinConfirm += k; }
+      if (pin.length === 4 && pinConfirm.length === 0) entering = 'confirm';
+    }
+    paintPin();
   });
+
+  /* ------------------------------- wiring ------------------------------- */
+
+  $(document).on('change', '#fDial', function () {
+    var p = $(this).val().split('|');
+    form.country = p[0]; form.dial = p[1];
+    try { KP.setCountry(p[0]); } catch (e) {}
+    ccyNote();
+  });
+
+  $(document).on('click', '#toVerify', function () {
+    form.name = ($('#fName').val() || '').trim();
+    form.phone = ($('#fPhone').val() || '').trim();
+    form.email = ($('#fEmail').val() || '').trim();
+    form.ref = ($('#fRef').val() || '').trim();
+
+    if (!form.name) { KP.rails.toast('Enter your full name.', 'danger'); return; }
+    if (!form.phone) { KP.rails.toast('Enter your phone number.', 'danger'); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) {
+      KP.rails.toast('Enter a valid email address.', 'danger'); return;
+    }
+    if (!$('#fTerms').is(':checked')) {
+      KP.rails.toast('Accept the terms to continue.', 'danger'); return;
+    }
+    at = 2; paintSteps(); stepVerify();
+  });
+
+  $(document).on('click', '#backDetails', function () { at = 1; paintSteps(); stepDetails(); });
+
+  $(document).on('click', '#toPin', function () {
+    var code = $('.otp-box').map(function () { return this.value; }).get().join('');
+    if (code.length < 6) { KP.rails.toast('Enter the 6-digit code.', 'danger'); return; }
+    at = 3; paintSteps(); stepPin();
+  });
+
+  $(document).on('click', '#resend', function (e) {
+    e.preventDefault();
+    KP.rails.toast('A new code is on its way.');
+    stepVerify();
+  });
+
+  $(document).on('click', '#createPin', function () {
+    KP.rails.toast('Account created. Welcome to Kaastro Pay.');
+    setTimeout(function () { location.href = 'dashboard/index.html'; }, 900);
+  });
+
+  paintSteps();
+  stepDetails();
 });
 </script>
 </body>

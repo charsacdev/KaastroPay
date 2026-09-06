@@ -162,13 +162,6 @@
                         + C().currency + ' equivalent.',
                     meta: [['fa-arrows-rotate', 'Converts automatically', 'pill-manual']]
                 })
-                + KP.flows.railCard({
-                    id: 'bank', icon: 'fa-building-columns', tone: 'qa-green',
-                    title: 'Request Bank Payment',
-                    desc: 'A link that collects ' + C().currency
-                        + ' into a dedicated account. Your client needs no crypto.',
-                    meta: [['fa-bolt', 'Instant matching'], ['fa-hashtag', 'Reference required']]
-                })
                 + '</div>'
                 + '<div class="how-strip mt-3"><div class="hs-title">How crypto requests work</div>'
                 + '<div class="hs-row">'
@@ -382,7 +375,7 @@
 
         $el.on('click', '.method-card', function () {
             var m = $(this).data('m');
-            if (m === 'link' || m === 'bank') { link.kind = m === 'bank' ? 'bank' : 'crypto'; linkForm(); }
+            if (m === 'link') linkForm();
             else userForm();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });

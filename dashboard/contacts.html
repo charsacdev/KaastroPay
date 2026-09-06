@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
 <script src="../js/boot.js" data-root="../"></script>
 </head>
-<body data-portal="user" data-page="contacts" data-title="Contacts" data-sub="People you have paid, and anyone you add">
+<body data-portal="user" data-page="contacts" data-title="Contacts" data-sub="Send and request money faster">
 
 <main class="main-content">
   <div class="row g-3">
@@ -23,13 +23,13 @@
       <div class="card p-3 p-md-4">
         <div class="kp-search mb-3">
           <i class="fas fa-magnifying-glass"></i>
-          <input class="form-control" id="q" placeholder="Search name, handle, bank or account" autocomplete="off">
+          <input class="form-control" id="q" placeholder="Search name, handle or phone" autocomplete="off">
         </div>
 
         <div class="filterbar mb-3">
           <button class="chip-btn active" data-f="all">All</button>
           <button class="chip-btn" data-f="kaastro">Kaastro Pay</button>
-          <button class="chip-btn" data-f="bank">Bank Accounts</button>
+          <button class="chip-btn" data-f="recipient">International</button>
           <button class="chip-btn" data-f="fav">Favourites</button>
           <button class="chip-btn" data-f="manual">Added by me</button>
         </div>
@@ -66,14 +66,14 @@
       </div>
 
       <div class="card p-3 mt-3">
-        <div class="section-head"><h2>Saved Bank Accounts</h2>
-          <span class="small text-muted" id="bankCount"></span></div>
-        <div id="banks"></div>
+        <div class="section-head"><h2>How they get paid</h2></div>
+        <div id="rails"></div>
         <div class="k-alert k-ok mt-3">
           <i class="fas fa-shield-halved"></i>
-          <div>Every bank account is <b>name-verified</b> with the bank before it can be
-            saved. Confirm the recipient before you send &mdash; a transfer cannot be
-            reversed once the receiving bank accepts it.</div>
+          <div>A Kaastro handle always resolves to a <b>verified user</b>.
+            A recipient abroad has their name checked by the delivery partner
+            before the money is released &mdash; confirm the details before
+            you send, because a transfer cannot be reversed once accepted.</div>
         </div>
       </div>
     </div>
@@ -86,22 +86,28 @@ KP.ready(function () {
   var D = KP.data;
   var filter = 'all', term = '';
 
-  /* One avatar renderer for the rail and the list, so a contact looks the same
-     everywhere. Bank beneficiaries have no photo and fall back to initials. */
+  /* One avatar renderer for the rail and the list. A recipient abroad has no
+     photo, so they fall back to initials on the brand tile. */
   function avatar(c, size) {
     var cls = 'kp-avatar' + (size ? ' ' + size : '') + (c.kind === 'kaastro' ? ' ring' : '');
     var inner = c.avatar
       ? '<img src="../images/' + c.avatar + '" alt="">'
-      : (c.bank || c.name).slice(0, 2).toUpperCase();
+      : c.name.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
     return '<span class="' + cls + '">' + inner
       + (c.verified ? '<span class="av-check"><i class="fas fa-check"></i></span>' : '')
       + '</span>';
   }
 
+  function flagOf(c) {
+    var k = KP.COUNTRIES[c.country];
+    return k ? k.flag : '';
+  }
+
   function subtitle(c) {
     var who = c.kind === 'kaastro'
       ? 'Kaastro Pay &nbsp;&bull;&nbsp; ' + c.handle
-      : c.bank + ' &nbsp;&bull;&nbsp; &bull;&bull;&bull;&bull; ' + c.number.slice(-4);
+      : flagOf(c) + ' ' + (KP.COUNTRIES[c.country] || {}).name
+        + ' &nbsp;&bull;&nbsp; ' + c.provider;
     /* Say how the contact got here — it is the thing this screen is about. */
     var how = c.source === 'manual'
       ? 'Added by you'
@@ -111,8 +117,8 @@ KP.ready(function () {
 
   function matches(c) {
     if (!term) return true;
-    var hay = [c.name, c.handle, c.phone, c.bank, c.number, c.nickname]
-      .filter(Boolean).join(' ').toLowerCase();
+    var hay = [c.name, c.handle, c.phone, c.provider, c.method,
+               (KP.COUNTRIES[c.country] || {}).name].filter(Boolean).join(' ').toLowerCase();
     return hay.indexOf(term) > -1;
   }
 
@@ -131,13 +137,22 @@ KP.ready(function () {
     $('#cFromPaid').text(all.filter(function (c) { return c.source === 'paid'; }).length);
     $('#cFromManual').text(all.filter(function (c) { return c.source === 'manual'; }).length);
     $('#cTotal').text(all.length);
-    var banks = D.contacts('bank');
-    $('#bankCount').text(banks.length + (banks.length === 1 ? ' account' : ' accounts'));
-    $('#banks').html(banks.map(function (c) {
-      return '<div class="asset-row">' + avatar(c, 'sm')
-        + '<div class="flex-grow-1 min-w-0"><div class="ar-name text-truncate">' + c.bank + '</div>'
-        + '<div class="ar-sub">&bull;&bull;&bull;&bull; ' + c.number.slice(-4) + ' &middot; ' + c.name + '</div></div>'
-        + '<i class="fas fa-chevron-right text-muted"></i></div>';
+
+    /* What rails the saved contacts actually use. */
+    var byRail = {};
+    all.forEach(function (c) {
+      var k = c.kind === 'kaastro' ? 'Kaastro Pay' : c.method;
+      byRail[k] = (byRail[k] || 0) + 1;
+    });
+    $('#rails').html(Object.keys(byRail).map(function (k) {
+      var icon = k === 'Kaastro Pay' ? 'fa-bolt'
+        : k === 'Mobile Money' ? 'fa-mobile-screen' : 'fa-building-columns';
+      return '<div class="asset-row">'
+        + '<div class="qa-icon qa-green sm"><i class="fas ' + icon + '"></i></div>'
+        + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + k + '</div>'
+        + '<div class="ar-sub">' + (k === 'Kaastro Pay'
+            ? 'Instant, free, inside Kaastro' : 'Delivered by a local partner') + '</div></div>'
+        + '<span class="pill pill-neutral">' + byRail[k] + '</span></div>';
     }).join(''));
   }
 
@@ -150,7 +165,8 @@ KP.ready(function () {
     $('#favWrap').toggle(!!showRail);
     if (showRail) {
       $('#favRail').html(favs.map(function (c) {
-        return '<a href="transfer.html?to=' + c.id + '" class="fav" data-id="' + c.id + '">'
+        return '<a href="' + (c.kind === 'kaastro' ? 'transfer.html' : 'send-abroad.html')
+          + '?to=' + c.id + '" class="fav" data-id="' + c.id + '">'
           + avatar(c, 'lg')
           + '<span class="fav-name">' + c.name.split(' ')[0] + '</span></a>';
       }).join('')
@@ -161,6 +177,7 @@ KP.ready(function () {
     var list = rows();
     $('#listHead').text(
       filter === 'manual' ? 'Added by you'
+        : filter === 'recipient' ? 'International recipients'
         : filter === 'all' && !term ? 'Recent Recipients' : 'Contacts');
     $('#listCount').text(list.length ? list.length + (list.length === 1 ? ' contact' : ' contacts') : '');
 
@@ -172,16 +189,17 @@ KP.ready(function () {
     }
 
     $('#list').html(list.map(function (c) {
+      var href = (c.kind === 'kaastro' ? 'transfer.html' : 'send-abroad.html') + '?to=' + c.id;
       return '<div class="contact-row" data-id="' + c.id + '">'
         + avatar(c)
-        + '<a href="transfer.html?to=' + c.id + '" class="flex-grow-1 min-w-0 stretched-none">'
+        + '<a href="' + href + '" class="flex-grow-1 min-w-0">'
         + '<span class="cr-name d-block text-truncate">' + c.name + '</span>'
         + '<span class="cr-sub d-block text-truncate">' + subtitle(c) + '</span></a>'
         + '<button class="cr-fav" data-fav="' + c.id + '" '
         + 'title="' + (c.favourite ? 'Remove from favourites' : 'Add to favourites') + '">'
         + '<i class="' + (c.favourite ? 'fas' : 'far') + ' fa-star cr-star"></i></button>'
-        + '<button class="cr-fav" data-del="' + c.id + '" title="Remove contact">'
-        + '<i class="fas fa-trash-can text-muted"></i></button>'
+        + '<button class="cr-fav" data-view="' + c.id + '" title="Details">'
+        + '<i class="fas fa-chevron-right text-muted"></i></button>'
         + '</div>';
     }).join(''));
   }
@@ -195,10 +213,7 @@ KP.ready(function () {
     paint();
   });
 
-  $('#q').on('input', function () {
-    term = $(this).val().trim().toLowerCase();
-    paint();
-  });
+  $('#q').on('input', function () { term = $(this).val().trim().toLowerCase(); paint(); });
 
   $(document).on('click', '[data-fav]', function (e) {
     e.preventDefault();
@@ -206,16 +221,47 @@ KP.ready(function () {
     repaint();
   });
 
-  $(document).on('click', '[data-del]', function (e) {
+  /* --- contact detail --- */
+  $(document).on('click', '[data-view]', function (e) {
     e.preventDefault();
+    var c = D.findContact($(this).data('view'));
+    if (!c) return;
+    var isK = c.kind === 'kaastro';
+    KP.rails.sheet(c.name,
+      '<div class="text-center mb-3">' + avatar(c, 'lg')
+      + '<div class="fw-bold mt-2">' + c.name + '</div>'
+      + '<div class="text-muted" style="font-size:.8rem">'
+      + (isK ? c.handle : flagOf(c) + ' ' + (KP.COUNTRIES[c.country] || {}).name) + '</div></div>'
+      + '<div class="summary-rows">'
+      + (isK
+          ? '<div class="sr"><span>Kaastro handle</span><span>' + c.handle + '</span></div>'
+            + '<div class="sr"><span>Phone</span><span>' + (c.phone || '—') + '</span></div>'
+          : '<div class="sr"><span>Phone</span><span>' + c.dial + ' ' + c.phone + '</span></div>'
+            + '<div class="sr"><span>Delivery method</span><span>' + c.method + '</span></div>'
+            + '<div class="sr"><span>Provider</span><span>' + c.provider + '</span></div>'
+            + '<div class="sr"><span>Receives in</span><span>' + c.ccy + '</span></div>'
+            + '<div class="sr"><span>Relationship</span><span>' + (c.relation || '—') + '</span></div>'
+            + '<div class="sr"><span>Purpose</span><span>' + (c.purpose || '—') + '</span></div>')
+      + '<div class="sr total"><span>Added</span><span>'
+      + (c.source === 'manual' ? 'By you' : 'From a payment') + '</span></div></div>'
+      + '<div class="d-grid gap-2 mt-3">'
+      + '<a class="btn btn-primary" href="' + (isK ? 'transfer.html' : 'send-abroad.html')
+      + '?to=' + c.id + '">Send money</a>'
+      + '<button class="btn btn-soft text-danger" data-del="' + c.id + '">Remove contact</button></div>');
+  });
+
+  $(document).on('click', '[data-del]', function () {
     var c = D.findContact($(this).data('del'));
     if (!c) return;
-    KP.rails.sheet('Remove ' + c.name + '?',
-      '<p class="text-muted" style="font-size:.83rem">They come off your contact list. '
-      + 'Past payments and receipts are unaffected, and you can add them again later.</p>'
-      + '<div class="d-grid gap-2">'
-      + '<button class="btn btn-danger" data-delyes="' + c.id + '">Remove contact</button>'
-      + '<button class="btn btn-soft" data-bs-dismiss="modal">Keep contact</button></div>');
+    KP.rails.closeSheet();
+    setTimeout(function () {
+      KP.rails.sheet('Remove ' + c.name + '?',
+        '<p class="text-muted" style="font-size:.83rem">They come off your contact list. '
+        + 'Past payments and receipts are unaffected, and you can add them again later.</p>'
+        + '<div class="d-grid gap-2">'
+        + '<button class="btn btn-danger" data-delyes="' + c.id + '">Remove contact</button>'
+        + '<button class="btn btn-soft" data-bs-dismiss="modal">Keep contact</button></div>');
+    }, 260);
   });
 
   $(document).on('click', '[data-delyes]', function () {
@@ -225,72 +271,144 @@ KP.ready(function () {
     repaint();
   });
 
-  /* --- manual add --- */
+  /* ------------------------- add a contact ------------------------- */
 
-  function addSheet(kind) {
-    var isK = kind === 'kaastro';
-    KP.rails.sheet(isK ? 'Add a Kaastro Pay user' : 'Add a bank account',
-      (isK
-        ? '<p class="text-muted" style="font-size:.83rem">Look someone up by their '
-          + 'Kaastro handle or phone number.</p>'
-          + '<label class="form-label">Full name</label>'
-          + '<input class="form-control mb-2" id="acName" placeholder="e.g. Ngozi Eze">'
-          + '<label class="form-label">Handle or phone</label>'
-          + '<input class="form-control mb-3" id="acHandle" placeholder="@ngozi or 0803 000 0000">'
-        : '<p class="text-muted" style="font-size:.83rem">We check the account name '
-          + 'with the bank before it is saved.</p>'
-          + '<label class="form-label">Bank</label>'
-          + '<select class="form-select mb-2" id="acBank">'
-          + ['GTBank', 'Access Bank', 'Zenith Bank', 'Kuda Microfinance Bank',
-             'Opay', 'First Bank', 'UBA', 'Providus Bank'].map(function (b) {
-              return '<option>' + b + '</option>'; }).join('') + '</select>'
-          + '<label class="form-label">Account number</label>'
-          + '<input class="form-control mb-2" id="acNumber" inputmode="numeric" '
-          + 'maxlength="10" placeholder="10 digits">'
-          + '<label class="form-label">Account name</label>'
-          + '<input class="form-control mb-2" id="acName" placeholder="As it appears at the bank">'
-          + '<label class="form-label">Nickname <span class="text-muted">(optional)</span></label>'
-          + '<input class="form-control mb-3" id="acNick" placeholder="e.g. Rent account">')
+  function kaastroForm() {
+    KP.rails.sheet('Add a Kaastro Pay user',
+      '<p class="text-muted" style="font-size:.83rem">Look someone up by their '
+      + 'Kaastro handle or phone number. They are paid instantly and for free.</p>'
+      + '<label class="form-label">Full name</label>'
+      + '<div class="input-group mb-3"><span class="input-group-text"><i class="fas fa-user"></i></span>'
+      + '<input class="form-control" id="acName" placeholder="Enter their full name"></div>'
+      + '<label class="form-label">Handle or phone</label>'
+      + '<div class="input-group mb-3"><span class="input-group-text"><i class="fas fa-at"></i></span>'
+      + '<input class="form-control" id="acHandle" placeholder="@handle or 0803 000 0000"></div>'
       + '<div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="acFav">'
       + '<label class="form-check-label" for="acFav" style="font-size:.83rem">'
       + 'Add to favourites</label></div>'
-      + '<button class="btn btn-primary w-100" data-save="' + kind + '">Save contact</button>');
+      + '<button class="btn btn-primary w-100" data-save="kaastro">Save contact</button>');
   }
+
+  /* The recipient form, in the order the design asks for it: where they are,
+     who they are, how the money reaches them, and why it is being sent. */
+  function recipientForm() {
+    var countries = KP.COUNTRY_LIST.filter(function (c) { return c.code !== 'NG'; });
+    var first = countries[0];
+    KP.rails.sheet('Add Recipient',
+      '<div class="row g-2 mb-3">'
+      + '<div class="col-7"><label class="form-label">Country</label>'
+      + '<select class="form-select" id="acCountry">'
+      + countries.map(function (c) {
+          return '<option value="' + c.code + '">' + c.flag + ' ' + c.name + '</option>'; }).join('')
+      + '</select></div>'
+      + '<div class="col-5"><label class="form-label">Receive currency</label>'
+      + '<input class="form-control" id="acCcy" value="' + first.currency + '" readonly></div></div>'
+
+      + '<label class="form-label">Full name</label>'
+      + '<div class="input-group mb-3"><span class="input-group-text"><i class="fas fa-user"></i></span>'
+      + '<input class="form-control" id="acName" placeholder="As it appears on their ID"></div>'
+
+      + '<label class="form-label">Phone number</label>'
+      + '<div class="input-group mb-3">'
+      + '<span class="input-group-text" id="acDial">' + first.dial + '</span>'
+      + '<input class="form-control" id="acPhone" placeholder="712 345 678"></div>'
+
+      + '<label class="form-label">Delivery method</label>'
+      + '<select class="form-select mb-3" id="acMethod"></select>'
+
+      + '<label class="form-label">Provider</label>'
+      + '<select class="form-select mb-3" id="acProvider"></select>'
+
+      + '<label class="form-label" id="acNumLabel">Mobile money number</label>'
+      + '<div class="input-group mb-3"><span class="input-group-text"><i class="fas fa-phone"></i></span>'
+      + '<input class="form-control" id="acNumber" placeholder="712 345 678"></div>'
+
+      + '<div class="row g-2 mb-3">'
+      + '<div class="col-6"><label class="form-label">Relationship</label>'
+      + '<select class="form-select" id="acRel">'
+      + KP.data.RELATIONSHIPS.map(function (r) { return '<option>' + r + '</option>'; }).join('')
+      + '</select></div>'
+      + '<div class="col-6"><label class="form-label">Purpose of transfer</label>'
+      + '<select class="form-select" id="acPurpose">'
+      + KP.data.PURPOSES.map(function (p) { return '<option>' + p + '</option>'; }).join('')
+      + '</select></div></div>'
+
+      + '<div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="acOk">'
+      + '<label class="form-check-label" for="acOk" style="font-size:.83rem">'
+      + 'Recipient information is correct.</label></div>'
+
+      + '<button class="btn btn-primary w-100" data-save="recipient">Save &amp; continue</button>'
+      + '<div class="k-alert k-ok mt-3"><i class="fas fa-shield-halved"></i><div>'
+      + 'Recipient details may be verified by the delivery partner before payout.</div></div>');
+    syncDelivery();
+  }
+
+  /* Country decides the rails; the rail decides the providers; the rail also
+     decides what the account field is even called. */
+  function syncDelivery() {
+    var cc = $('#acCountry').val();
+    var c = KP.COUNTRIES[cc] || {};
+    var d = KP.data.DELIVERY[cc] || { methods: ['Mobile Money'], providers: {} };
+    $('#acCcy').val(c.currency || '');
+    $('#acDial').text(c.dial || '');
+    $('#acMethod').html(d.methods.map(function (m) { return '<option>' + m + '</option>'; }).join(''));
+    syncProvider();
+  }
+  function syncProvider() {
+    var cc = $('#acCountry').val();
+    var m = $('#acMethod').val();
+    var d = KP.data.DELIVERY[cc] || { providers: {} };
+    var list = (d.providers || {})[m] || [];
+    $('#acProvider').html(list.map(function (p) { return '<option>' + p + '</option>'; }).join(''));
+    $('#acNumLabel').text(m === 'Mobile Money' ? 'Mobile money number' : 'Account number');
+    $('#acNumber').attr('placeholder', m === 'Mobile Money' ? '712 345 678' : '10-digit account number');
+  }
+  $(document).on('change', '#acCountry', syncDelivery);
+  $(document).on('change', '#acMethod', syncProvider);
 
   $(document).on('click', '#addContact, #addFav', function (e) {
     e.preventDefault();
     KP.rails.sheet('Add a contact',
-      '<p class="text-muted" style="font-size:.83rem">Choose what you are saving. '
-      + 'A Kaastro handle pays instantly; a bank account is verified with the bank first.</p>'
+      '<p class="text-muted" style="font-size:.83rem">Who are you saving?</p>'
       + '<div class="d-grid gap-2">'
       + '<button class="btn btn-soft text-start" data-add="kaastro">'
-      + '<i class="fas fa-at me-2 text-primary-k"></i>Kaastro Pay user</button>'
-      + '<button class="btn btn-soft text-start" data-add="bank">'
-      + '<i class="fas fa-building-columns me-2 text-primary-k"></i>Bank account</button>'
+      + '<i class="fas fa-at me-2 text-primary-k"></i>Kaastro Pay user'
+      + '<small class="d-block text-muted ms-4" style="font-size:.74rem">'
+      + 'Instant and free, inside Kaastro</small></button>'
+      + '<button class="btn btn-soft text-start" data-add="recipient">'
+      + '<i class="fas fa-earth-africa me-2 text-primary-k"></i>Recipient abroad'
+      + '<small class="d-block text-muted ms-4" style="font-size:.74rem">'
+      + 'Mobile money or a local bank in their country</small></button>'
       + '</div>');
   });
 
   $(document).on('click', '[data-add]', function () {
     var kind = $(this).data('add');
     KP.rails.closeSheet();
-    setTimeout(function () { addSheet(kind); }, 260);
+    setTimeout(function () { kind === 'kaastro' ? kaastroForm() : recipientForm(); }, 260);
   });
 
   $(document).on('click', '[data-save]', function () {
     var kind = $(this).data('save');
     var name = ($('#acName').val() || '').trim();
-    if (!name) { KP.rails.toast('Enter the name.', 'danger'); return; }
+    if (!name) { KP.rails.toast('Enter their name.', 'danger'); return; }
 
     if (kind === 'kaastro') {
       var h = ($('#acHandle').val() || '').trim();
       if (!h) { KP.rails.toast('Enter a handle or phone number.', 'danger'); return; }
       D.addContact({ kind: 'kaastro', name: name, handle: h, favourite: $('#acFav').is(':checked') });
     } else {
+      var phone = ($('#acPhone').val() || '').trim();
       var num = ($('#acNumber').val() || '').trim();
-      if (num.length !== 10) { KP.rails.toast('An account number is 10 digits.', 'danger'); return; }
+      if (!phone) { KP.rails.toast('Enter their phone number.', 'danger'); return; }
+      if (!num) { KP.rails.toast('Enter the number the money is delivered to.', 'danger'); return; }
+      if (!$('#acOk').is(':checked')) {
+        KP.rails.toast('Confirm the recipient information is correct.', 'danger'); return;
+      }
       D.addContact({
-        kind: 'bank', name: name, bank: $('#acBank').val(), number: num,
-        nickname: ($('#acNick').val() || '').trim(), favourite: $('#acFav').is(':checked')
+        kind: 'recipient', name: name, country: $('#acCountry').val(),
+        phone: phone, method: $('#acMethod').val(), provider: $('#acProvider').val(),
+        relation: $('#acRel').val(), purpose: $('#acPurpose').val()
       });
     }
 

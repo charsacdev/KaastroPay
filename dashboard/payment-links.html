@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Links | Kaastro Pay</title>
+<meta name="theme-color" content="#0A0A0A">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="payment-links" data-title="Payment Links" data-sub="Every link you have created">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <div class="col-lg-8">
+      <!-- Four states, four cards. Active and paid are the happy path;
+           expired ran out of time, cancelled was a decision someone made. -->
+      <div class="row g-2 mb-3" id="linkStats"></div>
+
+      <div class="card p-3 p-md-4">
+        <div class="filterbar mb-3">
+          <button class="chip-btn active" data-f="all">All</button>
+          <button class="chip-btn" data-f="active">Active</button>
+          <button class="chip-btn" data-f="paid">Paid</button>
+          <button class="chip-btn" data-f="expired">Expired</button>
+          <button class="chip-btn" data-f="cancelled">Cancelled</button>
+        </div>
+
+        <div class="kp-search mb-3">
+          <i class="fas fa-magnifying-glass"></i>
+          <input class="form-control" id="q" placeholder="Search by title or reference" autocomplete="off">
+        </div>
+
+        <div id="list"></div>
+
+        <a href="request.html" class="btn btn-primary w-100 mt-3">
+          <i class="fas fa-plus me-1"></i>Create Payment Link</a>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card p-3">
+        <div class="section-head"><h2>Collected</h2></div>
+        <div class="flow-stack" id="collected"></div>
+      </div>
+
+      <div class="card p-3 mt-3">
+        <div class="section-head"><h2>Link settings</h2></div>
+        <div id="settings"></div>
+        <button class="btn btn-primary w-100 mt-3" id="saveSettings">Save settings</button>
+      </div>
+
+      <div class="card p-3 mt-3">
+        <div class="section-head"><h2>How links get paid</h2></div>
+        <div class="k-alert k-ok">
+          <i class="fas fa-shield-halved"></i>
+          <div>Your client opens the link, picks a network and sends crypto.
+            You are credited in <span class="ccy">Naira</span> the moment it confirms.
+            They never need a Kaastro Pay account.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var D = KP.data, F = KP.fmt, C = KP.currentCountry();
+  var filter = 'all', term = '';
+
+  var TONE = {
+    active:    ['pill-manual',  'fa-link',          'qa-green'],
+    paid:      ['pill-success', 'fa-circle-check',  'qa-green'],
+    expired:   ['pill-warn',    'fa-clock',         'qa-amber qa-warn'],
+    cancelled: ['pill-danger',  'fa-circle-xmark',  'qa-red']
+  };
+
+  function rows() {
+    return D.myPaymentLinks(filter).filter(function (l) {
+      if (!term) return true;
+      return (l.title + ' ' + l.ref).toLowerCase().indexOf(term) > -1;
+    }).sort(function (a, b) { return a.daysAgo - b.daysAgo; });
+  }
+
+  function paintStats() {
+    var s = D.linkStats(D.myPaymentLinks());
+    $('#linkStats').html([
+      ['Active', s.active, 'fa-link', 'qa-green', 'awaiting payment'],
+      ['Paid', s.paid, 'fa-circle-check', 'qa-green', 'settled in full'],
+      ['Expired', s.expired, 'fa-clock', 'qa-amber qa-warn', 'ran out of time'],
+      ['Cancelled', s.cancelled, 'fa-circle-xmark', 'qa-red', 'called off by you']
+    ].map(function (c) {
+      return '<div class="col-6 col-lg-3"><div class="card figure-tile h-100">'
+        + '<span class="qa-icon ' + c[3] + ' sm"><i class="fas ' + c[2] + '"></i></span>'
+        + '<span class="ft-label">' + c[0] + '</span>'
+        + '<b class="ft-value">' + c[1] + '</b>'
+        + '<span class="ft-sub">' + c[4] + '</span></div></div>';
+    }).join(''));
+
+    $('#collected').html(
+      '<div><span>Received</span><b class="text-up">' + F.fiat(s.collected, C.currency) + '</b></div>'
+      + '<div><span>Still awaiting</span><b>' + F.fiat(s.pending, C.currency) + '</b></div>'
+      + '<div><span>Links created</span><b>' + s.total + '</b></div>'
+    );
+  }
+
+  function paint() {
+    var list = rows();
+    if (!list.length) {
+      $('#list').html('<div class="empty-state"><i class="fas fa-link-slash"></i>'
+        + '<p>' + (term ? 'No link matches that search.' : 'No links in this state yet.') + '</p></div>');
+      return;
+    }
+
+    $('#list').html(list.map(function (l) {
+      var t = TONE[l.status] || TONE.active;
+      var paidPct = l.amount ? Math.min(100, Math.round((l.paidAmount / l.amount) * 100)) : 0;
+      return '<div class="contact-row" data-ref="' + l.ref + '">'
+        + '<span class="qa-icon ' + t[2] + ' sm"><i class="fas ' + t[1] + '"></i></span>'
+        + '<span class="flex-grow-1 min-w-0">'
+        + '<span class="cr-name d-block text-truncate">' + l.title + '</span>'
+        + '<span class="cr-sub d-block text-truncate">'
+        + F.fiat(l.amount, l.currency) + ' &nbsp;&bull;&nbsp; ' + l.asset + ' &middot; ' + l.network
+        + ' &nbsp;&bull;&nbsp; ' + l.ref + '</span>'
+        + (l.status === 'paid'
+            ? '<span class="cr-sub d-block">' + l.payments + ' payment'
+              + (l.payments > 1 ? 's' : '') + ' &middot; ' + paidPct + '% received</span>'
+            : l.status === 'active'
+              ? '<span class="cr-sub d-block">' + l.views + ' views &middot; expires in ' + l.expiry + '</span>'
+              : '<span class="cr-sub d-block">' + l.date + '</span>')
+        + '</span>'
+        + '<span class="d-flex flex-column align-items-end gap-1 flex-shrink-0">'
+        + '<span class="pill ' + t[0] + '">' + l.status + '</span>'
+        + '<span class="d-flex gap-1">'
+        + '<button class="btn btn-sm btn-soft lk-copy" data-ref="' + l.ref + '" title="Copy link">'
+        + '<i class="fas fa-copy"></i></button>'
+        + '<button class="btn btn-sm btn-soft lk-open" data-ref="' + l.ref + '" title="Details">'
+        + '<i class="fas fa-chevron-right"></i></button></span></span>'
+        + '</div>';
+    }).join(''));
+  }
+
+  function repaint() { paintStats(); paint(); }
+
+  function linkUrl(l) {
+    return location.origin + location.pathname.replace(/dashboard\/.*$/, '') + 'pay.html?r=' + l.ref
+      + '&n=' + encodeURIComponent(KP.data.ME.name)
+      + '&a=' + l.amount + '&c=' + l.currency
+      + '&as=' + l.asset + '&nw=' + l.network
+      + '&d=' + encodeURIComponent(l.title)
+      + (l.status === 'expired' ? '&s=expired' : l.status === 'cancelled' ? '&s=cancelled' : '');
+  }
+
+  $('.chip-btn').on('click', function () {
+    $('.chip-btn').removeClass('active');
+    $(this).addClass('active');
+    filter = $(this).data('f');
+    paint();
+  });
+
+  $('#q').on('input', function () { term = $(this).val().trim().toLowerCase(); paint(); });
+
+  $(document).on('click', '.lk-copy', function (e) {
+    e.stopPropagation();
+    var ref = $(this).data('ref');
+    var l = D.myPaymentLinks().filter(function (x) { return x.ref === ref; })[0];
+    if (!l) return;
+    navigator.clipboard.writeText(linkUrl(l)).then(function () {
+      KP.rails.toast('Payment link copied.');
+    }, function () { KP.rails.toast('Could not copy the link.', 'danger'); });
+  });
+
+  $(document).on('click', '.lk-open', function (e) {
+    e.stopPropagation();
+    var ref = $(this).data('ref');
+    var l = D.myPaymentLinks().filter(function (x) { return x.ref === ref; })[0];
+    if (!l) return;
+    var url = linkUrl(l);
+    KP.rails.sheet(l.title,
+      '<div class="result-hero' + (l.status === 'paid' ? '' : l.status === 'active' ? ' is-wait' : ' is-fail') + '">'
+      + '<div class="rh-amt">' + F.fiat(l.amount, l.currency) + '</div>'
+      + '<div class="rh-sub">' + l.asset + ' &middot; ' + l.network + '</div>'
+      + '<div class="mt-2"><span class="pill ' + (TONE[l.status] || TONE.active)[0] + '">'
+      + l.status + '</span></div></div>'
+      + '<div class="summary-rows mt-3">'
+      + '<div class="sr"><span>Reference</span><span>' + l.ref + '</span></div>'
+      + '<div class="sr"><span>Created</span><span>' + l.date + '</span></div>'
+      + '<div class="sr"><span>Expiry</span><span>' + l.expiry + '</span></div>'
+      + '<div class="sr"><span>Views</span><span>' + l.views + '</span></div>'
+      + '<div class="sr total"><span>Received</span><span class="'
+      + (l.paidAmount ? 'text-up' : 'text-muted') + '">'
+      + F.fiat(l.paidAmount, l.currency) + '</span></div></div>'
+      + '<div class="address-box mt-3" style="font-size:.7rem">' + url + '</div>'
+      + '<div class="d-grid gap-2 mt-3">'
+      + '<button class="btn btn-primary kp-copy" data-copy="' + url + '">'
+      + '<i class="fas fa-copy me-1"></i>Copy link</button>'
+      + '<a class="btn btn-soft" href="' + url + '" target="_blank" rel="noopener">'
+      + '<i class="fas fa-arrow-up-right-from-square me-1"></i>Preview what your client sees</a>'
+      + (l.status === 'active'
+          ? '<button class="btn btn-soft text-danger" data-cancel="' + l.ref + '">Cancel this link</button>'
+          : '') + '</div>');
+  });
+
+  $(document).on('click', '[data-cancel]', function () {
+    D.cancelLink($(this).data('cancel'));
+    KP.rails.closeSheet();
+    KP.rails.toast('Link cancelled. Anyone who opens it now sees that it was called off.');
+    repaint();
+  });
+
+  /* --- per-link defaults, applied to every new link --- */
+  $('#settings').html([
+    ['fa-clock', 'Default expiry', '24 hours after creation', 'sel',
+     ['1 hour', '24 hours', '3 days', 'No expiry'], '24 hours'],
+    ['fa-coins', 'Default asset', 'Pre-selected on new links', 'sel',
+     KP.ASSET_LIST.map(function (a) { return a.symbol; }), 'USDT'],
+    ['fa-bell', 'Notify on payment', 'Push the moment a link is paid', 'sw', null, true],
+    ['fa-envelope', 'Email receipts', 'Send yourself a copy', 'sw', null, false],
+    ['fa-eye', 'Show my name', 'Payers see your verified name', 'sw', null, true]
+  ].map(function (r, i) {
+    return '<div class="asset-row">'
+      + '<div class="qa-icon qa-green sm"><i class="fas ' + r[0] + '"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + r[1] + '</div>'
+      + '<div class="ar-sub">' + r[2] + '</div></div>'
+      + (r[3] === 'sw'
+          ? '<div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox"'
+            + (r[5] ? ' checked' : '') + '></div>'
+          : '<select class="form-select form-select-sm" style="width:auto">'
+            + r[4].map(function (o) {
+                return '<option' + (o === r[5] ? ' selected' : '') + '>' + o + '</option>'; }).join('')
+            + '</select>')
+      + '</div>';
+  }).join(''));
+
+  $('#saveSettings').on('click', function () {
+    KP.rails.toast('Link settings saved. New links will use them.');
+  });
+
+  $('.ccy').text(C.currency === 'NGN' ? 'Naira' : C.currency);
+  repaint();
+});
+</script>
+</body>
+</html>

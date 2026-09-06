@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rewards &amp; Referrals | Kaastro Pay</title>
+<meta name="theme-color" content="#0A0A0A">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kaastro Pay">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<script src="../js/boot.js" data-root="../"></script>
+</head>
+<body data-portal="user" data-page="rewards" data-title="Rewards &amp; Referrals" data-sub="Invite friends, earn rewards">
+
+<main class="main-content">
+  <div class="row g-3">
+
+    <div class="col-lg-5">
+      <!-- Balance first: the number people came to see. -->
+      <div class="card reward-hero p-3 p-md-4">
+        <div class="rh-body">
+          <div class="rh-label">Available rewards</div>
+          <div class="rh-amt" id="rwAvail"></div>
+          <div class="rh-sub">Lifetime earned <b id="rwLifetime"></b></div>
+        </div>
+        <i class="fas fa-gift rh-art"></i>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>Your referral code</h2></div>
+        <div class="code-box">
+          <span id="rwCode"></span>
+          <button class="btn btn-sm btn-soft kp-copy" id="copyCode">
+            <i class="fas fa-copy me-1"></i>Copy</button>
+        </div>
+
+        <div class="text-muted mt-3 mb-1" style="font-size:.74rem;font-weight:700;
+             text-transform:uppercase;letter-spacing:.05em">Share your invite link</div>
+        <div class="address-box" id="rwLink" style="font-size:.74rem"></div>
+
+        <button class="btn btn-primary w-100 mt-3" id="shareInvite">
+          <i class="fas fa-share-nodes me-1"></i>Share invite link</button>
+
+        <div class="row g-2 mt-3" id="rwStats"></div>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>How it works</h2></div>
+        <div class="hp-num-list" id="rwHow"></div>
+        <p class="text-muted mt-2 mb-0" style="font-size:.74rem">
+          <i class="fas fa-circle-info me-1"></i>Rewards are conditional and not guaranteed.
+          <a href="../terms.html" class="text-primary-k">Terms apply</a>.</p>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card p-3 p-md-4">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tRw">Rewards</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tRf">Referrals</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tHi">History</button></li>
+        </ul>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="tRw"><div id="rwEarned"></div></div>
+          <div class="tab-pane fade" id="tRf"><div id="rwPeople"></div></div>
+          <div class="tab-pane fade" id="tHi"><div id="rwHistory"></div></div>
+        </div>
+      </div>
+
+      <div class="card p-3 p-md-4 mt-3">
+        <div class="section-head"><h2>Promotions</h2>
+          <span class="small text-muted">time-limited campaigns</span></div>
+        <div id="rwPromos"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+KP.ready(function () {
+  var F = KP.fmt, C = KP.currentCountry(), me = KP.data.ME;
+
+  var code = me.name.split(' ')[0].toUpperCase() + '25';
+  var link = location.origin + location.pathname.replace(/dashboard\/.*$/, '')
+    + 'register.html?ref=' + code;
+
+  $('#rwAvail').text(F.fiat(12500, C.currency));
+  $('#rwLifetime').text(F.fiat(38000, C.currency));
+  $('#rwCode').text(code);
+  $('#copyCode').attr('data-copy', code);
+  $('#rwLink').text(link);
+
+  $('#rwStats').html([
+    ['Invited', 8, 'fa-user-group', 'qa-green', 'signed up'],
+    ['Verified', 5, 'fa-circle-check', 'qa-green', 'completed KYC'],
+    ['Rewards', F.fiat(25000, C.currency), 'fa-gift', 'qa-green', 'eligible']
+  ].map(function (s) {
+    return '<div class="col-4"><div class="card figure-tile h-100">'
+      + '<span class="qa-icon ' + s[3] + ' sm"><i class="fas ' + s[2] + '"></i></span>'
+      + '<span class="ft-label">' + s[0] + '</span>'
+      + '<b class="ft-value">' + s[1] + '</b>'
+      + '<span class="ft-sub">' + s[4] + '</span></div></div>';
+  }).join(''));
+
+  $('#rwHow').html([
+    ['Invite a friend', 'Share your invite link with people you know.'],
+    ['They complete verification', 'They sign up and finish identity verification.'],
+    ['You receive the reward', 'You earn when they make a qualifying deposit.']
+  ].map(function (s, i) {
+    return '<div class="num-step"><span class="n">' + (i + 1) + '</span>'
+      + '<span class="min-w-0"><b>' + s[0] + '</b><span>' + s[1] + '</span></span></div>';
+  }).join(''));
+
+  /* --- what has actually been earned --- */
+  var EARNED = [
+    ['Referral bonus', 'Ada Okafor completed verification', 5000, 'fa-user-plus', 0],
+    ['Crypto deposit reward', 'First qualifying USDT deposit', 2500, 'fa-bitcoin-sign', 1],
+    ['Bill payment cashback', 'IKEDC electricity', 500, 'fa-bolt', 2],
+    ['Referral bonus', 'Emeka John completed verification', 5000, 'fa-user-plus', 5],
+    ['Send abroad cashback', 'Transfer to Kenya', 1200, 'fa-earth-africa', 8]
+  ];
+  $('#rwEarned').html(EARNED.map(function (e) {
+    return '<div class="asset-row">'
+      + '<div class="qa-icon qa-green sm"><i class="fas ' + e[3] + '"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + e[0] + '</div>'
+      + '<div class="ar-sub">' + e[1] + ' &middot; ' + KP.data.shortDate(e[4]) + '</div></div>'
+      + '<span class="ar-amt text-up flex-shrink-0">+' + F.fiat(e[2], C.currency) + '</span></div>';
+  }).join('')
+    + '<div class="k-alert k-info mt-3"><i class="fas fa-circle-info"></i><div>'
+    + 'Rewards are credited to your Naira balance once the qualifying action clears.'
+    + '</div></div>');
+
+  /* --- the people invited, and where each one got to --- */
+  var PEOPLE = KP.data.contacts('kaastro').slice(0, 6).map(function (c, i) {
+    return { c: c, state: i < 3 ? 'verified' : i < 5 ? 'signed up' : 'invited',
+             reward: i < 3 ? 5000 : 0, ago: i + 1 };
+  });
+  $('#rwPeople').html(PEOPLE.map(function (p) {
+    var tone = p.state === 'verified' ? 'pill-success' : p.state === 'signed up' ? 'pill-manual' : 'pill-neutral';
+    return '<div class="asset-row">'
+      + '<span class="kp-avatar sm ring"><img src="../images/' + p.c.avatar + '" alt="">'
+      + (p.state === 'verified' ? '<span class="av-check"><i class="fas fa-check"></i></span>' : '')
+      + '</span>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name text-truncate">' + p.c.name + '</div>'
+      + '<div class="ar-sub">Joined ' + KP.data.shortDate(p.ago * 4) + '</div></div>'
+      + '<div class="d-flex align-items-center gap-2 flex-shrink-0">'
+      + (p.reward ? '<span class="ar-amt text-up">+' + F.fiat(p.reward, C.currency) + '</span>' : '')
+      + '<span class="pill ' + tone + '">' + p.state + '</span></div></div>';
+  }).join('')
+    + '<div class="k-alert k-warn mt-3"><i class="fas fa-triangle-exclamation"></i><div>'
+    + 'A referral only pays once your friend finishes verification and makes a '
+    + 'qualifying deposit. Self-referrals are removed.</div></div>');
+
+  /* --- payouts of the reward balance --- */
+  $('#rwHistory').html([
+    ['Paid to Naira balance', 15000, 12, 'fa-arrow-down'],
+    ['Paid to Naira balance', 8000, 40, 'fa-arrow-down'],
+    ['Paid to Naira balance', 2500, 68, 'fa-arrow-down']
+  ].map(function (h) {
+    return '<div class="asset-row">'
+      + '<div class="qa-icon qa-green sm"><i class="fas ' + h[3] + '"></i></div>'
+      + '<div class="flex-grow-1 min-w-0"><div class="ar-name">' + h[0] + '</div>'
+      + '<div class="ar-sub">' + KP.data.shortDate(h[2]) + '</div></div>'
+      + '<span class="ar-amt flex-shrink-0">' + F.fiat(h[1], C.currency) + '</span></div>';
+  }).join('')
+    + '<button class="btn btn-primary w-100 mt-3" id="withdrawRw">'
+    + 'Move rewards to my balance</button>');
+
+  /* --- campaigns --- */
+  var PROMOS = [
+    { t: 'Crypto Deposit Campaign', s: 'Earn up to ' + F.fiat(2500, C.currency),
+      d: 'Automatically converted to Naira after your deposit is confirmed.',
+      state: 'Active', prog: 0, need: 1,
+      elig: ['Tier 2 or higher', 'Complete a qualifying crypto deposit', 'Campaign period applies'],
+      period: '1 May 2026 – 31 May 2026' },
+    { t: 'Refer three friends', s: 'Earn ' + F.fiat(15000, C.currency),
+      d: 'Three friends who verify and deposit inside the campaign window.',
+      state: 'Active', prog: 2, need: 3,
+      elig: ['Friends must be new to Kaastro Pay', 'Each must complete verification'],
+      period: '1 May 2026 – 30 Jun 2026' },
+    { t: 'Bill payment cashback', s: '1% back on bills',
+      d: 'Airtime, data and electricity paid from your Naira balance.',
+      state: 'Ended', prog: 1, need: 1,
+      elig: ['Applied automatically at payment'],
+      period: '1 Mar 2026 – 30 Apr 2026' }
+  ];
+
+  $('#rwPromos').html(PROMOS.map(function (p, i) {
+    var pct = Math.round((p.prog / p.need) * 100);
+    return '<div class="promo-row" data-i="' + i + '">'
+      + '<div class="qa-icon ' + (p.state === 'Active' ? 'qa-green' : 'qa-slate') + '">'
+      + '<i class="fas fa-gift"></i></div>'
+      + '<div class="flex-grow-1 min-w-0">'
+      + '<div class="d-flex align-items-center gap-2 flex-wrap">'
+      + '<span class="ar-name">' + p.t + '</span>'
+      + '<span class="pill ' + (p.state === 'Active' ? 'pill-success' : 'pill-neutral') + '">'
+      + p.state + '</span></div>'
+      + '<div class="ar-sub">' + p.s + ' &middot; ' + p.d + '</div>'
+      + (p.state === 'Active'
+          ? '<div class="cap-bar my-1" style="max-width:220px">'
+            + '<div class="cap-fill" style="width:' + pct + '%"></div></div>'
+            + '<div class="ar-sub">' + p.prog + ' of ' + p.need + ' qualifying &middot; ' + pct + '%</div>'
+          : '')
+      + '</div>'
+      + '<button class="btn btn-sm btn-soft promo-open flex-shrink-0" data-i="' + i + '">Details</button>'
+      + '</div>';
+  }).join(''));
+
+  $(document).on('click', '.promo-open', function () {
+    var p = PROMOS[$(this).data('i')];
+    KP.rails.sheet(p.t,
+      '<div class="result-hero' + (p.state === 'Active' ? '' : ' is-fail') + '">'
+      + '<div class="rh-ico"><i class="fas fa-gift"></i></div>'
+      + '<div class="rh-amt" style="font-size:1.3rem">' + p.s + '</div>'
+      + '<div class="rh-sub">' + p.d + '</div>'
+      + '<div class="mt-2"><span class="pill ' + (p.state === 'Active' ? 'pill-success' : 'pill-neutral')
+      + '">' + p.state + '</span></div></div>'
+      + '<div class="section-head mt-3"><h2>Eligibility</h2></div>'
+      + p.elig.map(function (e) {
+          return '<div class="hp-check-row"><i class="fas fa-circle-check text-primary-k"></i>'
+            + '<span>' + e + '</span></div>'; }).join('')
+      + '<div class="summary-rows mt-3">'
+      + '<div class="sr"><span>Campaign period</span><span>' + p.period + '</span></div>'
+      + '<div class="sr total"><span>Your progress</span><span>' + p.prog + ' of ' + p.need + '</span></div></div>'
+      + '<p class="text-muted mt-3 mb-3" style="font-size:.78rem">'
+      + 'Qualifying crypto deposits are automatically converted to Naira after confirmation. '
+      + 'Kaastro Pay does not custody crypto.</p>'
+      + (p.state === 'Active'
+          ? '<a class="btn btn-primary w-100" href="deposit.html">Deposit now</a>'
+          : '<button class="btn btn-soft w-100" data-bs-dismiss="modal">Close</button>'));
+  });
+
+  $('#shareInvite').on('click', function () {
+    if (navigator.share) {
+      navigator.share({ title: 'Join me on Kaastro Pay',
+        text: 'Receive crypto and spend in Naira. Use my code ' + code + '.', url: link });
+    } else {
+      navigator.clipboard.writeText(link);
+      KP.rails.toast('Invite link copied.');
+    }
+  });
+
+  $(document).on('click', '#withdrawRw', function () {
+    KP.rails.toast('Rewards moved to your Naira balance.');
+  });
+});
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 
     var COUNTRIES = {
         NG: {
-            code: 'NG', name: 'Nigeria', flag: '🇳🇬',
+            code: 'NG', name: 'Nigeria', flag: '🇳🇬', dial: '+234',
             currency: 'NGN', symbol: '₦', dp: 2,
             idLabel: 'NIN or BVN',
             idFields: [
@@ -24,7 +24,7 @@
             enabled: true
         },
         GH: {
-            code: 'GH', name: 'Ghana', flag: '🇬🇭',
+            code: 'GH', name: 'Ghana', flag: '🇬🇭', dial: '+233',
             currency: 'GHS', symbol: 'GH₵', dp: 2,
             idLabel: 'Ghana Card',
             idFields: [{ key: 'ghana_card', label: 'Ghana Card Number', len: 15, hint: 'GHA-XXXXXXXXX-X' }],
@@ -35,7 +35,7 @@
             enabled: true
         },
         KE: {
-            code: 'KE', name: 'Kenya', flag: '🇰🇪',
+            code: 'KE', name: 'Kenya', flag: '🇰🇪', dial: '+254',
             currency: 'KES', symbol: 'KSh', dp: 2,
             idLabel: 'National ID',
             idFields: [{ key: 'national_id', label: 'National ID Number', len: 8, hint: '8 digits' }],
@@ -46,7 +46,7 @@
             enabled: true
         },
         TZ: {
-            code: 'TZ', name: 'Tanzania', flag: '🇹🇿',
+            code: 'TZ', name: 'Tanzania', flag: '🇹🇿', dial: '+255',
             currency: 'TZS', symbol: 'TSh', dp: 0,
             idLabel: 'NIDA Number',
             idFields: [{ key: 'nida', label: 'NIDA Number', len: 20, hint: '20 digits' }],
@@ -57,7 +57,7 @@
             enabled: true
         },
         UG: {
-            code: 'UG', name: 'Uganda', flag: '🇺🇬',
+            code: 'UG', name: 'Uganda', flag: '🇺🇬', dial: '+256',
             currency: 'UGX', symbol: 'USh', dp: 0,
             idLabel: 'National ID (NIN)',
             idFields: [{ key: 'nin_ug', label: 'National ID Number', len: 14, hint: '14 characters' }],

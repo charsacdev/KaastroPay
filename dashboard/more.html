@@ -83,16 +83,22 @@ KP.ready(function () {
   /* One list definition drives the whole page, so adding a destination is a
      single line rather than a block of markup. */
   var GROUPS = [
+    ['Rewards', [
+      ['fa-gift', 'Rewards &amp; Referrals', 'rewards.html', 'Invite friends, earn rewards'],
+      ['fa-tags', 'Promotions', 'rewards.html', 'Time-limited campaigns']
+    ]],
     ['Payments', [
       ['fa-earth-africa', 'Send Abroad', 'send-abroad.html', 'Ghana, Kenya, South Africa and more'],
-      ['fa-link', 'Payment Links', 'request.html', 'Get paid in crypto, receive Naira'],
-      ['fa-building-columns', 'Saved Bank Accounts', 'contacts.html', 'Beneficiaries and verified accounts'],
+      ['fa-link', 'Payment Links', 'payment-links.html', 'Every link you have created'],
+      ['fa-building-columns', 'Payout Accounts', 'profile.html', 'Where your withdrawals land'],
+      ['fa-user-group', 'Contacts', 'contacts.html', 'People you send money to'],
       ['fa-bolt', 'Pay Bills', 'bills.html', 'Airtime, data, electricity, TV, betting']
     ]],
     ['Account', [
       ['fa-file-lines', 'Statements', 'insights.html', 'Download or email a statement'],
       ['fa-chart-line', 'Today’s Rates', 'rates.html', 'Deposit and withdrawal rates'],
-      ['fa-gauge-high', 'Transaction Limits', 'profile.html#verification', 'Daily limits by tier'],
+      ['fa-bell-concierge', 'Rate Alerts', 'alerts.html', 'Tell us the rate you are waiting for'],
+      ['fa-sliders', 'Limits &amp; Devices', 'security.html', 'Spending caps and active sessions'],
       ['fa-user-shield', 'KYC Verification', 'profile.html#verification', 'Tier 1 to Tier 3'],
       ['fa-lock', 'Security', 'profile.html', 'PIN, biometrics, devices, 2FA']
     ]],

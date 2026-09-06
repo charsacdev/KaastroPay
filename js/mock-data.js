@@ -694,17 +694,17 @@
         ]
     };
 
-    /* ====================== Contacts & beneficiaries ======================
+    /* ========================== Contacts ==========================
        This is NOT the phone book. A contact gets here one of two ways, and
        `source` records which: 'paid' means it was created the first time money
        moved to them, 'manual' means the user added it deliberately. Nothing is
        ever imported from the device.
 
-       Two record types share the list. A Kaastro contact is another user,
-       addressed by @handle and paid instantly. A bank beneficiary is an account
-       at a real bank, name-verified with that bank before it can be saved. The
-       type travels on each record rather than splitting the list in two, which
-       is what lets one search box find "whoever I paid last week". */
+       Two kinds of person, and neither is a bank account. A Kaastro contact is
+       another user, addressed by @handle and paid instantly. A recipient is
+       someone abroad, reached over a delivery rail — mobile money or a local
+       bank in their own country — which is why they carry a country, a
+       currency and a provider rather than an account number on our side. */
     var CONTACTS = [
         { id: 'CT-01', kind: 'kaastro', source: 'paid',   name: 'Ada Okafor',    handle: '@adaokafor', phone: '0803 111 2233', avatar: 'avatar-a1.jpg',        verified: true, favourite: true,  lastAmount: 25000,  lastAgo: 0, times: 12 },
         { id: 'CT-02', kind: 'kaastro', source: 'paid',   name: 'Emeka John',    handle: '@emekaj',    phone: '0805 444 1122', avatar: 'avatar-b2.jpg',        verified: true, favourite: true,  lastAmount: 12000,  lastAgo: 1, times: 8 },
@@ -712,11 +712,24 @@
         { id: 'CT-04', kind: 'kaastro', source: 'manual', name: 'Sarah Bello',   handle: '@sarahb',    phone: '0701 335 8890', avatar: 'avatar-mercy24.jpg',   verified: true, favourite: true,  lastAmount: 40000,  lastAgo: 3, times: 3 },
         { id: 'CT-05', kind: 'kaastro', source: 'paid',   name: 'Amina Yusuf',   handle: '@aminay',    phone: '0809 220 6644', avatar: 'avatar-blessingfx.jpg', verified: true, favourite: false, lastAmount: 50000, lastAgo: 1, times: 7 },
         { id: 'CT-06', kind: 'kaastro', source: 'manual', name: 'Tunde Adebayo', handle: '@tundeadebayo', phone: '0706 771 4432', avatar: 'avatar-tunde2000.jpg', verified: true, favourite: false, lastAmount: 15000, lastAgo: 6, times: 2 },
-        { id: 'CT-07', kind: 'bank', source: 'paid',   name: 'Mary Jane',   bank: 'GTBank',      number: '0123454521', nickname: 'Mary GTB',     verified: true, favourite: true,  lastAmount: 50000, lastAgo: 2, times: 9 },
-        { id: 'CT-08', kind: 'bank', source: 'manual', name: 'Emeka John',  bank: 'Access Bank', number: '0987657683', nickname: 'Emeka Access', verified: true, favourite: false, lastAmount: 25000, lastAgo: 4, times: 4 },
-        { id: 'CT-09', kind: 'bank', source: 'paid',   name: 'John Doe',    bank: 'GTBank',      number: '0123456789', nickname: 'John GTB',     verified: true, favourite: false, lastAmount: 75000, lastAgo: 5, times: 6 },
-        { id: 'CT-10', kind: 'bank', source: 'manual', name: 'Michael Ade', bank: 'Kuda Microfinance Bank', number: '2019383456', nickname: '',  verified: true, favourite: false, lastAmount: 9000,  lastAgo: 7, times: 1 }
+
+        { id: 'CT-07', kind: 'recipient', source: 'paid',   name: 'John Kimani',  country: 'KE', ccy: 'KES', dial: '+254', phone: '712 345 678', method: 'Mobile Money', provider: 'M-Pesa',    relation: 'Friend',  purpose: 'Family support', verified: true, favourite: true,  lastAmount: 100000, lastAgo: 2, times: 9 },
+        { id: 'CT-08', kind: 'recipient', source: 'manual', name: 'Kwame Mensah', country: 'GH', ccy: 'GHS', dial: '+233', phone: '24 556 1180', method: 'Mobile Money', provider: 'MTN MoMo',  relation: 'Family', purpose: 'Family support', verified: true, favourite: false, lastAmount: 25000, lastAgo: 4, times: 4 },
+        { id: 'CT-09', kind: 'recipient', source: 'paid',   name: 'Grace Wanjiru', country: 'KE', ccy: 'KES', dial: '+254', phone: '733 210 445', method: 'Bank transfer', provider: 'KCB Bank', relation: 'Family', purpose: 'Education',      verified: true, favourite: false, lastAmount: 75000, lastAgo: 5, times: 6 },
+        { id: 'CT-10', kind: 'recipient', source: 'manual', name: 'Joseph Okello', country: 'UG', ccy: 'UGX', dial: '+256', phone: '77 118 9042', method: 'Mobile Money', provider: 'Airtel Money', relation: 'Friend', purpose: 'Business',   verified: true, favourite: false, lastAmount: 9000,  lastAgo: 7, times: 1 }
     ];
+
+    /* The rails a cross-border recipient can be reached on, per country. */
+    var DELIVERY = {
+        KE: { methods: ['Mobile Money', 'Bank transfer'], providers: { 'Mobile Money': ['M-Pesa', 'Airtel Money'], 'Bank transfer': ['KCB Bank', 'Equity Bank', 'Co-operative Bank'] } },
+        GH: { methods: ['Mobile Money', 'Bank transfer'], providers: { 'Mobile Money': ['MTN MoMo', 'Vodafone Cash', 'AirtelTigo'], 'Bank transfer': ['GCB Bank', 'Absa Ghana', 'Fidelity Bank'] } },
+        TZ: { methods: ['Mobile Money', 'Bank transfer'], providers: { 'Mobile Money': ['M-Pesa', 'Tigo Pesa', 'Airtel Money'], 'Bank transfer': ['CRDB Bank', 'NMB Bank'] } },
+        UG: { methods: ['Mobile Money', 'Bank transfer'], providers: { 'Mobile Money': ['MTN MoMo', 'Airtel Money'], 'Bank transfer': ['Stanbic Bank', 'Centenary Bank'] } },
+        NG: { methods: ['Bank transfer'], providers: { 'Bank transfer': ['GTBank', 'Access Bank', 'Zenith Bank', 'Kuda', 'Opay'] } }
+    };
+
+    var RELATIONSHIPS = ['Friend', 'Family', 'Business partner', 'Employee', 'Supplier', 'Myself', 'Other'];
+    var PURPOSES = ['Family support', 'Education', 'Business', 'Rent', 'Medical', 'Salary', 'Gift', 'Other'];
 
     function contacts(kind) {
         if (!kind || kind === 'all') return CONTACTS.slice();
@@ -732,10 +745,9 @@
     function findContact(id) {
         return CONTACTS.filter(function (c) { return c.id === id; })[0] || null;
     }
-    /* Manual add. Everything the user types is theirs; `source` is stamped so
-       the list can tell "someone I paid" from "someone I added" without asking.
-       A bank account arrives unverified — the name check happens against the
-       bank, not here. */
+    /* Manual add. A Kaastro handle resolves to a verified user, so it is
+       trusted on save; a cross-border recipient is only confirmed when the
+       delivery partner checks the name, which happens at send time. */
     function addContact(rec) {
         var c = {
             id: 'CT-' + String(CONTACTS.length + 1).padStart(2, '0'),
@@ -752,9 +764,14 @@
             c.handle = rec.handle && rec.handle[0] === '@' ? rec.handle : '@' + (rec.handle || '');
             c.phone = rec.phone || '';
         } else {
-            c.bank = rec.bank || '';
-            c.number = rec.number || '';
-            c.nickname = rec.nickname || '';
+            c.country = rec.country || 'KE';
+            c.ccy = (global.KP.COUNTRIES[c.country] || {}).currency || '';
+            c.dial = (global.KP.COUNTRIES[c.country] || {}).dial || '';
+            c.phone = rec.phone || '';
+            c.method = rec.method || 'Mobile Money';
+            c.provider = rec.provider || '';
+            c.relation = rec.relation || '';
+            c.purpose = rec.purpose || '';
         }
         CONTACTS.push(c);
         return c;
@@ -770,6 +787,99 @@
         return c;
     }
 
+
+    /* ========================= Payment links =========================
+       A link is created by one user and paid by anyone, so it is platform
+       data rather than something hanging off ME: the user's own page filters
+       by owner, the back office sees the lot.
+
+       Four states, and they are not all the same kind of thing. `active` and
+       `paid` are the happy path. `expired` ran out of time with nothing
+       received. `cancelled` was called off by whoever created it — which is
+       worth separating from expired, because one is the platform's clock and
+       the other is a decision someone made. */
+    var LINK_TITLES = [
+        'Website design', 'Invoice #104', 'Consulting retainer', 'Logo package',
+        'Order #882', 'Monthly retainer', 'Photography session', 'Brand audit',
+        'App maintenance', 'Copywriting', 'Order #915', 'Invoice #118',
+        'Video edit', 'Social media pack', 'Site migration', 'Invoice #121'
+    ];
+
+    var PAYMENT_LINKS = [];
+    for (i = 0; i < 26; i++) {
+        var lu = userAt(i * 2 + 3);
+        var lsym = ['USDT', 'USDT', 'USDC', 'BTC', 'USDT', 'ETH'][i % 6];
+        var lamt = [150000, 75000, 250000, 40000, 500000, 120000, 90000, 300000][i % 8];
+        /* Weighted so the queue looks like a real one: mostly paid or waiting,
+           a handful expired, a couple called off. */
+        var lst = i % 11 === 0 ? 'cancelled'
+                : i % 7 === 0 ? 'expired'
+                : i % 3 === 0 ? 'active'
+                : 'paid';
+        var lnet = lsym === 'BTC' ? 'BTC' : lsym === 'ETH' ? 'ERC20' : ['TRC20', 'BEP20', 'ERC20'][i % 3];
+        PAYMENT_LINKS.push({
+            ref: 'KPR-' + (204100 + i * 7),
+            user: lu,
+            title: LINK_TITLES[i % LINK_TITLES.length],
+            amount: lamt,
+            currency: (global.KP.COUNTRIES[lu.country] || {}).currency || 'NGN',
+            asset: lsym,
+            network: lnet,
+            status: lst,
+            /* Only a paid link has anything received against it. */
+            paidAmount: lst === 'paid' ? lamt : 0,
+            payments: lst === 'paid' ? (i % 3) + 1 : 0,
+            views: 3 + (i * 5) % 40,
+            expiry: ['1 hour', '24 hours', '3 days', 'No expiry'][i % 4],
+            usdValue: lamt / (global.KP.USD_RATE[(global.KP.COUNTRIES[lu.country] || {}).currency || 'NGN'] || 1),
+            date: dateBack(i % 12, (8 + i) % 24, (i * 11) % 60),
+            daysAgo: i % 12
+        });
+    }
+
+    /* The user's own links. Everything on their page reads through this. */
+    function myPaymentLinks(status) {
+        var mine = PAYMENT_LINKS.filter(function (l) { return l.user.id === ME.id; });
+        /* The seeded set is spread across users, so make sure the signed-in
+           one always has a representative handful to look at. */
+        if (mine.length < 6) {
+            /* The seeded set is spread across countries. Re-homing a link onto
+               the signed-in user has to re-home its currency too, or the list
+               shows cedis while the totals underneath are in naira. */
+            var myCcy = global.KP.currentCountry().currency;
+            mine = PAYMENT_LINKS.slice(0, 9).map(function (l) {
+                var c = {}; for (var k in l) c[k] = l[k];
+                c.user = ME;
+                c.currency = myCcy;
+                return c;
+            });
+        }
+        return (!status || status === 'all') ? mine
+            : mine.filter(function (l) { return l.status === status; });
+    }
+
+    /* Counts and value per state, for the stat cards on every one of the
+       three portals. */
+    function linkStats(rows) {
+        rows = rows || PAYMENT_LINKS;
+        var s = { total: rows.length, active: 0, paid: 0, expired: 0, cancelled: 0, collected: 0, pending: 0 };
+        rows.forEach(function (l) {
+            s[l.status] = (s[l.status] || 0) + 1;
+            if (l.status === 'paid') s.collected += l.paidAmount;
+            if (l.status === 'active') s.pending += l.amount;
+        });
+        return s;
+    }
+
+    function findLink(ref) {
+        return PAYMENT_LINKS.filter(function (l) { return l.ref === ref; })[0] || null;
+    }
+
+    function cancelLink(ref) {
+        var l = findLink(ref);
+        if (l && l.status === 'active') { l.status = 'cancelled'; return true; }
+        return false;
+    }
     /* My own transaction feed, drawn from the platform sets. */
     function myTransactions() {
         var out = [];
@@ -802,9 +912,17 @@
         favourites: favourites,
         recentContacts: recentContacts,
         findContact: findContact,
+        PAYMENT_LINKS: PAYMENT_LINKS,
+        myPaymentLinks: myPaymentLinks,
+        linkStats: linkStats,
+        findLink: findLink,
+        cancelLink: cancelLink,
         addContact: addContact,
         removeContact: removeContact,
         toggleFavourite: toggleFavourite,
+        DELIVERY: DELIVERY,
+        RELATIONSHIPS: RELATIONSHIPS,
+        PURPOSES: PURPOSES,
         CRYPTO_DEPOSITS: CRYPTO_DEPOSITS,
         FIAT_DEPOSITS: FIAT_DEPOSITS,
         TRADES: TRADES,

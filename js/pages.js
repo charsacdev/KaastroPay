@@ -989,6 +989,120 @@
         $('#sThread').on('click', '.s-resolve', function () { KP.rails.toast('Ticket marked resolved.'); q.repaint(); });
     };
 
+
+    /* ========================= Payment links =========================
+       Both back-office portals get the same view: every link on the platform,
+       whoever created it, with the ranged stat bar the other queues use so
+       "last 30 days" means the same thing here as it does on deposits.
+
+       There is nothing to approve — a link settles itself when someone pays
+       it. This exists for support ("my client says they paid") and for
+       compliance, which is why the drawer leads with who created it. */
+
+    P.paymentLinks = function ($el, role) {
+        var BO = KP.bo, D = KP.data, f = fld();
+        $el.html('<div id="plStats"></div><div id="plQueue"></div>');
+
+        var bar = BO.statBar({
+            el: $('#plStats'),
+            title: 'Payment links in this period',
+            source: function () { return D.PAYMENT_LINKS; },
+            stats: [
+                { label: 'Active', icon: 'fa-link',
+                  value: function (rs) { return rs.filter(function (l) { return l.status === 'active'; }).length; },
+                  sub: function () { return 'awaiting payment'; } },
+                { label: 'Paid', icon: 'fa-circle-check',
+                  value: function (rs) { return rs.filter(function (l) { return l.status === 'paid'; }).length; },
+                  sub: function (rs) {
+                      return KP.fmt.usd(rs.filter(function (l) { return l.status === 'paid'; })
+                          .reduce(function (s, l) { return s + l.usdValue; }, 0)) + ' collected'; } },
+                { label: 'Expired', icon: 'fa-clock', tone: 'qa-amber qa-warn',
+                  value: function (rs) { return rs.filter(function (l) { return l.status === 'expired'; }).length; },
+                  sub: function () { return 'never paid'; } },
+                { label: 'Cancelled', icon: 'fa-circle-xmark', tone: 'qa-red',
+                  value: function (rs) { return rs.filter(function (l) { return l.status === 'cancelled'; }).length; },
+                  sub: function () { return 'called off'; } }
+            ],
+            onChange: function () { q.repaint(); }
+        });
+
+        var q = BO.queue({
+            el: $('#plQueue'),
+            rows: function () { return bar.filter(D.PAYMENT_LINKS); },
+            filters: [
+                { id: 'all', label: 'All' },
+                { id: 'active', label: 'Active',
+                  count: D.PAYMENT_LINKS.filter(function (l) { return l.status === 'active'; }).length },
+                { id: 'paid', label: 'Paid' },
+                { id: 'expired', label: 'Expired' },
+                { id: 'cancelled', label: 'Cancelled' }
+            ],
+            match: function (r, fl) { return r.status === fl; },
+            empty: 'No payment links match this filter.',
+            emptyIcon: 'fa-link',
+            columns: [
+                { title: 'Link', cell: function (r) {
+                    return '<div style="line-height:1.3"><div class="t-strong">' + r.title + '</div>'
+                        + '<div class="t-mono">' + r.ref + '</div></div>';
+                } },
+                { title: 'Created by', cell: function (r) { return BO.userCell(r.user); } },
+                { title: 'Amount', cell: function (r) {
+                    return '<div style="line-height:1.3"><div class="t-strong">'
+                        + KP.fmt.fiat(r.amount, r.currency) + '</div>'
+                        + '<div class="t-mono">' + r.asset + ' · ' + r.network + '</div></div>';
+                } },
+                { title: 'Received', cell: function (r) {
+                    return r.paidAmount
+                        ? '<span class="t-strong text-up">' + KP.fmt.fiat(r.paidAmount, r.currency) + '</span>'
+                        : '<span class="text-muted">—</span>';
+                } },
+                { title: 'Views', cell: function (r) { return '<span class="t-mono">' + r.views + '</span>'; } },
+                { title: 'Status', cell: function (r) { return BO.pill(r.status); } },
+                { title: 'Created', cell: function (r) { return '<span class="t-mono">' + r.date + '</span>'; } },
+                { title: '', right: true, cell: reviewBtn }
+            ]
+        });
+
+        $('#plQueue').on('click', '.rv-open', function () {
+            var r = q.rowOf(this); if (!r) return;
+            KP.review.open({
+                role: role,
+                title: r.title,
+                ref: r.ref,
+                status: r.status,
+                user: r.user,
+                headline: KP.fmt.fiat(r.amount, r.currency),
+                headSub: r.asset + ' · ' + r.network + ' · ' + KP.fmt.usd(r.usdValue),
+                groups: [
+                    ['Link', [
+                        f('Reference', r.ref, { mono: true }),
+                        f('Title', r.title),
+                        f('Amount', KP.fmt.fiat(r.amount, r.currency)),
+                        f('Asset', r.asset, { nocopy: true }),
+                        f('Network', r.network, { nocopy: true }),
+                        f('Expiry', r.expiry, { nocopy: true }),
+                        f('Created', r.date, { nocopy: true })
+                    ]],
+                    ['Settlement', [
+                        f('Status', r.status, { nocopy: true }),
+                        f('Received', KP.fmt.fiat(r.paidAmount, r.currency)),
+                        f('Payments', String(r.payments), { nocopy: true }),
+                        f('Views', String(r.views), { nocopy: true })
+                    ]],
+                    ['Created by', [
+                        f('User', r.user.name),
+                        f('User ID', r.user.id, { mono: true }),
+                        f('Email', r.user.email),
+                        f('Country', KP.COUNTRIES[r.user.country].name, { nocopy: true }),
+                        f('Tier', 'Tier ' + r.user.tier, { nocopy: true })
+                    ]]
+                ],
+                footNote: 'A payment link settles itself when someone pays it. There is nothing '
+                    + 'to approve here — this record is for support and compliance.',
+                actions: false
+            });
+        });
+    };
     /* ============================== Helpers ============================== */
 
     global.KP = global.KP || {};

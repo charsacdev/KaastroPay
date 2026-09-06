@@ -16,17 +16,21 @@
             { id: 'withdraw', href: 'withdraw.html', icon: 'fa-arrow-up', label: 'Withdraw' },
             { id: 'transfer', href: 'transfer.html', icon: 'fa-paper-plane', label: 'Transfer' },
             { id: 'request', href: 'request.html', icon: 'fa-hand-holding-dollar', label: 'Request' },
+            { id: 'payment-links', href: 'payment-links.html', icon: 'fa-link', label: 'Payment Links' },
             { id: 'send-abroad', href: 'send-abroad.html', icon: 'fa-earth-africa', label: 'Send Abroad' },
             { id: 'scan', href: 'scan.html', icon: 'fa-qrcode', label: 'Scan &amp; Pay' },
             { id: 'contacts', href: 'contacts.html', icon: 'fa-user-group', label: 'Contacts' },
             { s: 'Services' },
             { id: 'bills', href: 'bills.html', icon: 'fa-bolt', label: 'Pay Bills' },
             { id: 'rates', href: 'rates.html', icon: 'fa-chart-line', label: 'Today\u2019s Rates' },
+            { id: 'alerts', href: 'alerts.html', icon: 'fa-bell-concierge', label: 'Rate Alerts' },
+            { id: 'rewards', href: 'rewards.html', icon: 'fa-gift', label: 'Rewards' },
             { s: 'Account' },
             { id: 'insights', href: 'insights.html', icon: 'fa-chart-pie', label: 'Insights' },
             { id: 'verification', href: 'profile.html#verification', icon: 'fa-user-shield', label: 'Verification' },
             { id: 'notifications', href: 'notifications.html', icon: 'fa-bell', label: 'Notifications', badge: 'notifs' },
             { id: 'profile', href: 'profile.html', icon: 'fa-gear', label: 'Profile &amp; Security' },
+            { id: 'security', href: 'security.html', icon: 'fa-sliders', label: 'Limits &amp; Devices' },
             { id: 'support', href: 'support.html', icon: 'fa-headset', label: 'Support' }
         ],
         agent: [
@@ -37,6 +41,7 @@
             { id: 'deposits', href: 'deposits.html', icon: 'fa-arrow-down', label: 'Deposits', badge: 'deposits' },
             { id: 'withdrawals', href: 'withdrawals.html', icon: 'fa-arrow-up', label: 'Withdrawals', badge: 'withdrawals' },
             { id: 'trades', href: 'trades.html', icon: 'fa-right-left', label: 'Trades' },
+            { id: 'payment-links', href: 'payment-links.html', icon: 'fa-link', label: 'Payment Links' },
             { s: 'Other' },
             { id: 'transactions', href: 'transactions.html', icon: 'fa-list', label: 'All Transactions' },
             { id: 'support', href: 'support.html', icon: 'fa-headset', label: 'Support', badge: 'tickets' },
@@ -50,6 +55,7 @@
             { id: 'deposits', href: 'deposits.html', icon: 'fa-arrow-down', label: 'Deposits', badge: 'deposits' },
             { id: 'withdrawals', href: 'withdrawals.html', icon: 'fa-arrow-up', label: 'Withdrawals', badge: 'withdrawals' },
             { id: 'trades', href: 'trades.html', icon: 'fa-right-left', label: 'Trades' },
+            { id: 'payment-links', href: 'payment-links.html', icon: 'fa-link', label: 'Payment Links' },
             { id: 'escalations', href: 'escalations.html', icon: 'fa-arrow-up-right-dots', label: 'Escalations', badge: 'escalations' },
             { id: 'transactions', href: 'transactions.html', icon: 'fa-list', label: 'All Transactions' },
             { s: 'Control' },
@@ -85,7 +91,7 @@
         'payment-links': 'home', beneficiaries: 'contacts',
         rates: 'more', profile: 'more', security: 'more', settings: 'more',
         verification: 'more', support: 'more', notifications: 'more',
-        statements: 'more', limits: 'more', rewards: 'more'
+        statements: 'more', limits: 'more', rewards: 'more', alerts: 'more'
     };
 
     var PORTAL_META = {
