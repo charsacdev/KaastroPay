@@ -122,9 +122,9 @@ KP.ready(function () {
 
   var wk = D.weekSeries();
   function drawCharts() {
-    BO.barChart(document.getElementById('volChart'), wk.labels, wk.values, '#10b981');
+    BO.barChart(document.getElementById('volChart'), wk.labels, wk.values, '#B2FB0C');
     var types = [
-      { k: 'Buys', v: D.TRADES.filter(function (t) { return t.kind === 'buy'; }).length, c: '#10b981' },
+      { k: 'Buys', v: D.TRADES.filter(function (t) { return t.kind === 'buy'; }).length, c: '#B2FB0C' },
       { k: 'Sells', v: D.TRADES.filter(function (t) { return t.kind === 'sell'; }).length, c: '#0ea5e9' },
       { k: 'Swaps', v: D.TRADES.filter(function (t) { return t.kind === 'swap'; }).length, c: '#8b5cf6' },
       { k: 'Deposits', v: D.CRYPTO_DEPOSITS.length + D.FIAT_DEPOSITS.length, c: '#f59e0b' },

@@ -927,7 +927,7 @@
 
         var SPEND = [
             ['Transfers', 45, '#B2FB0C'], ['Bills', 25, '#7FD40A'],
-            ['Crypto Withdrawals', 20, '#00BE3A'], ['Other', 10, '#64748b']
+            ['Crypto Withdrawals', 20, '#6B9700'], ['Other', 10, '#64748b']
         ];
         BO.donut(document.getElementById('spendChart'),
             SPEND.map(function (s) { return { k: s[0], v: s[1], c: s[2] }; }));

@@ -443,8 +443,8 @@
             var bwid = bw * 0.56;
             var y = (h - pad) - bh;
             var grad = ctx.createLinearGradient(0, y, 0, h - pad);
-            grad.addColorStop(0, accent || '#10b981');
-            grad.addColorStop(1, 'rgba(16,185,129,.28)');
+            grad.addColorStop(0, accent || '#6B9700');
+            grad.addColorStop(1, 'rgba(178, 251, 12, .28)');
             ctx.fillStyle = grad;
             var rr = Math.min(5, bwid / 2);
             ctx.beginPath();

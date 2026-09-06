@@ -8,11 +8,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    /* Two greens doing two different jobs.
-       Lemon (#B2FB0C) is the button fill the client asked for. It is far too
-       bright to carry white text, so anything sitting on it uses --lemon-ink.
-       The brand green stays for icons, links, active states and chart lines,
-       where a lime would be illegible on a light ground. */
+    /* One colour, three strengths.
+
+       The brand is lemon. Full-strength lemon (#B2FB0C) is 15.7:1 on the dark
+       ground and 1.3:1 on white, so light mode steps the same hue down until it
+       passes: --primary-color for icons and UI accents, --primary-dark for text
+       and links. Nothing else in the product is green. */
     --lemon: #B2FB0C;
     --lemon-hover: #C4FF3A;
     --lemon-dark: #9FE00A;
@@ -20,18 +21,19 @@
     --lemon-soft: rgba(178, 251, 12, 0.14);
     --lemon-edge: rgba(178, 251, 12, 0.45);
 
-    --primary-color: #00BE3A;
-    --primary-light: #d6f7e0;
-    --primary-dark: #00902C;
-    --primary-soft: rgba(0, 190, 58, 0.10);
-    --bg-body: #f6f8f9;
+    /* Light mode: lemon darkened to carry on white. 3.5:1 and 5.2:1. */
+    --primary-color: #6B9700;
+    --primary-light: #EDF7CE;
+    --primary-dark: #557800;
+    --primary-soft: rgba(107, 151, 0, 0.10);
+    --bg-body: #F7F8F5;
     --bg-card: #ffffff;
-    --bg-sunk: #f1f5f9;
-    --text-main: #16241f;
-    --text-muted: #667a72;
-    --border-color: #e3e9e7;
+    --bg-sunk: #F2F3EE;
+    --text-main: #171A14;
+    --text-muted: #6A6F63;
+    --border-color: #E5E7E1;
 
-    --up: #10b981;
+    --up: #557800;
     --down: #ef4444;
     --warn: #f59e0b;
     --info: #0ea5e9;
@@ -39,9 +41,9 @@
 
     /* The balance card keeps one look in both themes — it is the app's
        signature surface in the mockups and inverting it loses that. */
-    --hero-bg: #0d1a15;
-    --hero-edge: rgba(16, 185, 129, 0.28);
-    --hero-text: #eaf5f0;
+    --hero-bg: #141A08;
+    --hero-edge: rgba(178, 251, 12, 0.28);
+    --hero-text: #F2F3EC;
     --hero-dim: rgba(234, 245, 240, 0.66);
 
     --radius-lg: 1rem;
@@ -56,12 +58,13 @@
 }
 
 [data-bs-theme="dark"] {
-    /* The mockups sit on a neutral near-black, not a green-tinted one. The
-       green reads as brand only when the ground it sits on is colourless. */
-    --primary-color: #22C55E;
-    --primary-dark: #4ADE80;
-    --primary-light: rgba(34, 197, 94, 0.18);
-    --primary-soft: rgba(34, 197, 94, 0.12);
+    /* A neutral near-black, not a tinted one: lemon only reads as the brand
+       when the ground it sits on is colourless. On this ground lemon runs at
+       full strength — 15.7:1 — so no stepped-down variant is needed. */
+    --primary-color: #B2FB0C;
+    --primary-dark: #C4FF3A;
+    --primary-light: rgba(178, 251, 12, 0.18);
+    --primary-soft: rgba(178, 251, 12, 0.12);
     --lemon-soft: rgba(178, 251, 12, 0.14);
     --lemon-edge: rgba(178, 251, 12, 0.38);
     --bg-body: #0A0A0A;
@@ -70,9 +73,12 @@
     --text-main: #F5F5F5;
     --text-muted: #8E8E8E;
     --border-color: #242424;
-    /* The balance card is the one surface allowed to carry the green glow. */
-    --hero-bg: #101A13;
-    --hero-edge: rgba(34, 197, 94, 0.30);
+    /* Positive figures run full lemon here; the light-mode value is far too
+       dark to read against #0A0A0A. */
+    --up: #B2FB0C;
+    /* The balance card is the one surface allowed to carry the lemon glow. */
+    --hero-bg: #151C09;
+    --hero-edge: rgba(178, 251, 12, 0.30);
     --hero-text: #FFFFFF;
     --hero-dim: rgba(255, 255, 255, 0.62);
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
@@ -290,7 +296,7 @@ a { text-decoration: none; }
 .balance-card::after {
     content: ""; position: absolute;
     top: -70px; right: -50px; width: 220px; height: 220px;
-    background: radial-gradient(closest-side, rgba(16,185,129,.30), transparent);
+    background: radial-gradient(closest-side, rgba(178, 251, 12, .30), transparent);
     pointer-events: none;
 }
 .balance-card > * { position: relative; z-index: 1; }
@@ -306,9 +312,9 @@ a { text-decoration: none; }
     overflow-wrap: anywhere;
 }
 .bc-chip {
-    background: rgba(16,185,129,.18);
-    border: 1px solid rgba(16,185,129,.4);
-    color: #34d399;
+    background: rgba(178, 251, 12, .18);
+    border: 1px solid rgba(178, 251, 12, .4);
+    color: #B2FB0C;
     border-radius: 99px; padding: 2px 11px;
     font-size: 0.68rem; font-weight: 800; letter-spacing: .03em;
     white-space: nowrap;
@@ -316,10 +322,10 @@ a { text-decoration: none; }
 .bc-sub-label { font-size: 0.68rem; color: var(--hero-dim); font-weight: 600; margin-top: 0.55rem; }
 .bc-sub-value { font-size: 0.95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .bc-link {
-    color: #34d399; font-size: 0.74rem; font-weight: 800;
+    color: #B2FB0C; font-size: 0.74rem; font-weight: 800;
     display: inline-flex; align-items: center; gap: 0.3rem;
 }
-.bc-link:hover { color: #6ee7b7; }
+.bc-link:hover { color: #C4FF3A; }
 
 /* four action tiles, the row under the balance card */
 .action-row {
@@ -493,7 +499,7 @@ a { text-decoration: none; }
     border: 1px solid transparent; line-height: 1.5;
 }
 .pill i { font-size: 0.52rem; }
-.pill-success    { background: rgba(16,185,129,0.12); color: #047857; border-color: rgba(16,185,129,0.3); }
+.pill-success    { background: rgba(178, 251, 12, 0.12); color: #557800; border-color: rgba(178, 251, 12, 0.3); }
 .pill-pending    { background: rgba(245,158,11,0.13); color: #b45309; border-color: rgba(245,158,11,0.32); }
 .pill-confirming { background: rgba(14,165,233,0.12); color: #0369a1; border-color: rgba(14,165,233,0.3); }
 .pill-processing { background: rgba(99,102,241,0.12); color: #4338ca; border-color: rgba(99,102,241,0.3); }
@@ -503,7 +509,7 @@ a { text-decoration: none; }
 .pill-warn       { background: rgba(245,158,11,0.13); color: #b45309; border-color: rgba(245,158,11,0.32); }
 .pill-manual     { background: rgba(139,92,246,0.13); color: #6d28d9; border-color: rgba(139,92,246,0.3); }
 .pill-neutral    { background: var(--bg-sunk);        color: var(--text-muted); border-color: var(--border-color); }
-[data-bs-theme="dark"] .pill-success    { color: #34d399; }
+[data-bs-theme="dark"] .pill-success    { color: #B2FB0C; }
 [data-bs-theme="dark"] .pill-pending    { color: #fbbf24; }
 [data-bs-theme="dark"] .pill-confirming { color: #38bdf8; }
 [data-bs-theme="dark"] .pill-processing { color: #a5b4fc; }
@@ -669,11 +675,11 @@ a { text-decoration: none; }
 .k-warn   { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.35); color: #92400e; }
 .k-info   { background: rgba(14,165,233,0.09); border-color: rgba(14,165,233,0.3);  color: #075985; }
 .k-danger { background: rgba(239,68,68,0.09);  border-color: rgba(239,68,68,0.3);   color: #991b1b; }
-.k-ok     { background: var(--primary-soft);   border-color: rgba(16,185,129,0.35); color: #065f46; }
+.k-ok     { background: var(--primary-soft);   border-color: rgba(178, 251, 12, 0.35); color: #4A6800; }
 [data-bs-theme="dark"] .k-warn { color: #fcd34d; }
 [data-bs-theme="dark"] .k-info { color: #7dd3fc; }
 [data-bs-theme="dark"] .k-danger { color: #fca5a5; }
-[data-bs-theme="dark"] .k-ok { color: #6ee7b7; }
+[data-bs-theme="dark"] .k-ok { color: #C4FF3A; }
 
 /* ============================ Tables ============================ */
 
@@ -775,8 +781,8 @@ table.dataTable.dt-nowrap > tbody > tr.child > td { white-space: normal; }
 .dataTables_wrapper .dataTables_paginate .page-item.active .page-link {
     background: var(--primary-color) !important;
     border-color: var(--primary-color) !important;
-    color: #04140a !important;
-    box-shadow: 0 4px 10px -5px rgba(16,185,129,.9) !important;
+    color: #0B1A02 !important;
+    box-shadow: 0 4px 10px -5px rgba(178, 251, 12, .9) !important;
 }
 .dataTables_wrapper .dataTables_paginate a.paginate_button.disabled,
 .dataTables_wrapper .dataTables_paginate a.paginate_button.disabled:hover,
@@ -981,29 +987,29 @@ img.brand-img { height: 38px; width: auto; }
 /* ============================ Receipt ============================ */
 
 .receipt-sheet {
-    background: #ffffff; color: #16241f;
+    background: #ffffff; color: #171A14;
     border-radius: 14px; padding: 1.5rem 1.35rem;
-    border: 1px solid #e3e9e7;
+    border: 1px solid #E5E7E1;
 }
 .receipt-sheet .rs-logo { height: 34px; width: auto; display: block; margin: 0 auto 0.25rem; }
 .receipt-sheet .rs-tag {
     text-align: center; font-size: 0.62rem; font-weight: 800;
-    letter-spacing: 0.14em; text-transform: uppercase; color: #667a72;
+    letter-spacing: 0.14em; text-transform: uppercase; color: #6A6F63;
 }
 .receipt-sheet .rs-div { border-top: 1px dashed #cfd8d4; margin: 1rem 0; }
 .receipt-sheet .rs-amt { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; text-align: center; }
-.receipt-sheet .rs-sub { text-align: center; font-size: 0.78rem; color: #667a72; }
+.receipt-sheet .rs-sub { text-align: center; font-size: 0.78rem; color: #6A6F63; }
 .receipt-sheet .rs-row {
     display: flex; justify-content: space-between; gap: 1rem;
     font-size: 0.79rem; padding: 0.3rem 0;
 }
-.receipt-sheet .rs-row span:first-child { color: #667a72; flex: none; }
+.receipt-sheet .rs-row span:first-child { color: #6A6F63; flex: none; }
 .receipt-sheet .rs-row span:last-child { font-weight: 700; text-align: right; overflow-wrap: anywhere; }
 .receipt-sheet .rs-foot {
     text-align: center; font-size: 0.68rem; color: #8a9a93; line-height: 1.5; margin-top: 0.5rem;
 }
 .receipt-sheet .rs-stamp {
-    display: inline-block; border: 2px solid #10b981; color: #047857;
+    display: inline-block; border: 2px solid #6B9700; color: #557800;
     border-radius: 8px; padding: 2px 10px; font-size: 0.68rem; font-weight: 800;
     text-transform: uppercase; letter-spacing: 0.08em; transform: rotate(-3deg);
 }
@@ -1525,7 +1531,7 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
 .kp-avatar .av-check {
     position: absolute; right: -2px; bottom: -2px;
     width: 16px; height: 16px; border-radius: 50%;
-    background: var(--primary-color); color: #04140a;
+    background: var(--primary-color); color: #0B1A02;
     display: grid; place-items: center;
     font-size: 0.5rem;
     border: 2px solid var(--bg-card);
@@ -1690,7 +1696,7 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
 .track .tk.done .tk-dot {
     background: var(--primary-color);
     border-color: var(--primary-color);
-    color: #04140a;
+    color: #0B1A02;
 }
 .track .tk.done:not(:last-child) .tk-dot::after { background: var(--primary-color); }
 .track .tk.on .tk-dot {
@@ -1936,8 +1942,8 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
    one saturated surface and a piece of artwork behind the figure. */
 .reward-hero {
     position: relative; overflow: hidden;
-    background: linear-gradient(150deg, #17864A 0%, #0C5730 60%, #06331B 100%);
-    border-color: rgba(34,197,94,.35);
+    background: linear-gradient(150deg, #4A6800 0%, #2E4200 60%, #1B2800 100%);
+    border-color: rgba(178, 251, 12, .35);
     color: #fff;
 }
 .reward-hero .rh-body { position: relative; z-index: 1; }

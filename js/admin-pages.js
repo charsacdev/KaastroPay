@@ -1168,7 +1168,7 @@
                 values.push(Math.round(days[k]));
             });
             if (!labels.length) { labels = ['—']; values = [0]; }
-            BO.barChart(document.getElementById('repChart'), labels.slice(-14), values.slice(-14), '#10b981');
+            BO.barChart(document.getElementById('repChart'), labels.slice(-14), values.slice(-14), '#6B9700');
 
             /* table */
             var data = rows.map(function (r) {
