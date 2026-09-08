@@ -74,6 +74,12 @@
         var joinedDaysAgo = i < 3 ? 0 : 12 + i * 9;
         var base = name.toLowerCase().replace(/[^a-z\s]/g, '').trim().split(/\s+/).join('.');
         var tier = i % 4;
+        /* CC and the balance tables are both ten long and were both indexed by
+           i, which locked every country to a single balance slot: CC[4] is
+           Kenya and slot 4 is zero, so every Kenyan user held exactly nothing.
+           Stepping the balance index by the decade breaks the lock-step and
+           spreads all ten figures across all five markets. */
+        var bIdx = (i + Math.floor(i / CC.length) * 3) % 10;
         return {
             id: 'KP-' + (10240 + i),
             name: name,
@@ -91,8 +97,8 @@
                 number: cc === 'NG' ? String(9020000000 + i * 137) : '+' + (233000000 + i),
                 name: 'KAASTRO/' + name.toUpperCase()
             } : null,
-            fiatBalance: [245680, 18400, 92300, 1240, 0, 560700, 34100, 7800, 128900, 4300][i % 10] * (c.dp === 0 ? 40 : 1),
-            usdValue: [1420.50, 320.10, 8940.00, 65.20, 0, 2180.75, 540.00, 12400.30, 88.40, 730.60][i % 10],
+            fiatBalance: [245680, 18400, 92300, 1240, 0, 560700, 34100, 7800, 128900, 4300][bIdx] * (c.dp === 0 ? 40 : 1),
+            usdValue: [1420.50, 320.10, 8940.00, 65.20, 0, 2180.75, 540.00, 12400.30, 88.40, 730.60][bIdx],
             joined: shortDate(joinedDaysAgo),
             joinedDaysAgo: joinedDaysAgo,
             lastSeen: relDay(i % 5),
@@ -788,6 +794,77 @@
     }
 
 
+
+    /* ====================== Market and user metrics ======================
+       Derived, not stored. Everything here is computed from USERS and the
+       platform sets so a country's figures can never drift from the rows
+       they are meant to summarise — the bar chart, the table and the drawer
+       all read the same function. */
+
+    /* One user's total holdings in USD: crypto plus cash, converted. */
+    function holdingsUsd(u) {
+        return u.usdValue + (u.fiatBalance / (global.KP.USD_RATE[u.currency] || 1));
+    }
+
+    /* A stand-in for 30-day throughput. Deterministic from the user's own id
+       so it is stable across reloads, and scaled by holdings so the ranking
+       is plausible rather than random. */
+    function volume30dUsd(u) {
+        var seed = 0;
+        for (var i = 0; i < u.id.length; i++) seed += u.id.charCodeAt(i);
+        var mult = 2.2 + ((seed % 47) / 10);            /* 2.2x - 6.8x */
+        return holdingsUsd(u) * mult;
+    }
+
+    var SERVICE_MIX = {
+        NG: [['Crypto conversion', 42], ['Bank withdrawals', 27], ['Transfers', 16], ['Bills & airtime', 10], ['Payment links', 5]],
+        GH: [['Mobile money', 38], ['Crypto conversion', 29], ['Transfers', 18], ['Bills & airtime', 10], ['Payment links', 5]],
+        KE: [['Send money', 36], ['Crypto conversion', 31], ['Mobile money', 19], ['Bills & airtime', 9], ['Payment links', 5]],
+        TZ: [['Airtime & data', 34], ['Crypto conversion', 30], ['Mobile money', 22], ['Transfers', 9], ['Payment links', 5]],
+        UG: [['Bills', 35], ['Crypto conversion', 28], ['Mobile money', 21], ['Transfers', 11], ['Payment links', 5]]
+    };
+
+    /* Month-on-month user growth. Fixed figures rather than random, because
+       the "fastest-growing market" callout has to agree with the table. */
+    var GROWTH = { NG: 9.4, GH: 12.1, KE: 18.6, TZ: 7.2, UG: 11.3 };
+
+    function marketStats(cc) {
+        var c = global.KP.COUNTRIES[cc];
+        var users = USERS.filter(function (u) { return u.country === cc; });
+        var localBalance = users.reduce(function (s, u) { return s + u.fiatBalance; }, 0);
+        var usdBalance = users.reduce(function (s, u) { return s + holdingsUsd(u); }, 0);
+        var volumeUsd = users.reduce(function (s, u) { return s + volume30dUsd(u); }, 0);
+        var mix = SERVICE_MIX[cc] || SERVICE_MIX.NG;
+        return {
+            code: cc,
+            name: c.name,
+            flag: c.flag,
+            currency: c.currency,
+            enabled: c.enabled,
+            users: users.length,
+            active: users.filter(function (u) { return u.status !== 'blocked' && u.kyc === 'verified'; }).length,
+            verified: users.filter(function (u) { return u.kyc === 'verified'; }).length,
+            localBalance: localBalance,
+            usdBalance: usdBalance,
+            volumeUsd: volumeUsd,
+            growth: GROWTH[cc] != null ? GROWTH[cc] : 0,
+            services: mix,
+            topService: mix[0][0],
+            /* Reserves are held slightly above liability; the ratio is what an
+               operator actually watches. */
+            coverage: 100 + (GROWTH[cc] || 5) * 0.45,
+            topHolders: users.slice().sort(function (a, b) { return holdingsUsd(b) - holdingsUsd(a); }).slice(0, 5)
+        };
+    }
+
+    function allMarkets() {
+        return global.KP.COUNTRY_LIST.map(function (c) { return marketStats(c.code); });
+    }
+
+    /* The market growing fastest, for the callout beside the chart. */
+    function fastestMarket() {
+        return allMarkets().sort(function (a, b) { return b.growth - a.growth; })[0];
+    }
     /* ========================= Payment links =========================
        A link is created by one user and paid by anyone, so it is platform
        data rather than something hanging off ME: the user's own page filters
@@ -912,6 +989,11 @@
         favourites: favourites,
         recentContacts: recentContacts,
         findContact: findContact,
+        holdingsUsd: holdingsUsd,
+        volume30dUsd: volume30dUsd,
+        marketStats: marketStats,
+        allMarkets: allMarkets,
+        fastestMarket: fastestMarket,
         PAYMENT_LINKS: PAYMENT_LINKS,
         myPaymentLinks: myPaymentLinks,
         linkStats: linkStats,

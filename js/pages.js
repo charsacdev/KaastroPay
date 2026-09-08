@@ -610,6 +610,7 @@
 
         $el.html('<div class="stat-strip mb-3" id="uStats"></div>'
             + '<div class="strip-dots" data-for="uStats"></div>'
+            + '<div class="card p-3 mt-2 mb-2" id="uControls"></div>'
             + '<div id="uQueue" class="mt-2"></div>');
 
         var total = D.USERS.length;
@@ -634,9 +635,93 @@
         );
         BO.stripDots('#uStats');
 
+        /* Country, sort and preset. Each narrows the same set, and the KYC
+           chips inside the queue then filter whatever survives. */
+        var view = { country: 'all', sort: 'balance', preset: 'none' };
+
+        /* Deep-link support, so "View users in Kenya" from the countries page
+           lands with the filter already applied. */
+        var qs = (location.search.match(/[?&]country=([A-Z]{2})/i) || [])[1];
+        if (qs && KP.COUNTRIES[qs.toUpperCase()]) view.country = qs.toUpperCase();
+
+        function paintControls() {
+            $('#uControls').html(
+                '<div class="u-controls">'
+                + '<div class="uc-field"><label class="form-label">Country</label>'
+                + '<select class="form-select form-select-sm" id="ucCountry">'
+                + '<option value="all">All countries</option>'
+                + KP.COUNTRY_LIST.map(function (c) {
+                    return '<option value="' + c.code + '"'
+                        + (c.code === view.country ? ' selected' : '') + '>'
+                        + c.flag + ' ' + c.name + '</option>';
+                }).join('') + '</select></div>'
+
+                + '<div class="uc-field"><label class="form-label">Sort by</label>'
+                + '<select class="form-select form-select-sm" id="ucSort">'
+                + [['balance', 'Highest balance first'],
+                   ['volume', 'Highest 30D volume first'],
+                   ['recent', 'Most recently active'],
+                   ['joined', 'Newest sign-ups'],
+                   ['name', 'Name (A–Z)']].map(function (o) {
+                    return '<option value="' + o[0] + '"'
+                        + (o[0] === view.sort ? ' selected' : '') + '>' + o[1] + '</option>';
+                }).join('') + '</select></div>'
+
+                + '<div class="uc-presets">'
+                + [['none', 'Everyone'], ['top10', 'Top 10 holders'], ['top50', 'Top 50 holders'],
+                   ['zero', 'Zero balance'], ['recent', 'Recently active']].map(function (p) {
+                    return '<button class="chip-btn' + (p[0] === view.preset ? ' active' : '')
+                        + '" data-preset="' + p[0] + '">' + p[1] + '</button>';
+                }).join('')
+                + '</div></div>'
+                + '<div class="ar-sub mt-2" id="ucSummary"></div>'
+            );
+        }
+
+        function holdings(u) { return D.holdingsUsd(u); }
+
+        /* The rows the queue sees, after country, preset and sort. */
+        function viewRows() {
+            var rows = D.USERS.slice();
+
+            if (view.country !== 'all') {
+                rows = rows.filter(function (u) { return u.country === view.country; });
+            }
+
+            if (view.preset === 'zero') {
+                rows = rows.filter(function (u) { return holdings(u) <= 0; });
+            } else if (view.preset === 'recent') {
+                rows = rows.filter(function (u) { return /now|today|hour|min/i.test(u.lastSeen); });
+            }
+
+            var by = {
+                balance: function (a, b) { return holdings(b) - holdings(a); },
+                volume:  function (a, b) { return D.volume30dUsd(b) - D.volume30dUsd(a); },
+                recent:  function (a, b) { return (a.joinedDaysAgo || 0) - (b.joinedDaysAgo || 0); },
+                joined:  function (a, b) { return (a.joinedDaysAgo || 0) - (b.joinedDaysAgo || 0); },
+                name:    function (a, b) { return a.name.localeCompare(b.name); }
+            };
+            rows.sort(by[view.sort] || by.balance);
+
+            /* Top-N presets are a slice of the ranking, so they only mean
+               anything once the sort above has run. */
+            if (view.preset === 'top10') rows = rows.slice(0, 10);
+            if (view.preset === 'top50') rows = rows.slice(0, 50);
+
+            return rows;
+        }
+
+        function paintSummary() {
+            var rows = viewRows();
+            var sum = rows.reduce(function (s, u) { return s + holdings(u); }, 0);
+            var where = view.country === 'all' ? 'all markets' : KP.COUNTRIES[view.country].name;
+            $('#ucSummary').html('Showing <b>' + rows.length + '</b> of ' + D.USERS.length
+                + ' users in ' + where + ' &middot; ' + KP.fmt.usd(sum) + ' held');
+        }
+
         var q = BO.queue({
             el: $('#uQueue'),
-            rows: function () { return D.USERS; },
+            rows: function () { return viewRows(); },
             filters: [
                 { id: 'all', label: 'All', count: total },
                 { id: 'verified', label: 'Verified' },
@@ -671,6 +756,27 @@
                 } }
             ]
         });
+
+        /* Country, sort and preset all narrow the same set, then the queue's
+           own KYC chips filter whatever survives. */
+        $el.on('change', '#ucCountry', function () {
+            view.country = $(this).val(); q.repaint(); paintSummary();
+        });
+        $el.on('change', '#ucSort', function () {
+            view.sort = $(this).val(); q.repaint(); paintSummary();
+        });
+        $el.on('click', '[data-preset]', function () {
+            view.preset = $(this).data('preset') + '';
+            /* A top-N preset only means something against a ranking, so move
+               off the alphabetical sort if that is where the user was. */
+            if ((view.preset === 'top10' || view.preset === 'top50') && view.sort === 'name') {
+                view.sort = 'balance';
+            }
+            paintControls(); q.repaint(); paintSummary();
+        });
+
+        paintControls();
+        paintSummary();
     };
 
     /* ============================== Trades ============================== */

@@ -14,15 +14,50 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
 <script src="../js/boot.js" data-root="../"></script>
 </head>
-<body data-portal="admin" data-page="countries" data-title="Countries" data-sub="A new market should be configuration, not a code change">
+<body data-portal="admin" data-page="countries" data-title="Countries" data-sub="Market performance and customer wallet exposure">
 
 <main class="main-content">
-  <div class="card p-3">
+
+  <!-- Platform totals, then the same figures broken down per market. -->
+  <div class="row g-2 mb-3" id="mktStats"></div>
+
+  <div class="k-alert k-info mb-3">
+    <i class="fas fa-circle-info"></i>
+    <div>Amounts are shown in local currency and consolidated USD equivalent.</div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-8">
+      <div class="card p-3 p-md-4 h-100">
+        <div class="section-head"><h2>Users by country</h2>
+          <div class="d-flex align-items-center gap-2">
+            <select class="form-select form-select-sm" id="metric" style="width:auto">
+              <option value="users">Users</option>
+              <option value="usdBalance">Customer balances</option>
+              <option value="volumeUsd">30-day volume</option>
+            </select>
+          </div>
+        </div>
+        <canvas id="mktChart" height="230"></canvas>
+        <div id="chartLegend" class="mt-2"></div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <!-- The single number an operator looks for first: where is growth. -->
+      <div class="card p-3 p-md-4 h-100 top-market" id="topMarket"></div>
+    </div>
+  </div>
+
+  <div class="card p-3 p-md-4">
+    <div class="section-head"><h2>All markets</h2>
+      <span class="small text-muted" id="mktCount"></span></div>
     <div class="table-wrap">
-      <table class="k-table" style="min-width:900px">
+      <table class="k-table" style="min-width:1000px">
         <thead><tr>
-          <th>Country</th><th>Currency</th><th>Identity check</th>
-          <th>Funding rail</th><th>Payout rail</th><th>Users</th><th>Status</th><th class="text-end"></th>
+          <th>Country</th><th class="text-end">Users</th><th class="text-end">Customer balances</th>
+          <th class="text-end">30D volume</th><th class="text-end">Growth</th>
+          <th>Top service</th><th>Status</th><th class="text-end">Action</th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
@@ -55,33 +90,194 @@
 <script src="../js/backoffice.js"></script>
 <script>
 KP.ready(function () {
-  var BO = KP.bo, D = KP.data;
+  var BO = KP.bo, D = KP.data, F = KP.fmt;
+  var metric = 'users';
 
-  function userCount(cc) {
-    return D.USERS.filter(function (u) { return u.country === cc; }).length;
+  var METRIC_LABEL = {
+    users: 'Users',
+    usdBalance: 'Customer balances',
+    volumeUsd: '30-day volume'
+  };
+  function fmtMetric(m, v) { return m === 'users' ? String(v) : F.usd(v); }
+
+  /* ------------------------- platform totals ------------------------- */
+
+  function paintStats() {
+    var all = D.allMarkets();
+    var liability = all.reduce(function (s, m) { return s + m.usdBalance; }, 0);
+    var volume = all.reduce(function (s, m) { return s + m.volumeUsd; }, 0);
+    var coverage = all.reduce(function (s, m) { return s + m.coverage; }, 0) / all.length;
+    var open = all.filter(function (m) { return m.enabled; }).length;
+
+    $('#mktStats').html([
+      ['Total customer liability', F.usd(liability), 'fa-vault', 'qa-green', 'cash and crypto'],
+      ['Reserve coverage', coverage.toFixed(1) + '%', 'fa-shield-halved', 'qa-green', 'reserves over liability'],
+      ['30-day transaction volume', F.usd(volume), 'fa-chart-simple', 'qa-green', 'USD equivalent'],
+      ['Active markets', open + ' of ' + all.length, 'fa-earth-africa', 'qa-green', 'open for signups']
+    ].map(function (c) {
+      return '<div class="col-6 col-lg-3"><div class="card figure-tile h-100">'
+        + '<span class="qa-icon ' + c[3] + ' sm"><i class="fas ' + c[2] + '"></i></span>'
+        + '<span class="ft-label">' + c[0] + '</span>'
+        + '<b class="ft-value">' + c[1] + '</b>'
+        + '<span class="ft-sub">' + c[4] + '</span></div></div>';
+    }).join(''));
   }
 
+  /* --------------------------- the chart --------------------------- */
+
+  function paintChart() {
+    var all = D.allMarkets().sort(function (a, b) { return b[metric] - a[metric]; });
+    var canvas = document.getElementById('mktChart');
+    BO.barChart(canvas, all.map(function (m) { return m.code; }),
+      all.map(function (m) { return m[metric]; }), '#B2FB0C');
+
+    /* The canvas can only carry a code on each bar, so the legend spells out
+       which market each one is and what the bar is actually worth. */
+    var max = Math.max.apply(null, all.map(function (m) { return m[metric]; })) || 1;
+    $('#chartLegend').html('<div class="chart-legend">' + all.map(function (m) {
+      return '<div class="cl-row">'
+        + '<span class="cl-flag">' + m.flag + '</span>'
+        + '<span class="cl-name">' + m.name + '</span>'
+        + '<span class="cl-bar"><span style="width:' + (m[metric] / max * 100) + '%"></span></span>'
+        + '<span class="cl-val">' + fmtMetric(metric, m[metric]) + '</span></div>';
+    }).join('') + '</div>');
+  }
+
+  $('#metric').on('change', function () { metric = $(this).val(); paintChart(); });
+
+  /* ----------------------- fastest-growing market ----------------------- */
+
+  function paintTop() {
+    var all = D.allMarkets().sort(function (a, b) { return b.growth - a.growth; });
+    var top = all[0];
+    $('#topMarket').html(
+      '<div class="section-head"><h2>Top performing market</h2></div>'
+      + '<div class="tm-head">'
+      + '<span class="tm-flag">' + top.flag + '</span>'
+      + '<div class="min-w-0"><div class="tm-name">' + top.name + '</div>'
+      + '<div class="ar-sub">Fastest-growing market</div></div></div>'
+      + '<div class="tm-growth">+' + top.growth.toFixed(1) + '%</div>'
+      + '<div class="ar-sub mb-3">user growth in the last 30 days</div>'
+      + '<div class="summary-rows mb-3">'
+      + '<div class="sr"><span>Users</span><span>' + top.users + '</span></div>'
+      + '<div class="sr"><span>Customer balances</span><span>' + F.usd(top.usdBalance) + '</span></div>'
+      + '<div class="sr total"><span>Top service</span><span>' + top.topService + '</span></div></div>'
+      + '<div class="text-muted mb-2" style="font-size:.72rem;font-weight:700;'
+      + 'text-transform:uppercase;letter-spacing:.05em">Growth across all markets</div>'
+      + all.map(function (m) {
+          return '<div class="growth-row">'
+            + '<span>' + m.flag + ' ' + m.name + '</span>'
+            + '<span class="growth-bar"><span style="width:'
+            + (m.growth / all[0].growth * 100) + '%"></span></span>'
+            + '<b class="text-up">+' + m.growth.toFixed(1) + '%</b></div>';
+        }).join('')
+      + '<button class="btn btn-primary w-100 mt-3" data-insight="' + top.code + '">'
+      + 'View insight <i class="fas fa-arrow-right ms-1"></i></button>'
+    );
+  }
+
+  /* --------------------------- the table --------------------------- */
+
   function paint() {
-    $('#rows').html(KP.COUNTRY_LIST.map(function (c) {
+    var all = D.allMarkets().sort(function (a, b) { return b.users - a.users; });
+    $('#mktCount').text(all.length + ' markets');
+    $('#rows').html(all.map(function (m) {
+      var c = KP.COUNTRIES[m.code];
       return '<tr>'
         + '<td><div class="d-flex align-items-center gap-2">'
-        + '<span style="font-size:1.2rem">' + c.flag + '</span>'
-        + '<div style="line-height:1.25"><div class="t-strong">' + c.name + '</div>'
-        + '<div class="t-mono">' + c.code + '</div></div></div></td>'
-        + '<td><span class="t-strong">' + c.currency + '</span> <span class="t-mono">' + c.symbol + '</span></td>'
-        + '<td class="t-strong">' + c.idLabel + '</td>'
-        + '<td>' + (c.fundingRail === 'virtual_account'
-          ? '<span class="pill pill-success"><i class="fas fa-building-columns"></i>Virtual account</span>'
-          : '<span class="pill pill-confirming"><i class="fas fa-mobile-screen"></i>Mobile money</span>') + '</td>'
-        + '<td class="t-mono">' + (c.payoutRail === 'bank' ? 'Bank transfer' : 'Mobile money') + '</td>'
-        + '<td class="t-strong">' + userCount(c.code) + '</td>'
-        + '<td>' + BO.pill(c.enabled ? 'active' : 'blocked') + '</td>'
-        + '<td class="text-end"><div class="form-check form-switch d-inline-block">'
-        + '<input class="form-check-input toggle-c" type="checkbox" data-cc="' + c.code + '"'
-        + (c.enabled ? ' checked' : '') + '></div></td>'
+        + '<span style="font-size:1.2rem">' + m.flag + '</span>'
+        + '<div style="line-height:1.25"><div class="t-strong">' + m.name + '</div>'
+        + '<div class="t-mono">' + m.code + ' · ' + m.currency + '</div></div></div></td>'
+        + '<td class="text-end t-strong">' + m.users + '</td>'
+        + '<td class="text-end"><div style="line-height:1.25">'
+        + '<div class="t-strong">' + F.fiat(m.localBalance, m.currency) + '</div>'
+        + '<div class="t-mono">' + F.usd(m.usdBalance) + '</div></div></td>'
+        + '<td class="text-end t-strong">' + F.usd(m.volumeUsd) + '</td>'
+        + '<td class="text-end t-strong text-up">+' + m.growth.toFixed(1) + '%</td>'
+        + '<td class="t-mono">' + m.topService + '</td>'
+        + '<td><div class="d-flex align-items-center gap-2">'
+        + BO.pill(m.enabled ? 'active' : 'blocked')
+        + '<div class="form-check form-switch m-0">'
+        + '<input class="form-check-input toggle-c" type="checkbox" data-cc="' + m.code + '"'
+        + (m.enabled ? ' checked' : '') + '></div></div></td>'
+        + '<td class="text-end">'
+        + '<button class="btn btn-sm btn-primary" data-insight="' + m.code + '">'
+        + 'View insight</button></td>'
         + '</tr>';
     }).join(''));
   }
+
+  /* ------------------------- the insight drawer ------------------------- */
+
+  $(document).on('click', '[data-insight]', function () {
+    var m = D.marketStats($(this).data('insight'));
+    var c = KP.COUNTRIES[m.code];
+    var maxSvc = m.services[0][1];
+
+    KP.rails.sheet(m.flag + '&nbsp; ' + m.name + ' &mdash; market insight',
+      '<div class="row g-2 mb-3">'
+      + [['Users', m.users, 'fa-users'],
+         ['Customer balances', F.fiat(m.localBalance, m.currency), 'fa-wallet'],
+         ['30D volume', F.usd(m.volumeUsd), 'fa-chart-simple'],
+         ['Growth', '+' + m.growth.toFixed(1) + '%', 'fa-arrow-trend-up']].map(function (s) {
+          return '<div class="col-6"><div class="card figure-tile h-100">'
+            + '<span class="qa-icon qa-green sm"><i class="fas ' + s[2] + '"></i></span>'
+            + '<span class="ft-label">' + s[0] + '</span>'
+            + '<b class="ft-value">' + s[1] + '</b></div></div>';
+        }).join('')
+      + '</div>'
+
+      + '<div class="section-head"><h2>Wallet position</h2></div>'
+      + '<p class="text-muted" style="font-size:.8rem">View only &mdash; fund movement '
+      + 'controls are in Treasury.</p>'
+      + '<div class="summary-rows mb-3">'
+      + '<div class="sr"><span>Customer liability</span><span>' + F.usd(m.usdBalance) + '</span></div>'
+      + '<div class="sr"><span>Allocated reserves</span><span>'
+      + F.usd(m.usdBalance * m.coverage / 100) + '</span></div>'
+      + '<div class="sr"><span>Coverage</span><span class="text-up">'
+      + m.coverage.toFixed(1) + '%</span></div>'
+      + '<div class="sr total"><span>Available operational float</span><span>'
+      + F.usd(m.usdBalance * (m.coverage - 100) / 100) + '</span></div></div>'
+
+      + '<div class="section-head"><h2>Popular services</h2>'
+      + '<span class="small text-muted">share of activity, last 30 days</span></div>'
+      + m.services.map(function (s) {
+          return '<div class="growth-row">'
+            + '<span>' + s[0] + '</span>'
+            + '<span class="growth-bar"><span style="width:' + (s[1] / maxSvc * 100) + '%"></span></span>'
+            + '<b>' + s[1] + '%</b></div>';
+        }).join('')
+
+      + '<div class="section-head mt-3"><h2>Top holders</h2></div>'
+      + (m.topHolders.length
+          ? m.topHolders.map(function (u, i) {
+              return '<div class="asset-row">'
+                + '<div class="qa-icon qa-green sm">' + (i + 1) + '</div>'
+                + '<div class="flex-grow-1 min-w-0"><div class="ar-name text-truncate">'
+                + u.name + '</div>'
+                + '<div class="ar-sub">Tier ' + u.tier + ' &middot; ' + u.id + '</div></div>'
+                + '<span class="ar-amt flex-shrink-0">' + F.fiat(u.fiatBalance, u.currency) + '</span></div>';
+            }).join('')
+          : '<div class="empty-state"><i class="fas fa-users"></i><p>No users in this market yet.</p></div>')
+
+      + '<div class="section-head mt-3"><h2>Configuration</h2></div>'
+      + '<div class="summary-rows">'
+      + '<div class="sr"><span>Currency</span><span>' + c.currency + ' ' + c.symbol + '</span></div>'
+      + '<div class="sr"><span>Identity check</span><span>' + c.idLabel + '</span></div>'
+      + '<div class="sr"><span>Funding rail</span><span>'
+      + (c.fundingRail === 'virtual_account' ? 'Virtual account' : 'Mobile money') + '</span></div>'
+      + '<div class="sr"><span>Payout rail</span><span>'
+      + (c.payoutRail === 'bank' ? 'Bank transfer' : 'Mobile money') + '</span></div>'
+      + '<div class="sr total"><span>Status</span><span class="'
+      + (m.enabled ? 'text-up' : 'text-muted') + '">'
+      + (m.enabled ? 'Open for signups' : 'Closed') + '</span></div></div>'
+
+      + '<div class="d-grid gap-2 mt-3">'
+      + '<a class="btn btn-primary" href="users.html?country=' + m.code + '">'
+      + 'View users in ' + m.name + '</a>'
+      + '<a class="btn btn-soft" href="treasury.html">Open treasury</a></div>',
+      { size: 'modal-lg' });
+  });
 
   $(document).on('change', '.toggle-c', function () {
     var cc = $(this).data('cc');
@@ -89,7 +285,7 @@ KP.ready(function () {
     KP.rails.toast(KP.COUNTRIES[cc].name + ' is now '
       + (KP.COUNTRIES[cc].enabled ? 'open for signups.' : 'closed to new signups.'),
       KP.COUNTRIES[cc].enabled ? 'dark' : 'warning');
-    paint();
+    paint(); paintStats();
   });
 
   $('#checklist').html([
@@ -100,12 +296,13 @@ KP.ready(function () {
     ['Tier limits', 'Local regulator caps often differ from your global tiers.']
   ].map(function (x, i) {
     return '<div class="asset-row">'
-      + '<div class="qa-icon qa-blue" style="width:30px;height:30px;font-size:.7rem;font-weight:800">' + (i + 1) + '</div>'
+      + '<div class="qa-icon qa-green sm" style="font-weight:800">' + (i + 1) + '</div>'
       + '<div><div class="ar-name" style="font-size:.83rem">' + x[0] + '</div>'
       + '<div class="ar-sub">' + x[1] + '</div></div></div>';
   }).join(''));
 
-  paint();
+  paintStats(); paintChart(); paintTop(); paint();
+  $(window).on('resize', function () { paintChart(); });
 });
 </script>
 </body>

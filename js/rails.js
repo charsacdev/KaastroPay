@@ -789,7 +789,10 @@
         opts = opts || {};
         $('#kpSheet').remove();
         $('body').append('<div class="modal fade kp-sheet" id="kpSheet" tabindex="-1">'
-            + '<div class="modal-dialog modal-dialog-centered ' + (opts.size || '') + '">'
+            /* Scrollable, so a long body scrolls inside the sheet instead of
+               running off the viewport with its buttons out of reach. */
+            + '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable '
+            + (opts.size || '') + '">'
             + '<div class="modal-content">'
             + '<div class="modal-header">'
             + '<h5 class="modal-title">' + title + '</h5>'
